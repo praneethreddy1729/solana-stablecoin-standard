@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "anchor *",
+      "cargo *",
+      "solana *",
+      "npm *",
+      "yarn *",
+      "npx *",
+      "git *",
+      "gh *",
+      "docker *",
+      "docker-compose *",
+      "node *",
+      "ts-mocha *",
+      "tsc *",
+      "prettier *",
+      "rustfmt *",
+      "cargo-fmt *",
+      "ls *",
+      "cat *",
+      "mkdir *",
+      "echo *"
+    ],
+    "deny": [
+      "rm -rf /",
+      "sudo *",
+      "chmod 777 *",
+      "solana program deploy * --url mainnet*",
+      "solana program deploy * -um*",
+      "git push --force *",
+      "git reset --hard *"
+    ]
+  }
+}

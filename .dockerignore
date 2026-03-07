@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build artifacts
+target/deploy
+target/debug
+target/release
+test-ledger
+.anchor
+
+# Environment and secrets
+.env
+.env.local
+**/.env
+
+# IDE and OS
+.DS_Store
+.idea
+.vscode
+*.swp
+
+# Logs
+*.log
+
+# Git
+.git
+.gitignore
+
+# Documentation (not needed in image)
+docs/
+*.md
+!README.md
+
+# Frontend (separate build)
+frontend/node_modules
+frontend/.next

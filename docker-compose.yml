@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "${PORT:-3001}:3001"
+    env_file:
+      - .env
+    environment:
+      - PORT=3001
+      - HOST=0.0.0.0
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-http://host.docker.internal:8899}
+      - MINT_ADDRESS=${MINT_ADDRESS}
+      - AUTHORITY_KEYPAIR=${AUTHORITY_KEYPAIR:-/run/secrets/authority_keypair}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ENABLE_SANCTIONS_SCREENING=${ENABLE_SANCTIONS_SCREENING:-false}
+    volumes:
+      # Mount keypair file (read-only) for local dev
+      - ${AUTHORITY_KEYPAIR_PATH:-~/.config/solana/id.json}:/run/secrets/authority_keypair:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
