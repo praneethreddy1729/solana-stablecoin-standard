@@ -1,8 +1,10 @@
+import * as crypto from "crypto";
 import pino from "pino";
 
 const logger = pino({ name: "webhook-service" });
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -24,13 +26,23 @@ export async function sendWebhook(
   }
 
   const payload = { event, data, timestamp: new Date().toISOString() };
+  const body = JSON.stringify(payload);
+
+  // Compute HMAC-SHA256 signature if WEBHOOK_SECRET is configured.
+  // Recipients should verify by computing HMAC-SHA256(raw_body, secret) and
+  // comparing with the X-Webhook-Signature header using a timing-safe comparison.
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (WEBHOOK_SECRET) {
+    const signature = crypto.createHmac("sha256", WEBHOOK_SECRET).update(body).digest("hex");
+    headers["X-Webhook-Signature"] = signature;
+  }
 
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const res = await fetch(WEBHOOK_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        headers,
+        body,
       });
 
       if (res.ok) {

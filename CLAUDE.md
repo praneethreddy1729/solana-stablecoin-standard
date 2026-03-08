@@ -36,8 +36,8 @@ ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 ANCHOR_WALLET=~/.config/solana/id.json
 - **sss-transfer-hook**: Transfer hook + blacklist PDAs
   - Program ID: A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB
 
-## Role Types (6 total)
-- Minter(0), Burner(1), Pauser(2), Freezer(3), Blacklister(4), Seizer(5)
+## Role Types (7 total)
+- Minter(0), Burner(1), Pauser(2), Freezer(3), Blacklister(4), Seizer(5), Attestor(6)
 
 ## Key Decisions
 - BlacklistEntry PDAs owned by hook program (not main program)
@@ -57,6 +57,7 @@ ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 ANCHOR_WALLET=~/.config/solana/id.json
 - Role: [b"role", config, role_type, assignee]
 - BlacklistEntry: [b"blacklist", mint, user] (hook program)
 - ExtraAccountMetas: [b"extra-account-metas", mint] (hook program)
+- ReserveAttestation: [b"attestation", config] (main program)
 
 ## Cargo Dependency Notes
 - blake3 pinned to 1.5.5 (1.8+ requires edition2024, incompatible with platform-tools cargo 1.84)
@@ -65,6 +66,9 @@ ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 ANCHOR_WALLET=~/.config/solana/id.json
 ## Error Codes
 - 6000-6023: Original errors (see errors.rs)
 - 6024: ReasonTooLong (blacklist reason > 64 bytes)
+- 6030: AttestationUriTooLong (> 256 bytes)
+- 6031: InvalidExpiration (must be positive)
+- 6032: Undercollateralized (reserves < supply, auto-pauses)
 
 ## Known Issues
 - Agave 3.0.x SIMD-0219 breaks Token-2022 metadata realloc (anza-xyz/agave#9799)

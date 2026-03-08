@@ -235,6 +235,7 @@ describe("role-matrix", () => {
         enableTransferHook: false,
         enablePermanentDelegate: false,
         defaultAccountFrozen: false,
+        treasury: getAssociatedTokenAddressSync(mint.publicKey, authority.publicKey, false, TOKEN_2022_PROGRAM_ID),
       })
       .accountsStrict({
         authority: authority.publicKey,
@@ -1330,6 +1331,15 @@ describe("role-matrix", () => {
   // ================================================================
   describe("seize() authorization (SSS-1 — PermanentDelegateNotEnabled)", () => {
     let authorityAta: PublicKey;
+    const hookProgramId = new PublicKey("A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB");
+
+    function seizeBlacklistPda(user: PublicKey): PublicKey {
+      const [pda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("blacklist"), mint.publicKey.toBuffer(), user.toBuffer()],
+        hookProgramId
+      );
+      return pda;
+    }
 
     before(async () => {
       try {
@@ -1346,6 +1356,7 @@ describe("role-matrix", () => {
 
     it("rejects with correct Seizer role on SSS-1 (PermanentDelegateNotEnabled)", async () => {
       const seizerRole = rolePda(configPda, SEIZER, seizerKp.publicKey);
+      const blPda = seizeBlacklistPda(recipient.publicKey);
       try {
         await program.methods
           .seize()
@@ -1355,6 +1366,8 @@ describe("role-matrix", () => {
             seizerRole,
             mint: mint.publicKey,
             from: recipientAta,
+            fromOwner: recipient.publicKey,
+            blacklistEntry: blPda,
             to: authorityAta,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
           })
@@ -1370,6 +1383,7 @@ describe("role-matrix", () => {
       it(`rejects ${ROLE_NAMES[wrongRole]} trying to seize on SSS-1`, async () => {
         const kp = roleKeypairs[wrongRole];
         const fakeSeizerRole = rolePda(configPda, SEIZER, kp.publicKey);
+        const blPda = seizeBlacklistPda(recipient.publicKey);
         try {
           await program.methods
             .seize()
@@ -1379,6 +1393,8 @@ describe("role-matrix", () => {
               seizerRole: fakeSeizerRole,
               mint: mint.publicKey,
               from: recipientAta,
+              fromOwner: recipient.publicKey,
+              blacklistEntry: blPda,
               to: authorityAta,
               tokenProgram: TOKEN_2022_PROGRAM_ID,
             })
@@ -1399,6 +1415,7 @@ describe("role-matrix", () => {
 
     it("rejects nobody trying to seize", async () => {
       const fakeSeizerRole = rolePda(configPda, SEIZER, nobody.publicKey);
+      const blPda = seizeBlacklistPda(recipient.publicKey);
       try {
         await program.methods
           .seize()
@@ -1408,6 +1425,8 @@ describe("role-matrix", () => {
             seizerRole: fakeSeizerRole,
             mint: mint.publicKey,
             from: recipientAta,
+            fromOwner: recipient.publicKey,
+            blacklistEntry: blPda,
             to: authorityAta,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
           })
@@ -1427,6 +1446,7 @@ describe("role-matrix", () => {
     it("rejects revoked Seizer role (RoleNotActive)", async () => {
       await revokeRole(SEIZER, seizerKp.publicKey);
       const seizerRole = rolePda(configPda, SEIZER, seizerKp.publicKey);
+      const blPda = seizeBlacklistPda(recipient.publicKey);
       try {
         await program.methods
           .seize()
@@ -1436,6 +1456,8 @@ describe("role-matrix", () => {
             seizerRole,
             mint: mint.publicKey,
             from: recipientAta,
+            fromOwner: recipient.publicKey,
+            blacklistEntry: blPda,
             to: authorityAta,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
           })

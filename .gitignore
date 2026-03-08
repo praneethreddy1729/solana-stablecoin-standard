@@ -9,4 +9,5 @@ test-ledger
 *.log
 dist/
 devnet-deployer.json
+*-keypair.json
 *.pem

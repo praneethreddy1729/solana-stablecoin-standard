@@ -24,6 +24,8 @@ pub struct StablecoinConfig {
     pub default_account_frozen: bool,
     /// PDA bump
     pub bump: u8,
+    /// Treasury token account — seized tokens are sent here
+    pub treasury: Pubkey,
     /// Reserved for future use
-    pub _reserved: [u8; 64],
+    pub _reserved: [u8; 32],
 }

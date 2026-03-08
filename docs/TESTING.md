@@ -4,7 +4,7 @@
 
 The test suite validates all SSS-1 and SSS-2 functionality through Anchor integration tests. Tests run against a local Solana validator with both programs deployed.
 
-**Total: 107 tests** across 9 test files covering all instructions, role checks, compliance flows, and edge cases.
+**Total: 285 tests** across 14 test files covering all instructions, role checks, compliance flows, and edge cases.
 
 ## Running Tests
 
@@ -46,15 +46,20 @@ Tests are located in the `tests/` directory:
 
 ```
 tests/
-  sss-token.ts           -- Main test suite (34 tests)
-  sss-transfer-hook.ts   -- Transfer hook tests (5 tests)
-  admin-extended.ts      -- Extended admin/role tests (15 tests)
-  edge-cases.ts          -- Edge case coverage (17 tests)
-  multi-user.ts          -- Multi-user scenarios (15 tests)
-  invariants.ts          -- Invariant checks (11 tests)
-  full-lifecycle.ts      -- Full lifecycle scenarios (8 tests)
-  e2e-sss1.ts            -- End-to-end SSS-1 lifecycle (1 test)
-  e2e-sss2.ts            -- End-to-end SSS-2 lifecycle (1 test)
+  sss-token.ts              -- Main test suite (34 tests)
+  sss-transfer-hook.ts      -- Transfer hook tests (5 tests)
+  admin-extended.ts         -- Extended admin/role tests (15 tests)
+  authority-pause-extended.ts -- Authority & pause tests (30 tests)
+  compliance-extended.ts    -- Compliance flow tests (35 tests)
+  edge-cases.ts             -- Edge case coverage (17 tests)
+  multi-user.ts             -- Multi-user scenarios (15 tests)
+  invariants.ts             -- Invariant checks (11 tests)
+  full-lifecycle.ts         -- Full lifecycle scenarios (8 tests)
+  role-matrix.ts            -- Role permission matrix (47 tests)
+  token-ops-extended.ts     -- Extended token operations (40 tests)
+  sdk-integration.ts        -- SDK integration tests (26 tests)
+  e2e-sss1.ts               -- End-to-end SSS-1 lifecycle (1 test)
+  e2e-sss2.ts               -- End-to-end SSS-2 lifecycle (1 test)
 ```
 
 ### sss-token.ts (34 tests)
@@ -147,6 +152,26 @@ Invariant checks validating PDA derivation consistency, config immutability afte
 ### full-lifecycle.ts (8 tests)
 
 Full lifecycle scenarios covering various combinations of SSS-1 and SSS-2 features end-to-end.
+
+### authority-pause-extended.ts (30 tests)
+
+Extended coverage for authority transfer edge cases and pause/unpause interaction with all operations.
+
+### compliance-extended.ts (35 tests)
+
+Comprehensive compliance testing including blacklist reason validation, CPI flow edge cases, and seize permission checks.
+
+### role-matrix.ts (47 tests)
+
+Full role permission matrix ensuring every instruction correctly accepts authorized roles and rejects unauthorized ones.
+
+### token-ops-extended.ts (40 tests)
+
+Extended token operation tests covering mint quota boundaries, burn edge cases, freeze/thaw interactions, and multi-operation sequences.
+
+### sdk-integration.ts (26 tests)
+
+SDK integration tests verifying the TypeScript SDK correctly wraps all on-chain instructions and handles errors.
 
 ### e2e-sss1.ts (1 test)
 

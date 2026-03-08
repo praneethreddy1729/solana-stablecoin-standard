@@ -100,6 +100,9 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       hookProgram.programId
     );
 
+    // Derive treasury ATA (authority's ATA for this mint)
+    const treasuryAta = getAssociatedTokenAddressSync(mint.publicKey, authority.publicKey, false, TOKEN_2022_PROGRAM_ID);
+
     // ===== Step 1: Create SSS-2 Mint (hook + permanent delegate + default frozen) =====
     await program.methods
       .initialize({
@@ -110,6 +113,7 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
         enableTransferHook: true,
         enablePermanentDelegate: true,
         defaultAccountFrozen: true,
+        treasury: treasuryAta,
       })
       .accountsStrict({
         authority: authority.publicKey,
@@ -145,6 +149,7 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       [0, minter],
       [3, freezer],
       [4, blacklister],
+      [4, authority],
     ] as [number, Keypair][]) {
       await program.methods
         .updateRoles(roleType, signer.publicKey, true)
@@ -243,13 +248,13 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
     expect(Number(accountB.amount)).to.equal(5_000_000);
 
     // ===== Step 8: Blacklist userA =====
-    const blacklisterRole = rolePda(4, blacklister.publicKey);
+    const blacklisterRole = rolePda(4, authority.publicKey);
     const blEntryA = blacklistPda(userA.publicKey);
 
     const blSig = await program.methods
       .addToBlacklist(userA.publicKey, "OFAC match")
       .accountsStrict({
-        blacklister: blacklister.publicKey,
+        blacklister: authority.publicKey,
         config: configPda,
         blacklisterRole,
         hookProgram: hookProgram.programId,
@@ -257,7 +262,7 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
         mint: mint.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([blacklister])
+      .signers([])
       .rpc();
     await provider.connection.confirmTransaction(blSig, "confirmed");
 
@@ -318,6 +323,8 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
         seizerRole,
         mint: mint.publicKey,
         from: ataA,
+        fromOwner: userA.publicKey,
+        blacklistEntry: senderBlPda,
         to: authorityAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
@@ -351,14 +358,14 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
     const rmSig = await program.methods
       .removeFromBlacklist(userA.publicKey)
       .accountsStrict({
-        blacklister: blacklister.publicKey,
+        blacklister: authority.publicKey,
         config: configPda,
         blacklisterRole,
         hookProgram: hookProgram.programId,
         blacklistEntry: blEntryA,
         mint: mint.publicKey,
       })
-      .signers([blacklister])
+      .signers([])
       .rpc();
     await provider.connection.confirmTransaction(rmSig, "confirmed");
 

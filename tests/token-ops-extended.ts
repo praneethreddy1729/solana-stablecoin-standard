@@ -298,6 +298,7 @@ describe("token-ops-extended", () => {
         enableTransferHook: false,
         enablePermanentDelegate: false,
         defaultAccountFrozen: false,
+        treasury: PublicKey.default,
       })
       .accountsStrict({
         authority: authority.publicKey,
@@ -960,6 +961,7 @@ describe("token-ops-extended", () => {
           enableTransferHook: false,
           enablePermanentDelegate: false,
           defaultAccountFrozen: false,
+          treasury: PublicKey.default,
         })
         .accountsStrict({
           authority: authority.publicKey,

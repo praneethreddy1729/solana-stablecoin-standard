@@ -7,6 +7,10 @@ use crate::events::TokensSeized;
 use crate::state::{RoleAssignment, RoleType, StablecoinConfig};
 use crate::utils::{require_permanent_delegate_enabled, require_role_active};
 
+/// Blacklist PDA seed used by the transfer hook program.
+/// Must match `programs/sss-transfer-hook/src/state.rs::BLACKLIST_SEED`.
+const BLACKLIST_SEED: &[u8] = b"blacklist";
+
 #[derive(Accounts)]
 pub struct Seize<'info> {
     pub authority: Signer<'info>,
@@ -29,7 +33,7 @@ pub struct Seize<'info> {
     #[account(mut)]
     pub mint: InterfaceAccount<'info, Mint>,
 
-    /// The blacklisted user's token account to seize from
+    /// The blacklisted user's token account to seize from.
     #[account(
         mut,
         token::mint = mint,
@@ -37,11 +41,23 @@ pub struct Seize<'info> {
     )]
     pub from: InterfaceAccount<'info, TokenAccount>,
 
-    /// The treasury/destination token account
+    /// CHECK: The wallet owner of the `from` token account.
+    /// Validated in handler to match `from.owner`.
+    pub from_owner: UncheckedAccount<'info>,
+
+    /// CHECK: BlacklistEntry PDA owned by the hook program.
+    /// Seeds: [b"blacklist", mint, from_owner] under hook_program_id.
+    /// Verified manually in handler because this PDA belongs to another program.
+    pub blacklist_entry: UncheckedAccount<'info>,
+
+    /// The treasury token account — seized tokens MUST go here.
+    /// SECURITY: Constraining destination prevents a seizer from redirecting
+    /// seized funds to their own account.
     #[account(
         mut,
         token::mint = mint,
         token::token_program = token_program,
+        constraint = to.key() == config.treasury @ SSSError::InvalidTreasury,
     )]
     pub to: InterfaceAccount<'info, TokenAccount>,
 
@@ -51,6 +67,50 @@ pub struct Seize<'info> {
 pub fn handler<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Result<()> {
     require_role_active(&ctx.accounts.seizer_role, RoleType::Seizer)?;
     require_permanent_delegate_enabled(&ctx.accounts.config)?;
+
+    // ---------------------------------------------------------------
+    // SECURITY: Seize is an enforcement action and intentionally works
+    // even when the token is paused. A paused token should not prevent
+    // the issuer from seizing assets from sanctioned/blacklisted users.
+    // freeze_account and thaw_account also operate while paused for the
+    // same reason — enforcement actions must not be blockable.
+    // ---------------------------------------------------------------
+
+    // --- Validate from_owner matches the actual owner of the `from` token account ---
+    require!(
+        ctx.accounts.from.owner == ctx.accounts.from_owner.key(),
+        SSSError::InvalidFromOwner
+    );
+
+    // --- Verify the target account owner is blacklisted ---
+    // The BlacklistEntry PDA is owned by the hook program with seeds:
+    //   [b"blacklist", mint.key(), from_owner.key()]
+    // We derive the expected PDA and compare against the provided account.
+    let hook_program_id = ctx.accounts.config.hook_program_id;
+    require!(
+        hook_program_id != Pubkey::default(),
+        SSSError::ComplianceNotEnabled
+    );
+
+    let (expected_blacklist_pda, _bump) = Pubkey::find_program_address(
+        &[
+            BLACKLIST_SEED,
+            ctx.accounts.mint.key().as_ref(),
+            ctx.accounts.from_owner.key().as_ref(),
+        ],
+        &hook_program_id,
+    );
+    require!(
+        ctx.accounts.blacklist_entry.key() == expected_blacklist_pda,
+        SSSError::InvalidBlacklistEntry
+    );
+
+    // The PDA must actually exist (have data) and be owned by the hook program.
+    // If the account doesn't exist or is owned by system program, the user is NOT blacklisted.
+    require!(
+        ctx.accounts.blacklist_entry.owner == &hook_program_id,
+        SSSError::TargetNotBlacklisted
+    );
 
     let amount = ctx.accounts.from.amount;
     require!(amount > 0, SSSError::ZeroAmount);

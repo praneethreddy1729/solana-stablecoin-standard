@@ -30,18 +30,18 @@ export async function screenAddress(address: string): Promise<ScreeningResult> {
   let sanctioned = false;
 
   if (sanctionsApiUrl) {
-    // Production: call external sanctions API
+    // Production: call external sanctions API (fail-closed: reject on API failure)
     try {
       const res = await fetch(`${sanctionsApiUrl}/check?address=${address}`);
       if (!res.ok) throw new Error(`Sanctions API returned ${res.status}`);
       const data = (await res.json()) as { sanctioned: boolean };
       sanctioned = data.sanctioned;
     } catch (err) {
-      logger.error({ err }, "Sanctions API call failed, falling back to mock");
-      sanctioned = MOCK_SANCTIONED_ADDRESSES.has(address);
+      logger.error({ err, address }, "Sanctions API call failed — rejecting request (fail-closed policy)");
+      throw new Error("Sanctions screening unavailable — operation rejected");
     }
   } else {
-    // Mock screening
+    // Mock screening (no external API configured)
     sanctioned = MOCK_SANCTIONED_ADDRESSES.has(address);
   }
 

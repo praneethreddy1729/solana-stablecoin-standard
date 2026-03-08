@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `add_to_blacklist` / `remove_from_blacklist` -- BlacklistEntry PDA creation and closure
   - `fallback` -- Route SPL Transfer Hook Execute discriminator to `execute`
 - Two specification presets: **SSS-1** (basic) and **SSS-2** (compliance)
-- 5 role types: Minter, Burner, Pauser, Freezer, Blacklister
+- 6 role types: Minter, Burner, Pauser, Freezer, Blacklister, Seizer
 - 24 custom error codes for sss-token (6000-6023)
 - 7 custom error codes for sss-transfer-hook (6000-6006)
 - 15 Anchor events for off-chain indexing
@@ -59,9 +59,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Testing
 
-- 40 integration tests across 4 suites
-- 33 sss-token tests covering all instructions and error paths
+- 285 tests across 14 test files
+- 34 sss-token tests covering all instructions and error paths
 - 5 transfer-hook tests covering blacklist enforcement
+- 15 admin-extended tests for role management edge cases
+- 30 authority-pause-extended tests
+- 35 compliance-extended tests
+- 17 edge-case tests (zero amounts, boundary values, reason validation)
+- 15 multi-user tests (concurrent role holders, independent quotas)
+- 11 invariant tests (PDA derivation, config immutability)
+- 8 full-lifecycle tests (SSS-1 and SSS-2 feature combinations)
+- 47 role-matrix tests (comprehensive role permission coverage)
+- 40 token-ops-extended tests
+- 26 SDK integration tests
 - 2 end-to-end lifecycle tests (SSS-1 and SSS-2)
 
 #### Documentation
@@ -69,4 +79,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 11 documentation files covering architecture, specifications, SDK, compliance, operations, API, security, testing, and privacy analysis
 - Comprehensive README with architecture diagrams, API tables, and usage examples
 
-[0.1.0]: https://github.com/<org>/solana-stablecoin-standard/releases/tag/v0.1.0
+[0.1.0]: https://github.com/praneethg/solana-stablecoin-standard/releases/tag/v0.1.0

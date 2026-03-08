@@ -112,3 +112,16 @@ pub struct TokensSeized {
     pub amount: u64,
     pub seizer: Pubkey,
 }
+
+#[event]
+pub struct ReservesAttested {
+    pub config: Pubkey,
+    pub attestor: Pubkey,
+    pub reserve_amount: u64,
+    pub token_supply: u64,
+    /// Collateralization ratio in basis points (10000 = 100%)
+    pub collateralization_ratio_bps: u64,
+    /// Whether the token was auto-paused due to undercollateralization
+    pub auto_paused: bool,
+    pub timestamp: i64,
+}

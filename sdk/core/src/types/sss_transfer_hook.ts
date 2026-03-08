@@ -1,0 +1,468 @@
+/**
+ * Program IDL in camelCase format in order to be used in JS/TS.
+ *
+ * Note that this is only a type helper and is not the actual IDL. The original
+ * IDL can be found at `target/idl/sss_transfer_hook.json`.
+ */
+export type SssTransferHook = {
+  "address": "A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB",
+  "metadata": {
+    "name": "sssTransferHook",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Solana Stablecoin Standard — Transfer Hook Program"
+  },
+  "instructions": [
+    {
+      "name": "addToBlacklist",
+      "discriminator": [
+        90,
+        115,
+        98,
+        231,
+        173,
+        119,
+        117,
+        176
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "blacklistEntry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  108,
+                  97,
+                  99,
+                  107,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "user",
+          "type": "pubkey"
+        },
+        {
+          "name": "reason",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "execute",
+      "discriminator": [
+        130,
+        221,
+        242,
+        154,
+        13,
+        193,
+        189,
+        29
+      ],
+      "accounts": [
+        {
+          "name": "source",
+          "docs": [
+            "Source token account"
+          ]
+        },
+        {
+          "name": "mint",
+          "docs": [
+            "The mint"
+          ]
+        },
+        {
+          "name": "destination",
+          "docs": [
+            "Destination token account"
+          ]
+        },
+        {
+          "name": "ownerDelegate",
+          "docs": [
+            "Owner or delegate of source"
+          ]
+        },
+        {
+          "name": "extraAccountMetas",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  120,
+                  116,
+                  114,
+                  97,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "senderBlacklist",
+          "docs": [
+            "Sender blacklist PDA (may not exist = not blacklisted)"
+          ]
+        },
+        {
+          "name": "receiverBlacklist",
+          "docs": [
+            "Receiver blacklist PDA (may not exist = not blacklisted)"
+          ]
+        },
+        {
+          "name": "config"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initializeExtraAccountMetas",
+      "discriminator": [
+        22,
+        213,
+        130,
+        114,
+        1,
+        174,
+        121,
+        36
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "extraAccountMetas",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  120,
+                  116,
+                  114,
+                  97,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "removeFromBlacklist",
+      "discriminator": [
+        47,
+        105,
+        20,
+        10,
+        165,
+        168,
+        203,
+        219
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "blacklistEntry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  108,
+                  97,
+                  99,
+                  107,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "config"
+        }
+      ],
+      "args": [
+        {
+          "name": "user",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "updateExtraAccountMetas",
+      "discriminator": [
+        125,
+        37,
+        202,
+        105,
+        15,
+        13,
+        255,
+        94
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "extraAccountMetas",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  120,
+                  116,
+                  114,
+                  97,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "config"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "blacklistEntry",
+      "discriminator": [
+        218,
+        179,
+        231,
+        40,
+        141,
+        25,
+        168,
+        189
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "senderBlacklisted",
+      "msg": "Sender is blacklisted"
+    },
+    {
+      "code": 6001,
+      "name": "receiverBlacklisted",
+      "msg": "Receiver is blacklisted"
+    },
+    {
+      "code": 6002,
+      "name": "tokenPaused",
+      "msg": "Token is paused"
+    },
+    {
+      "code": 6003,
+      "name": "invalidBlacklistEntry",
+      "msg": "Invalid blacklist entry"
+    },
+    {
+      "code": 6004,
+      "name": "alreadyBlacklisted",
+      "msg": "Already blacklisted"
+    },
+    {
+      "code": 6005,
+      "name": "notBlacklisted",
+      "msg": "Not blacklisted"
+    },
+    {
+      "code": 6006,
+      "name": "unauthorized",
+      "msg": "unauthorized"
+    }
+  ],
+  "types": [
+    {
+      "name": "blacklistEntry",
+      "docs": [
+        "BlacklistEntry PDA — existence means the address is blacklisted",
+        "Seeds: [b\"blacklist\", mint.key(), user.key()]",
+        "Owned by the transfer hook program (NOT the main program)"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "docs": [
+              "The mint this blacklist entry applies to"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "user",
+            "docs": [
+              "The blacklisted user's wallet address"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "reason",
+            "docs": [
+              "Reason for blacklisting (e.g., \"OFAC match\"), max 64 chars"
+            ],
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ]
+};

@@ -52,4 +52,20 @@ pub enum SSSError {
     PermanentDelegateNotEnabled, // 6023
     #[msg("Blacklist reason too long (max 64 bytes)")]
     ReasonTooLong, // 6024
+    #[msg("Seized tokens must go to the designated treasury")]
+    InvalidTreasury, // 6025
+    #[msg("Target account owner is not blacklisted")]
+    TargetNotBlacklisted, // 6026
+    #[msg("Account is deliberately frozen and cannot be auto-thawed")]
+    AccountDeliberatelyFrozen, // 6027
+    #[msg("Invalid blacklist entry PDA")]
+    InvalidBlacklistEntry, // 6028
+    #[msg("Invalid from account owner")]
+    InvalidFromOwner, // 6029
+    #[msg("Attestation URI too long (max 256 bytes)")]
+    AttestationUriTooLong, // 6030
+    #[msg("Invalid expiration: must be positive")]
+    InvalidExpiration, // 6031
+    #[msg("Undercollateralized: reserves are below token supply")]
+    Undercollateralized, // 6032
 }

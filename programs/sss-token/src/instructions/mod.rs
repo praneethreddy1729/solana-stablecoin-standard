@@ -1,5 +1,6 @@
 pub mod accept_authority;
 pub mod add_to_blacklist;
+pub mod attest_reserves;
 pub mod burn;
 pub mod cancel_authority_transfer;
 pub mod freeze_account;
@@ -13,9 +14,11 @@ pub mod transfer_authority;
 pub mod unpause;
 pub mod update_minter_quota;
 pub mod update_roles;
+pub mod update_treasury;
 
 pub use accept_authority::*;
 pub use add_to_blacklist::*;
+pub use attest_reserves::*;
 pub use burn::*;
 pub use cancel_authority_transfer::*;
 pub use freeze_account::*;
@@ -30,3 +33,4 @@ pub use transfer_authority::*;
 pub use unpause::*;
 pub use update_minter_quota::*;
 pub use update_roles::*;
+pub use update_treasury::*;

@@ -28,6 +28,24 @@ pub const HOOK_ADD_BLACKLIST_DISC: [u8; 8] = [90, 115, 98, 231, 173, 119, 117, 1
 /// sha256("global:remove_from_blacklist")[..8]
 pub const HOOK_REMOVE_BLACKLIST_DISC: [u8; 8] = [47, 105, 20, 10, 165, 168, 203, 219];
 
+/// Attestation PDA seed
+pub const ATTESTATION_SEED: &[u8] = b"attestation";
+
+/// Max attestation URI length
+pub const MAX_ATTESTATION_URI_LEN: usize = 256;
+
+/// Reserve attestation account size (discriminator + fixed fields + max string + vec overhead)
+pub const RESERVE_ATTESTATION_SIZE: usize = 8  // discriminator
+    + 32  // config
+    + 32  // attestor
+    + 8   // reserve_amount
+    + 8   // token_supply
+    + 8   // timestamp
+    + 8   // expires_at
+    + 4 + MAX_ATTESTATION_URI_LEN // attestation_uri (String = 4-byte len prefix + data)
+    + 1   // is_valid
+    + 1;  // bump
+
 /// Max name/symbol lengths for token metadata
 pub const MAX_NAME_LEN: usize = 32;
 pub const MAX_SYMBOL_LEN: usize = 10;

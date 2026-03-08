@@ -18,22 +18,25 @@ import {
   findRolePda,
   findBlacklistPda,
   findExtraAccountMetasPda,
+  findAttestationPda,
 } from "./pda";
 import {
   RoleType,
   Preset,
   StablecoinConfig,
+  ReserveAttestation,
   InitializeParams,
   FreezeThawParams,
   PauseParams,
   UpdateRolesParams,
   UpdateMinterQuotaParams,
+  AttestReservesParams,
 } from "./types";
 
-import sssTokenIdl from "../../../target/idl/sss_token.json";
-import sssTransferHookIdl from "../../../target/idl/sss_transfer_hook.json";
-import { SssToken } from "../../../target/types/sss_token";
-import { SssTransferHook } from "../../../target/types/sss_transfer_hook";
+import sssTokenIdl from "./idl/sss_token.json";
+import sssTransferHookIdl from "./idl/sss_transfer_hook.json";
+import { SssToken } from "./types/sss_token";
+import { SssTransferHook } from "./types/sss_transfer_hook";
 
 export class SolanaStablecoin {
   readonly program: Program<SssToken>;
@@ -524,5 +527,62 @@ export class SolanaStablecoin {
     );
     const account = await this.connection.getAccountInfo(blacklistEntry);
     return account !== null;
+  }
+
+  // --- Reserve Attestation ---
+
+  /**
+   * Submit a reserve attestation proving the stablecoin is backed.
+   * Auto-pauses minting if reserves < token supply.
+   * Requires Attestor role (type 6).
+   */
+  async attestReserves(params: AttestReservesParams): Promise<TransactionSignature> {
+    const [attestorRole] = findRolePda(
+      this.configPda,
+      RoleType.Attestor,
+      params.attestor,
+      this.programId
+    );
+    const [attestationPda] = findAttestationPda(this.configPda, this.programId);
+
+    return this.program.methods
+      .attestReserves(params.reserveAmount, params.expiresInSeconds, params.attestationUri)
+      .accountsStrict({
+        attestor: params.attestor,
+        config: this.configPda,
+        attestorRole,
+        mint: this.mintAddress,
+        attestation: attestationPda,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+  }
+
+  /**
+   * Fetch the current reserve attestation, or null if none exists.
+   */
+  async getAttestation(): Promise<ReserveAttestation | null> {
+    const [attestationPda] = findAttestationPda(this.configPda, this.programId);
+    try {
+      const account = await this.program.account.reserveAttestation.fetch(attestationPda);
+      return account as unknown as ReserveAttestation;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Returns the collateralization ratio as a percentage (e.g. 100.0 = fully backed).
+   * Returns null if no attestation exists.
+   */
+  async getCollateralizationRatio(): Promise<number | null> {
+    const attestation = await this.getAttestation();
+    if (!attestation) return null;
+
+    const supply = attestation.tokenSupply.toNumber();
+    if (supply === 0) return 100;
+
+    const reserves = attestation.reserveAmount.toNumber();
+    return (reserves / supply) * 100;
   }
 }

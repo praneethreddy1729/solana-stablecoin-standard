@@ -3,6 +3,9 @@ use anchor_spl::token_interface::Mint;
 
 use crate::errors::HookError;
 
+/// The sss-token program ID — used to verify config PDA derivation
+const SSS_TOKEN_PROGRAM_ID: Pubkey = pubkey!("tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz");
+
 /// Transfer hook execute — called automatically by Token-2022 on every transfer.
 /// Checks if sender or receiver is blacklisted.
 /// Bypasses blacklist check if the transfer is initiated by the permanent delegate (seize).
@@ -31,15 +34,45 @@ pub struct Execute<'info> {
     pub extra_account_metas: UncheckedAccount<'info>,
 
     /// Sender blacklist PDA (may not exist = not blacklisted)
-    /// CHECK: Derived from source token account owner via ExtraAccountMetaList
+    /// CHECK: Validated in handler — owner checked when non-empty
     pub sender_blacklist: UncheckedAccount<'info>,
 
     /// Receiver blacklist PDA (may not exist = not blacklisted)
-    /// CHECK: Derived from destination token account owner via ExtraAccountMetaList
+    /// CHECK: Validated in handler — owner checked when non-empty
     pub receiver_blacklist: UncheckedAccount<'info>,
 
-    /// CHECK: Config PDA from main program (for pause check)
+    /// CHECK: Config PDA from main program — validated in handler (owner + PDA derivation)
     pub config: UncheckedAccount<'info>,
+}
+
+/// Validate that the config account is the correct PDA owned by the sss-token program.
+fn validate_config(config: &AccountInfo, mint_key: &Pubkey) -> Result<()> {
+    // Verify owner is the sss-token program
+    require!(
+        config.owner == &SSS_TOKEN_PROGRAM_ID,
+        HookError::Unauthorized
+    );
+
+    // Verify PDA derivation
+    let (expected_config, _) =
+        Pubkey::find_program_address(&[b"config", mint_key.as_ref()], &SSS_TOKEN_PROGRAM_ID);
+    require!(
+        config.key() == expected_config,
+        HookError::Unauthorized
+    );
+
+    Ok(())
+}
+
+/// Validate that a blacklist account (when non-empty) is owned by this program.
+fn validate_blacklist_account(account: &AccountInfo) -> Result<()> {
+    if !account.data_is_empty() {
+        require!(
+            account.owner == &crate::ID,
+            HookError::InvalidBlacklistEntry
+        );
+    }
+    Ok(())
 }
 
 pub fn handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
@@ -54,14 +87,22 @@ pub fn handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
         return Ok(());
     }
 
+    // Validate config account: owner + PDA derivation
+    validate_config(
+        &ctx.accounts.config.to_account_info(),
+        &ctx.accounts.mint.key(),
+    )?;
+
     // Check pause state from config
     // Layout: 8 discriminator + 32 authority + 32 pending + 8 transfer_initiated_at + 32 mint + 32 hook_program_id + 1 decimals = byte 145 is paused
     let config_data = ctx.accounts.config.try_borrow_data()?;
     if config_data.len() > 145 && config_data[145] == 1 {
         return Err(HookError::TokenPaused.into());
     }
+    drop(config_data);
 
-    // Check sender blacklist
+    // Validate and check sender blacklist
+    validate_blacklist_account(&ctx.accounts.sender_blacklist.to_account_info())?;
     if !ctx.accounts.sender_blacklist.data_is_empty() {
         let data = ctx.accounts.sender_blacklist.try_borrow_data()?;
         if data.len() >= 8 {
@@ -69,7 +110,8 @@ pub fn handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
         }
     }
 
-    // Check receiver blacklist
+    // Validate and check receiver blacklist
+    validate_blacklist_account(&ctx.accounts.receiver_blacklist.to_account_info())?;
     if !ctx.accounts.receiver_blacklist.data_is_empty() {
         let data = ctx.accounts.receiver_blacklist.try_borrow_data()?;
         if data.len() >= 8 {
@@ -109,13 +151,18 @@ pub fn fallback_execute<'info>(
         return Ok(());
     }
 
+    // Validate config account: owner + PDA derivation
+    validate_config(config, &mint_info.key())?;
+
     // Check pause state from config
     let config_data = config.try_borrow_data()?;
     if config_data.len() > 145 && config_data[145] == 1 {
         return Err(HookError::TokenPaused.into());
     }
+    drop(config_data);
 
-    // Check sender blacklist
+    // Validate and check sender blacklist
+    validate_blacklist_account(sender_blacklist)?;
     if !sender_blacklist.data_is_empty() {
         let data = sender_blacklist.try_borrow_data()?;
         if data.len() >= 8 {
@@ -123,7 +170,8 @@ pub fn fallback_execute<'info>(
         }
     }
 
-    // Check receiver blacklist
+    // Validate and check receiver blacklist
+    validate_blacklist_account(receiver_blacklist)?;
     if !receiver_blacklist.data_is_empty() {
         let data = receiver_blacklist.try_borrow_data()?;
         if data.len() >= 8 {

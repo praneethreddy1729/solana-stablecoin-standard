@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import { addAuditEntry } from "../services/compliance";
+import { screenAddress, addAuditEntry } from "../services/compliance";
 import { sendWebhook } from "../services/webhook";
 
 interface BurnBody {
@@ -39,6 +39,18 @@ export async function burnRoutes(app: FastifyInstance): Promise<void> {
       });
     }
 
+    if (process.env.ENABLE_SANCTIONS_SCREENING === "true") {
+      try {
+        const result = await screenAddress(fromAuthority);
+        if (result.sanctioned) {
+          return reply.status(403).send({ error: "Address is sanctioned", screening: result });
+        }
+      } catch (err: any) {
+        app.log.error(err, "Sanctions screening failed");
+        return reply.status(503).send({ error: "Sanctions screening unavailable" });
+      }
+    }
+
     try {
       const sdk = app.sdk;
 
@@ -72,8 +84,7 @@ export async function burnRoutes(app: FastifyInstance): Promise<void> {
     } catch (err: any) {
       app.log.error(err, "Burn transaction failed");
       return reply.status(500).send({
-        error: "Burn transaction failed",
-        details: err.message,
+        error: "Transaction failed",
       });
     }
   });

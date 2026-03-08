@@ -45,6 +45,17 @@ pub fn handler(ctx: Context<RemoveFromBlacklist>, user: Pubkey) -> Result<()> {
         HookError::Unauthorized
     );
 
+    // Verify payer is the config authority (bytes 8..40 after Anchor discriminator)
+    let config_data = ctx.accounts.config.try_borrow_data()?;
+    require!(config_data.len() >= 40, HookError::Unauthorized);
+    let config_authority =
+        Pubkey::try_from(&config_data[8..40]).map_err(|_| error!(HookError::Unauthorized))?;
+    require!(
+        ctx.accounts.payer.key() == config_authority,
+        HookError::Unauthorized
+    );
+    drop(config_data);
+
     msg!("Unblacklisted address: {}", user);
     Ok(())
 }

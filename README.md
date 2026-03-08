@@ -30,6 +30,13 @@ SSS defines two composable specification levels. Choose the one that matches you
 | `sss-token` | `tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz` | `tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz` |
 | `sss-transfer-hook` | `A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB` | `A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB` |
 
+### Deployed on Devnet
+
+Both programs are deployed and verified on Solana Devnet:
+
+- **sss-token**: [tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz](https://explorer.solana.com/address/tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz?cluster=devnet)
+- **sss-transfer-hook**: [A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB](https://explorer.solana.com/address/A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB?cluster=devnet)
+
 ## Installation
 
 ### Prerequisites
@@ -43,7 +50,7 @@ SSS defines two composable specification levels. Choose the one that matches you
 ### Clone and Build
 
 ```bash
-git clone https://github.com/<org>/solana-stablecoin-standard.git
+git clone https://github.com/praneethg/solana-stablecoin-standard.git
 cd solana-stablecoin-standard
 yarn install
 anchor build
@@ -538,7 +545,7 @@ anchor test
 
 ### Test Breakdown
 
-**107 tests** across 9 test files covering all instructions, role checks, compliance flows, and edge cases. See [docs/TESTING.md](docs/TESTING.md) for the full breakdown.
+**285 tests** across 14 test files covering all instructions, role checks, compliance flows, and edge cases. See [docs/TESTING.md](docs/TESTING.md) for the full breakdown.
 
 ### What Tests Verify
 
@@ -584,7 +591,7 @@ solana-stablecoin-standard/
         commands/              13 command modules
         helpers.ts             Wallet/connection utilities
         index.ts               Entry point
-  tests/                       107 tests across 7 files
+  tests/                       285 tests across 14 files
   backend/                     Fastify REST API (port 3001)
   frontend/                    Next.js dashboard
   docs/                        Extended documentation (11 files)

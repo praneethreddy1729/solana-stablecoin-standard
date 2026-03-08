@@ -115,6 +115,7 @@ describe("sss-token", () => {
           enableTransferHook: false,
           enablePermanentDelegate: false,
           defaultAccountFrozen: false,
+          treasury: getAssociatedTokenAddressSync(mint.publicKey, authority.publicKey, false, TOKEN_2022_PROGRAM_ID),
         })
         .accountsStrict({
           authority: authority.publicKey,
@@ -1002,6 +1003,12 @@ describe("sss-token", () => {
         })
         .rpc();
 
+      // Derive blacklist PDA for fromOwner (won't exist, but needed for struct)
+      const [blPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("blacklist"), mint.publicKey.toBuffer(), recipient.publicKey.toBuffer()],
+        hookProgram.programId
+      );
+
       try {
         await program.methods
           .seize()
@@ -1011,6 +1018,8 @@ describe("sss-token", () => {
             seizerRole,
             mint: mint.publicKey,
             from: recipientAta,
+            fromOwner: recipient.publicKey,
+            blacklistEntry: blPda,
             to: authorityAta,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
           })

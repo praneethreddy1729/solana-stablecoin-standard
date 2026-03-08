@@ -8,20 +8,26 @@
     "start": "next start --port 3000"
   },
   "dependencies": {
-    "next": "^14.2.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "@solana/web3.js": "^1.95.0",
+    "@coral-xyz/anchor": "^0.32.1",
     "@solana/spl-token": "^0.4.6",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/wallet-adapter-react-ui": "^0.9.35",
-    "@solana/wallet-adapter-wallets": "^0.19.32"
+    "@solana/wallet-adapter-wallets": "^0.19.32",
+    "@solana/web3.js": "^1.95.0",
+    "@types/bn.js": "^5.2.0",
+    "bn.js": "^5.2.3",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.3",
+    "@tailwindcss/postcss": "^4.2.1",
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0"
+    "@types/react-dom": "^18.3.0",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.7.3"
   }
 }

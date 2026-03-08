@@ -12,6 +12,7 @@ import { burnRoutes } from "./routes/burn";
 import { complianceRoutes } from "./routes/compliance";
 import { statusRoutes } from "./routes/status";
 import { EventPoller } from "./services/event-poller";
+import { apiKeyAuth } from "./middleware/auth";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -71,14 +72,26 @@ async function main() {
   app.decorate("authority", authority);
   app.decorate("eventPoller", eventPoller);
 
+  // CORS configuration
+  const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
+    : ["http://localhost:3000"];
+
   app.addHook("onRequest", async (req, reply) => {
-    reply.header("Access-Control-Allow-Origin", "*");
+    const origin = req.headers.origin || "";
+    if (allowedOrigins.includes(origin)) {
+      reply.header("Access-Control-Allow-Origin", origin);
+    }
     reply.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    reply.header("Access-Control-Allow-Headers", "Content-Type");
+    reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    reply.header("Vary", "Origin");
     if (req.method === "OPTIONS") {
       reply.status(204).send();
     }
   });
+
+  // API key authentication for protected routes
+  app.addHook("onRequest", apiKeyAuth);
 
   await app.register(healthRoutes);
   await app.register(mintRoutes);

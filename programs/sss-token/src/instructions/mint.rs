@@ -63,8 +63,17 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     let bump = ctx.accounts.config.bump;
     let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, mint_key.as_ref(), &[bump]]];
 
-    // If default account state is frozen, thaw before minting
+    // Handle frozen accounts when DefaultAccountState is Frozen.
+    // SECURITY: Only auto-thaw accounts with zero balance — these are newly-created
+    // ATAs that are frozen solely because of the DefaultAccountState extension, not
+    // because a Freezer deliberately froze them. If an account has a non-zero balance
+    // and is frozen, it was deliberately frozen by a Freezer (enforcement action) and
+    // a Minter must NOT be able to bypass that freeze by minting into it.
     if ctx.accounts.config.default_account_frozen && ctx.accounts.to.is_frozen() {
+        require!(
+            ctx.accounts.to.amount == 0,
+            SSSError::AccountDeliberatelyFrozen
+        );
         thaw_token_account(
             &ctx.accounts.token_program.to_account_info(),
             &ctx.accounts.to.to_account_info(),

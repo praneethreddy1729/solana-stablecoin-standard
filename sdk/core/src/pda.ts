@@ -4,6 +4,7 @@ import {
   ROLE_SEED,
   BLACKLIST_SEED,
   EXTRA_ACCOUNT_METAS_SEED,
+  ATTESTATION_SEED,
   SSS_TOKEN_PROGRAM_ID,
   SSS_TRANSFER_HOOK_PROGRAM_ID,
 } from "./constants";
@@ -48,5 +49,15 @@ export function findExtraAccountMetasPda(
   return PublicKey.findProgramAddressSync(
     [EXTRA_ACCOUNT_METAS_SEED, mint.toBuffer()],
     hookProgramId
+  );
+}
+
+export function findAttestationPda(
+  config: PublicKey,
+  programId: PublicKey = SSS_TOKEN_PROGRAM_ID
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [ATTESTATION_SEED, config.toBuffer()],
+    programId
   );
 }

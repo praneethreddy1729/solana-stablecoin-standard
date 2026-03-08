@@ -95,6 +95,7 @@ describe("full-lifecycle: SSS-1", () => {
         enableTransferHook: false,
         enablePermanentDelegate: false,
         defaultAccountFrozen: false,
+        treasury: PublicKey.default,
       })
       .accountsStrict({
         authority: authority.publicKey,
@@ -651,6 +652,7 @@ describe("full-lifecycle: SSS-2", () => {
   async function initSSS2(mintKp: Keypair): Promise<{
     configPda: PublicKey;
     extraAccountMetasPda: PublicKey;
+    treasuryAta: PublicKey;
   }> {
     const [configPda] = PublicKey.findProgramAddressSync(
       [Buffer.from("config"), mintKp.publicKey.toBuffer()],
@@ -660,6 +662,7 @@ describe("full-lifecycle: SSS-2", () => {
       [Buffer.from("extra-account-metas"), mintKp.publicKey.toBuffer()],
       hookProgram.programId
     );
+    const treasuryAta = getAssociatedTokenAddressSync(mintKp.publicKey, authority.publicKey, false, TOKEN_2022_PROGRAM_ID);
 
     await program.methods
       .initialize({
@@ -670,6 +673,7 @@ describe("full-lifecycle: SSS-2", () => {
         enableTransferHook: true,
         enablePermanentDelegate: true,
         defaultAccountFrozen: true,
+        treasury: treasuryAta,
       })
       .accountsStrict({
         authority: authority.publicKey,
@@ -694,7 +698,7 @@ describe("full-lifecycle: SSS-2", () => {
       })
       .rpc();
 
-    return { configPda, extraAccountMetasPda };
+    return { configPda, extraAccountMetasPda, treasuryAta };
   }
 
   async function thawIfFrozen(
@@ -812,14 +816,25 @@ describe("full-lifecycle: SSS-2", () => {
     let accountB = await getAccount(provider.connection, ataB, "confirmed", TOKEN_2022_PROGRAM_ID);
     expect(Number(accountB.amount)).to.equal(2_000_000);
 
-    // 5. Blacklist userA
-    const blacklisterRole = rolePda(configPda, 4, blacklister.publicKey);
+    // 5. Blacklist userA (hook requires payer == config authority)
+    const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
     const blEntry = blacklistPda(mintKp.publicKey, userA.publicKey);
+
+    // Assign blacklister role to authority (hook CPI requires payer == config authority)
+    await program.methods
+      .updateRoles(4, authority.publicKey, true)
+      .accountsStrict({
+        authority: authority.publicKey,
+        config: configPda,
+        role: blacklisterRole,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
 
     sig = await program.methods
       .addToBlacklist(userA.publicKey, "compliance violation")
       .accountsStrict({
-        blacklister: blacklister.publicKey,
+        blacklister: authority.publicKey,
         config: configPda,
         blacklisterRole,
         hookProgram: hookProgram.programId,
@@ -827,7 +842,7 @@ describe("full-lifecycle: SSS-2", () => {
         mint: mintKp.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([blacklister])
+      .signers([])
       .rpc();
     await provider.connection.confirmTransaction(sig, "confirmed");
 
@@ -892,6 +907,8 @@ describe("full-lifecycle: SSS-2", () => {
         seizerRole,
         mint: mintKp.publicKey,
         from: ataA,
+        fromOwner: userA.publicKey,
+        blacklistEntry: senderBlPda,
         to: authorityAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
@@ -912,14 +929,14 @@ describe("full-lifecycle: SSS-2", () => {
     const rmSig = await program.methods
       .removeFromBlacklist(userA.publicKey)
       .accountsStrict({
-        blacklister: blacklister.publicKey,
+        blacklister: authority.publicKey,
         config: configPda,
         blacklisterRole,
         hookProgram: hookProgram.programId,
         blacklistEntry: blEntry,
         mint: mintKp.publicKey,
       })
-      .signers([blacklister])
+      .signers([])
       .rpc();
     await provider.connection.confirmTransaction(rmSig, "confirmed");
 
@@ -980,11 +997,11 @@ describe("full-lifecycle: SSS-2", () => {
 
     const { configPda } = await initSSS2(mintKp);
 
-    // Assign roles
+    // Assign roles (hook requires payer == config authority for blacklist CPI)
     for (const [roleType, signer] of [
       [0, minter],
       [3, freezer],
-      [4, blacklister],
+      [4, authority],  // authority as blacklister (hook CPI requires payer == config authority)
     ] as [number, Keypair][]) {
       const role = rolePda(configPda, roleType, signer.publicKey);
       await program.methods
@@ -998,7 +1015,7 @@ describe("full-lifecycle: SSS-2", () => {
         .rpc();
     }
 
-    const blacklisterRole = rolePda(configPda, 4, blacklister.publicKey);
+    const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
 
     // Blacklist both users
     const blEntryA = blacklistPda(mintKp.publicKey, userA.publicKey);
@@ -1007,7 +1024,7 @@ describe("full-lifecycle: SSS-2", () => {
     await program.methods
       .addToBlacklist(userA.publicKey, "compliance violation")
       .accountsStrict({
-        blacklister: blacklister.publicKey,
+        blacklister: authority.publicKey,
         config: configPda,
         blacklisterRole,
         hookProgram: hookProgram.programId,
@@ -1015,13 +1032,13 @@ describe("full-lifecycle: SSS-2", () => {
         mint: mintKp.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([blacklister])
+      .signers([])
       .rpc();
 
     await program.methods
       .addToBlacklist(userB.publicKey, "OFAC match")
       .accountsStrict({
-        blacklister: blacklister.publicKey,
+        blacklister: authority.publicKey,
         config: configPda,
         blacklisterRole,
         hookProgram: hookProgram.programId,
@@ -1029,7 +1046,7 @@ describe("full-lifecycle: SSS-2", () => {
         mint: mintKp.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([blacklister])
+      .signers([])
       .rpc();
 
     // Both entries exist
@@ -1042,14 +1059,14 @@ describe("full-lifecycle: SSS-2", () => {
     await program.methods
       .removeFromBlacklist(userA.publicKey)
       .accountsStrict({
-        blacklister: blacklister.publicKey,
+        blacklister: authority.publicKey,
         config: configPda,
         blacklisterRole,
         hookProgram: hookProgram.programId,
         blacklistEntry: blEntryA,
         mint: mintKp.publicKey,
       })
-      .signers([blacklister])
+      .signers([])
       .rpc();
 
     // A removed, B still exists
@@ -1062,14 +1079,14 @@ describe("full-lifecycle: SSS-2", () => {
     await program.methods
       .removeFromBlacklist(userB.publicKey)
       .accountsStrict({
-        blacklister: blacklister.publicKey,
+        blacklister: authority.publicKey,
         config: configPda,
         blacklisterRole,
         hookProgram: hookProgram.programId,
         blacklistEntry: blEntryB,
         mint: mintKp.publicKey,
       })
-      .signers([blacklister])
+      .signers([])
       .rpc();
 
     infoB = await provider.connection.getAccountInfo(blEntryB);
@@ -1096,12 +1113,12 @@ describe("full-lifecycle: SSS-2", () => {
 
     const { configPda, extraAccountMetasPda } = await initSSS2(mintKp);
 
-    // Assign roles
+    // Assign roles (hook requires payer == config authority for blacklist CPI)
     for (const [roleType, signer] of [
       [0, minter],
       [2, pauser],
       [3, freezer],
-      [4, blacklister],
+      [4, authority],  // authority as blacklister (hook CPI requires payer == config authority)
     ] as [number, Keypair][]) {
       const role = rolePda(configPda, roleType, signer.publicKey);
       await program.methods
@@ -1142,12 +1159,12 @@ describe("full-lifecycle: SSS-2", () => {
     await provider.connection.confirmTransaction(sig, "confirmed");
 
     // Blacklist userA
-    const blacklisterRole = rolePda(configPda, 4, blacklister.publicKey);
+    const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
     const blEntry = blacklistPda(mintKp.publicKey, userA.publicKey);
     await program.methods
       .addToBlacklist(userA.publicKey, "compliance violation")
       .accountsStrict({
-        blacklister: blacklister.publicKey,
+        blacklister: authority.publicKey,
         config: configPda,
         blacklisterRole,
         hookProgram: hookProgram.programId,
@@ -1155,7 +1172,7 @@ describe("full-lifecycle: SSS-2", () => {
         mint: mintKp.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([blacklister])
+      .signers([])
       .rpc();
 
     // Pause the token
@@ -1211,6 +1228,8 @@ describe("full-lifecycle: SSS-2", () => {
         seizerRole,
         mint: mintKp.publicKey,
         from: ataA,
+        fromOwner: userA.publicKey,
+        blacklistEntry: senderBlPda,
         to: authorityAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
@@ -1246,6 +1265,8 @@ describe("full-lifecycle: SSS-2", () => {
       program.programId
     );
 
+    const sss1TreasuryAta = getAssociatedTokenAddressSync(mintKp.publicKey, authority.publicKey, false, TOKEN_2022_PROGRAM_ID);
+
     await program.methods
       .initialize({
         name: "NoHookUSD",
@@ -1255,6 +1276,7 @@ describe("full-lifecycle: SSS-2", () => {
         enableTransferHook: false,
         enablePermanentDelegate: false,
         defaultAccountFrozen: false,
+        treasury: sss1TreasuryAta,
       })
       .accountsStrict({
         authority: authority.publicKey,
@@ -1338,6 +1360,12 @@ describe("full-lifecycle: SSS-2", () => {
       })
       .rpc();
 
+    // Derive blacklist PDA for fromOwner (won't exist, but needed for struct)
+    const [blPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("blacklist"), mintKp.publicKey.toBuffer(), user.publicKey.toBuffer()],
+      hookProgram.programId
+    );
+
     try {
       await program.methods
         .seize()
@@ -1347,6 +1375,8 @@ describe("full-lifecycle: SSS-2", () => {
           seizerRole,
           mint: mintKp.publicKey,
           from: userAta,
+          fromOwner: user.publicKey,
+          blacklistEntry: blPda,
           to: authorityAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })

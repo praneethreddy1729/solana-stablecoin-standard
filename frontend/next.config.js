@@ -8,6 +8,7 @@ const nextConfig = {
       fs: false,
       path: false,
       os: false,
+      crypto: false,
     };
     return config;
   },

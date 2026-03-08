@@ -50,6 +50,8 @@ describe("compliance-extended", () => {
   let ataC: PublicKey;
   let authorityAta: PublicKey;
   let seizerAta: PublicKey;
+  let treasuryAta: PublicKey;
+  let sss1TreasuryAta: PublicKey;
 
   function rolePda(cfg: PublicKey, roleType: number, assignee: PublicKey): PublicKey {
     const [pda] = PublicKey.findProgramAddressSync(
@@ -116,18 +118,18 @@ describe("compliance-extended", () => {
 
   async function addBlacklist(user: PublicKey, reason: string) {
     const blEntry = blacklistPda(mint.publicKey, user);
+    // Hook requires payer == config authority, so authority must be the blacklister
     const sig = await program.methods
       .addToBlacklist(user, reason)
       .accountsStrict({
-        blacklister: blacklister.publicKey,
+        blacklister: authority.publicKey,
         config: configPda,
-        blacklisterRole: rolePda(configPda, 4, blacklister.publicKey),
+        blacklisterRole: rolePda(configPda, 4, authority.publicKey),
         hookProgram: hookProgram.programId,
         blacklistEntry: blEntry,
         mint: mint.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([blacklister])
       .rpc();
     await provider.connection.confirmTransaction(sig, "confirmed");
     return sig;
@@ -135,17 +137,17 @@ describe("compliance-extended", () => {
 
   async function removeBlacklist(user: PublicKey) {
     const blEntry = blacklistPda(mint.publicKey, user);
+    // Hook requires payer == config authority, so authority must be the blacklister
     const sig = await program.methods
       .removeFromBlacklist(user)
       .accountsStrict({
-        blacklister: blacklister.publicKey,
+        blacklister: authority.publicKey,
         config: configPda,
-        blacklisterRole: rolePda(configPda, 4, blacklister.publicKey),
+        blacklisterRole: rolePda(configPda, 4, authority.publicKey),
         hookProgram: hookProgram.programId,
         blacklistEntry: blEntry,
         mint: mint.publicKey,
       })
-      .signers([blacklister])
       .rpc();
     await provider.connection.confirmTransaction(sig, "confirmed");
     return sig;
@@ -154,7 +156,6 @@ describe("compliance-extended", () => {
   async function seizeTokens(fromAta: PublicKey, toAta: PublicKey, fromOwner: PublicKey, toOwner: PublicKey, seizerKey: PublicKey = authority.publicKey) {
     const senderBlPda = blacklistPda(mint.publicKey, fromOwner);
     const receiverBlPda = blacklistPda(mint.publicKey, toOwner);
-    const signers = seizerKey.equals(authority.publicKey) ? [] : [];
     const sig = await program.methods
       .seize()
       .accountsStrict({
@@ -163,6 +164,8 @@ describe("compliance-extended", () => {
         seizerRole: rolePda(configPda, 5, seizerKey),
         mint: mint.publicKey,
         from: fromAta,
+        fromOwner: fromOwner,
+        blacklistEntry: senderBlPda,
         to: toAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
@@ -219,6 +222,9 @@ describe("compliance-extended", () => {
     );
     extraAccountMetasPda = extraMetasPda(mint.publicKey);
 
+    // Derive treasury ATA (authority's ATA for this mint)
+    treasuryAta = getAssociatedTokenAddressSync(mint.publicKey, authority.publicKey, false, TOKEN_2022_PROGRAM_ID);
+
     const initSig = await program.methods
       .initialize({
         name: "ComplianceTest",
@@ -228,6 +234,7 @@ describe("compliance-extended", () => {
         enableTransferHook: true,
         enablePermanentDelegate: true,
         defaultAccountFrozen: false,
+        treasury: treasuryAta,
       })
       .accountsStrict({
         authority: authority.publicKey,
@@ -261,6 +268,8 @@ describe("compliance-extended", () => {
       program.programId
     );
 
+    sss1TreasuryAta = getAssociatedTokenAddressSync(sss1Mint.publicKey, authority.publicKey, false, TOKEN_2022_PROGRAM_ID);
+
     await program.methods
       .initialize({
         name: "SSS1Token",
@@ -270,6 +279,7 @@ describe("compliance-extended", () => {
         enableTransferHook: false,
         enablePermanentDelegate: false,
         defaultAccountFrozen: false,
+        treasury: sss1TreasuryAta,
       })
       .accountsStrict({
         authority: authority.publicKey,
@@ -289,7 +299,8 @@ describe("compliance-extended", () => {
       [1, burner],       // Burner
       [2, pauser],       // Pauser
       [3, freezer],      // Freezer
-      [4, blacklister],  // Blacklister
+      [4, blacklister],  // Blacklister (dedicated, for non-authority tests)
+      [4, authority],    // Blacklister (authority, needed for CPI since hook requires payer == authority)
       [5, authority],    // Seizer (authority as seizer)
       [5, seizer],       // Seizer (dedicated seizer)
     ];
@@ -318,11 +329,11 @@ describe("compliance-extended", () => {
 
     // ===== Assign blacklister role on SSS-1 for testing ComplianceNotEnabled =====
     await program.methods
-      .updateRoles(4, blacklister.publicKey, true)
+      .updateRoles(4, authority.publicKey, true)
       .accountsStrict({
         authority: authority.publicKey,
         config: sss1ConfigPda,
-        role: rolePda(sss1ConfigPda, 4, blacklister.publicKey),
+        role: rolePda(sss1ConfigPda, 4, authority.publicKey),
         systemProgram: SystemProgram.programId,
       })
       .rpc();
@@ -641,23 +652,37 @@ describe("compliance-extended", () => {
       await removeBlacklist(userC.publicKey);
     });
 
-    it("18. seizes from non-blacklisted account works (permanent delegate bypass in hook)", async () => {
+    it("18. seize from non-blacklisted account fails (TargetNotBlacklisted)", async () => {
       // Mint some tokens to userC for this test
       await mintTokensTo(ataC, 5_000_000);
-      const balCBefore = await getBalance(ataC);
-      const balAuthBefore = await getBalance(authorityAta);
 
-      // Seize from non-blacklisted — hook bypasses blacklist check for permanent delegate
-      await seizeTokens(ataC, authorityAta, userC.publicKey, authority.publicKey);
-
-      const balCAfter = await getBalance(ataC);
-      const balAuthAfter = await getBalance(authorityAta);
-      expect(balCAfter).to.equal(0);
-      expect(balAuthAfter - balAuthBefore).to.equal(balCBefore);
+      // Seize from non-blacklisted — should now fail with TargetNotBlacklisted
+      try {
+        await seizeTokens(ataC, authorityAta, userC.publicKey, authority.publicKey);
+        expect.fail("Should have thrown — target is not blacklisted");
+      } catch (e: any) {
+        const errStr = e.toString();
+        expect(
+          errStr.includes("TargetNotBlacklisted") ||
+          errStr.includes("6026") ||
+          errStr.includes("Error")
+        ).to.equal(true);
+      }
     });
 
     it("19. seize transfers correct amount to treasury", async () => {
+      // userC may have tokens from test 18 (5M) — blacklist first, then seize
+      // Burn any existing balance first by seizing after blacklisting
+      const balCInit = await getBalance(ataC);
+      if (balCInit > 0) {
+        // Need to blacklist to seize
+        await addBlacklist(userC.publicKey, "seize for test 19 cleanup");
+        await seizeTokens(ataC, authorityAta, userC.publicKey, authority.publicKey);
+        await removeBlacklist(userC.publicKey);
+      }
+
       await mintTokensTo(ataC, 7_777_777);
+      await addBlacklist(userC.publicKey, "seize target test 19");
       const balAuthBefore = await getBalance(authorityAta);
 
       await seizeTokens(ataC, authorityAta, userC.publicKey, authority.publicKey);
@@ -666,13 +691,15 @@ describe("compliance-extended", () => {
       const balAuthAfter = await getBalance(authorityAta);
       expect(balCAfter).to.equal(0);
       expect(balAuthAfter - balAuthBefore).to.equal(7_777_777);
+      await removeBlacklist(userC.publicKey);
     });
 
     it("20. seize with dedicated Seizer role succeeds", async () => {
       await mintTokensTo(ataC, 3_000_000);
+      await addBlacklist(userC.publicKey, "seize target test 20");
 
       const senderBlPda = blacklistPda(mint.publicKey, userC.publicKey);
-      const receiverBlPda = blacklistPda(mint.publicKey, seizer.publicKey);
+      const receiverBlPda = blacklistPda(mint.publicKey, authority.publicKey);
 
       const sig = await program.methods
         .seize()
@@ -682,7 +709,9 @@ describe("compliance-extended", () => {
           seizerRole: rolePda(configPda, 5, seizer.publicKey),
           mint: mint.publicKey,
           from: ataC,
-          to: seizerAta,
+          fromOwner: userC.publicKey,
+          blacklistEntry: senderBlPda,
+          to: treasuryAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .remainingAccounts([
@@ -698,14 +727,14 @@ describe("compliance-extended", () => {
 
       const balC = await getBalance(ataC);
       expect(balC).to.equal(0);
+      await removeBlacklist(userC.publicKey);
     });
 
     it("21. non-seizer cannot seize", async () => {
       await mintTokensTo(ataC, 1_000_000);
       try {
         const senderBlPda = blacklistPda(mint.publicKey, userC.publicKey);
-        const receiverBlPda = blacklistPda(mint.publicKey, randomUser.publicKey);
-        const randomAta = await createAta(mint.publicKey, randomUser.publicKey);
+        const receiverBlPda = blacklistPda(mint.publicKey, authority.publicKey);
 
         await program.methods
           .seize()
@@ -715,7 +744,9 @@ describe("compliance-extended", () => {
             seizerRole: rolePda(configPda, 5, randomUser.publicKey),
             mint: mint.publicKey,
             from: ataC,
-            to: randomAta,
+            fromOwner: userC.publicKey,
+            blacklistEntry: senderBlPda,
+            to: treasuryAta,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
           })
           .remainingAccounts([
@@ -743,10 +774,12 @@ describe("compliance-extended", () => {
       const balBefore = await getBalance(ataC);
       expect(balBefore).to.be.greaterThan(0);
 
+      await addBlacklist(userC.publicKey, "seize target test 22");
       await seizeTokens(ataC, authorityAta, userC.publicKey, authority.publicKey);
 
       const balAfter = await getBalance(ataC);
       expect(balAfter).to.equal(0);
+      await removeBlacklist(userC.publicKey);
     });
 
     it("23. seize fails on zero balance (ZeroAmount)", async () => {
@@ -754,6 +787,7 @@ describe("compliance-extended", () => {
       const bal = await getBalance(ataC);
       expect(bal).to.equal(0);
 
+      await addBlacklist(userC.publicKey, "seize target test 23");
       try {
         await seizeTokens(ataC, authorityAta, userC.publicKey, authority.publicKey);
         expect.fail("Should have thrown — zero balance");
@@ -765,6 +799,7 @@ describe("compliance-extended", () => {
           errStr.includes("greater than zero")
         ).to.equal(true);
       }
+      await removeBlacklist(userC.publicKey);
     });
   });
 
@@ -778,15 +813,14 @@ describe("compliance-extended", () => {
         await program.methods
           .addToBlacklist(userA.publicKey, "should fail")
           .accountsStrict({
-            blacklister: blacklister.publicKey,
+            blacklister: authority.publicKey,
             config: sss1ConfigPda,
-            blacklisterRole: rolePda(sss1ConfigPda, 4, blacklister.publicKey),
+            blacklisterRole: rolePda(sss1ConfigPda, 4, authority.publicKey),
             hookProgram: hookProgram.programId,
             blacklistEntry: fakeBlEntry,
             mint: sss1Mint.publicKey,
             systemProgram: SystemProgram.programId,
           })
-          .signers([blacklister])
           .rpc();
         expect.fail("Should have thrown");
       } catch (e: any) {
@@ -803,14 +837,13 @@ describe("compliance-extended", () => {
         await program.methods
           .removeFromBlacklist(userA.publicKey)
           .accountsStrict({
-            blacklister: blacklister.publicKey,
+            blacklister: authority.publicKey,
             config: sss1ConfigPda,
-            blacklisterRole: rolePda(sss1ConfigPda, 4, blacklister.publicKey),
+            blacklisterRole: rolePda(sss1ConfigPda, 4, authority.publicKey),
             hookProgram: hookProgram.programId,
             blacklistEntry: fakeBlEntry,
             mint: sss1Mint.publicKey,
           })
-          .signers([blacklister])
           .rpc();
         expect.fail("Should have thrown");
       } catch (e: any) {
@@ -857,6 +890,12 @@ describe("compliance-extended", () => {
         .signers([minter])
         .rpc();
 
+      // Derive blacklist PDA for the fromOwner (won't exist, but needed for struct)
+      const [sss1BlPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("blacklist"), sss1Mint.publicKey.toBuffer(), userA.publicKey.toBuffer()],
+        hookProgram.programId
+      );
+
       try {
         await program.methods
           .seize()
@@ -866,6 +905,8 @@ describe("compliance-extended", () => {
             seizerRole: rolePda(sss1ConfigPda, 5, authority.publicKey),
             mint: sss1Mint.publicKey,
             from: sss1AtaFrom,
+            fromOwner: userA.publicKey,
+            blacklistEntry: sss1BlPda,
             to: sss1AtaTo,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
           })
@@ -941,7 +982,7 @@ describe("compliance-extended", () => {
 
     it("30. paused + seize still works (emergency ops not paused)", async () => {
       // Token is still paused — mint tokens first requires unpausing
-      // Unpause, mint, re-pause, then seize
+      // Unpause, mint, blacklist, re-pause, then seize
       await program.methods
         .unpause()
         .accountsStrict({
@@ -953,6 +994,7 @@ describe("compliance-extended", () => {
         .rpc();
 
       await mintTokensTo(ataC, 2_000_000);
+      await addBlacklist(userC.publicKey, "seize target test 30");
 
       // Re-pause
       await program.methods
@@ -973,6 +1015,8 @@ describe("compliance-extended", () => {
 
       const balAfter = await getBalance(ataC);
       expect(balAfter).to.equal(0);
+      // Clean up blacklist (works while paused)
+      await removeBlacklist(userC.publicKey);
     });
 
     it("31. unpause + transfer resumes", async () => {

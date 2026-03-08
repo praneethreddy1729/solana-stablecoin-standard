@@ -9,6 +9,7 @@ pub enum RoleType {
     Freezer = 3,
     Blacklister = 4,
     Seizer = 5,
+    Attestor = 6,
 }
 
 impl RoleType {
@@ -20,6 +21,7 @@ impl RoleType {
             3 => Some(RoleType::Freezer),
             4 => Some(RoleType::Blacklister),
             5 => Some(RoleType::Seizer),
+            6 => Some(RoleType::Attestor),
             _ => None,
         }
     }

@@ -97,8 +97,24 @@ pub mod sss_token {
         instructions::remove_from_blacklist::handler(ctx, user)
     }
 
-    /// Seize tokens from a blacklisted account using permanent delegate (SSS-2, authority only)
+    /// Seize tokens from a blacklisted account using permanent delegate (SSS-2, requires Seizer role)
     pub fn seize<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Result<()> {
         instructions::seize::handler(ctx)
+    }
+
+    /// Update the treasury address where seized tokens are sent (authority only)
+    pub fn update_treasury(ctx: Context<UpdateTreasury>, new_treasury: Pubkey) -> Result<()> {
+        instructions::update_treasury::handler(ctx, new_treasury)
+    }
+
+    /// Submit a reserve attestation proving the stablecoin is fully backed.
+    /// Auto-pauses minting if reserves < token supply (undercollateralized).
+    pub fn attest_reserves(
+        ctx: Context<AttestReserves>,
+        reserve_amount: u64,
+        expires_in_seconds: i64,
+        attestation_uri: String,
+    ) -> Result<()> {
+        instructions::attest_reserves::handler(ctx, reserve_amount, expires_in_seconds, attestation_uri)
     }
 }

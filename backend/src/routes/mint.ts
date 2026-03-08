@@ -38,9 +38,14 @@ export async function mintRoutes(app: FastifyInstance): Promise<void> {
     }
 
     if (process.env.ENABLE_SANCTIONS_SCREENING === "true") {
-      const result = await screenAddress(to);
-      if (result.sanctioned) {
-        return reply.status(403).send({ error: "Address is sanctioned", screening: result });
+      try {
+        const result = await screenAddress(to);
+        if (result.sanctioned) {
+          return reply.status(403).send({ error: "Address is sanctioned", screening: result });
+        }
+      } catch (err: any) {
+        app.log.error(err, "Sanctions screening failed");
+        return reply.status(503).send({ error: "Sanctions screening unavailable" });
       }
     }
 
@@ -82,8 +87,7 @@ export async function mintRoutes(app: FastifyInstance): Promise<void> {
     } catch (err: any) {
       app.log.error(err, "Mint transaction failed");
       return reply.status(500).send({
-        error: "Mint transaction failed",
-        details: err.message,
+        error: "Transaction failed",
       });
     }
   });

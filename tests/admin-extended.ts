@@ -182,6 +182,7 @@ describe("admin-extended", () => {
         enableTransferHook: false,
         enablePermanentDelegate: false,
         defaultAccountFrozen: false,
+        treasury: PublicKey.default,
       })
       .accountsStrict({
         authority: authority.publicKey,

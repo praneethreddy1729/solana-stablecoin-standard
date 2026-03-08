@@ -80,6 +80,7 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
         enableTransferHook: false,
         enablePermanentDelegate: false,
         defaultAccountFrozen: false,
+        treasury: PublicKey.default,
       })
       .accountsStrict({
         authority: authority.publicKey,

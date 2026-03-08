@@ -7,12 +7,14 @@ export {
   ROLE_SEED,
   BLACKLIST_SEED,
   EXTRA_ACCOUNT_METAS_SEED,
+  ATTESTATION_SEED,
 } from "./constants";
 export {
   findConfigPda,
   findRolePda,
   findBlacklistPda,
   findExtraAccountMetasPda,
+  findAttestationPda,
 } from "./pda";
 export {
   RoleType,
@@ -30,6 +32,8 @@ export {
   type SeizeParams,
   type UpdateRolesParams,
   type UpdateMinterQuotaParams,
+  type ReserveAttestation,
+  type AttestReservesParams,
 } from "./types";
 export {
   SSS_TOKEN_ERRORS,

@@ -26,6 +26,9 @@ pub struct InitializeArgs {
     pub enable_transfer_hook: bool,
     pub enable_permanent_delegate: bool,
     pub default_account_frozen: bool,
+    /// Treasury token account where seized tokens are sent.
+    /// Use Pubkey::default() if permanent delegate / seize is not enabled.
+    pub treasury: Pubkey,
 }
 
 #[derive(Accounts)]
@@ -214,7 +217,8 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
     config.enable_permanent_delegate = args.enable_permanent_delegate;
     config.default_account_frozen = args.default_account_frozen;
     config.bump = bump;
-    config._reserved = [0u8; 64];
+    config.treasury = args.treasury;
+    config._reserved = [0u8; 32];
 
     emit!(StablecoinInitialized {
         mint: mint_key,

@@ -9,6 +9,7 @@ export enum RoleType {
   Freezer = 3,
   Blacklister = 4,
   Seizer = 5,
+  Attestor = 6,
 }
 
 export enum Preset {
@@ -109,6 +110,26 @@ export interface UpdateRolesParams {
 export interface UpdateMinterQuotaParams {
   minterRole: PublicKey;
   newQuota: BN;
+}
+
+/** Mirrors on-chain ReserveAttestation account */
+export interface ReserveAttestation {
+  config: PublicKey;
+  attestor: PublicKey;
+  reserveAmount: BN;
+  tokenSupply: BN;
+  timestamp: BN;
+  expiresAt: BN;
+  attestationUri: string;
+  isValid: boolean;
+  bump: number;
+}
+
+export interface AttestReservesParams {
+  reserveAmount: BN;
+  expiresInSeconds: BN;
+  attestationUri: string;
+  attestor: PublicKey;
 }
 
 export const Presets = Preset;
