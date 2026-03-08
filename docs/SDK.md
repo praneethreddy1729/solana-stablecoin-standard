@@ -249,8 +249,8 @@ const blacklisted: boolean = await stablecoin.compliance.isBlacklisted(userPubke
 
 ```typescript
 import {
-  SSS_TOKEN_PROGRAM_ID,        // 8PRbAdtmGWZRjQJpsybTgojq5UkYsCSujTERY3QhC9LW
-  SSS_TRANSFER_HOOK_PROGRAM_ID, // J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf
+  SSS_TOKEN_PROGRAM_ID,        // tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz
+  SSS_TRANSFER_HOOK_PROGRAM_ID, // A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB
   TOKEN_2022_PROGRAM_ID,        // Re-exported from @solana/spl-token
   CONFIG_SEED,                  // Buffer.from("config")
   ROLE_SEED,                    // Buffer.from("role")

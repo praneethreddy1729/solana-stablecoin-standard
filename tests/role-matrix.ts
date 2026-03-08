@@ -1188,7 +1188,7 @@ describe("role-matrix", () => {
   //    We still test that wrong roles are rejected.
   // ================================================================
   describe("addToBlacklist() authorization (SSS-1 — ComplianceNotEnabled)", () => {
-    const hookProgramId = new PublicKey("J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf");
+    const hookProgramId = new PublicKey("A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB");
 
     function blacklistEntryPda(user: PublicKey): PublicKey {
       const [pda] = PublicKey.findProgramAddressSync(
@@ -1260,7 +1260,7 @@ describe("role-matrix", () => {
   // M. REMOVE_FROM_BLACKLIST — requires Blacklister role (SSS-2 only)
   // ================================================================
   describe("removeFromBlacklist() authorization (SSS-1 — ComplianceNotEnabled)", () => {
-    const hookProgramId = new PublicKey("J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf");
+    const hookProgramId = new PublicKey("A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB");
 
     function blacklistEntryPda(user: PublicKey): PublicKey {
       const [pda] = PublicKey.findProgramAddressSync(

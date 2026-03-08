@@ -204,8 +204,8 @@ anchor_version = "0.32.1"
 package_manager = "yarn"
 
 [programs.localnet]
-sss_token = "8PRbAdtmGWZRjQJpsybTgojq5UkYsCSujTERY3QhC9LW"
-sss_transfer_hook = "J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf"
+sss_token = "tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz"
+sss_transfer_hook = "A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB"
 
 [test.validator]
 bind_address = "127.0.0.1"

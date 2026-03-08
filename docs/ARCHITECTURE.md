@@ -29,7 +29,7 @@ The Config PDA serves as mint authority, freeze authority, and permanent delegat
 
 ### sss-token (Main Program)
 
-Program ID: `8PRbAdtmGWZRjQJpsybTgojq5UkYsCSujTERY3QhC9LW`
+Program ID: `tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz`
 
 The main program provides 15 instructions covering the full stablecoin lifecycle:
 
@@ -53,7 +53,7 @@ The main program provides 15 instructions covering the full stablecoin lifecycle
 
 ### sss-transfer-hook (Hook Program)
 
-Program ID: `J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf`
+Program ID: `A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB`
 
 The transfer hook program is invoked automatically by Token-2022 on every transfer for SSS-2 tokens:
 

@@ -4,7 +4,7 @@ use crate::errors::HookError;
 use crate::state::{BlacklistEntry, BLACKLIST_SEED};
 
 /// The sss-token program ID — used to verify config PDA derivation
-const SSS_TOKEN_PROGRAM_ID: Pubkey = pubkey!("8PRbAdtmGWZRjQJpsybTgojq5UkYsCSujTERY3QhC9LW");
+const SSS_TOKEN_PROGRAM_ID: Pubkey = pubkey!("tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz");
 
 #[derive(Accounts)]
 #[instruction(user: Pubkey, reason: String)]

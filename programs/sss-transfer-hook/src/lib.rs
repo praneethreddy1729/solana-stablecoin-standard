@@ -6,7 +6,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf");
+declare_id!("A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB");
 
 #[program]
 pub mod sss_transfer_hook {

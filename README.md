@@ -27,8 +27,8 @@ SSS defines two composable specification levels. Choose the one that matches you
 
 | Program | Devnet | Localnet |
 |---------|--------|----------|
-| `sss-token` | `8PRbAdtmGWZRjQJpsybTgojq5UkYsCSujTERY3QhC9LW` | `8PRbAdtmGWZRjQJpsybTgojq5UkYsCSujTERY3QhC9LW` |
-| `sss-transfer-hook` | `J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf` | `J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf` |
+| `sss-token` | `tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz` | `tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz` |
+| `sss-transfer-hook` | `A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB` | `A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB` |
 
 ## Installation
 

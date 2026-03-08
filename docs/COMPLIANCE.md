@@ -14,7 +14,7 @@ These features are designed to meet regulatory requirements for stablecoins oper
 
 ### Architecture
 
-The blacklist is implemented as an existence-based PDA system. Each blacklisted address has a `BlacklistEntry` PDA owned by the transfer hook program (`J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf`). The transfer hook checks for the existence of these PDAs on every transfer.
+The blacklist is implemented as an existence-based PDA system. Each blacklisted address has a `BlacklistEntry` PDA owned by the transfer hook program (`A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB`). The transfer hook checks for the existence of these PDAs on every transfer.
 
 ```
 BlacklistEntry PDA

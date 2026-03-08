@@ -44,14 +44,14 @@ describe("Constants", () => {
   it("SSS_TOKEN_PROGRAM_ID is a valid PublicKey matching expected base58", () => {
     expect(SSS_TOKEN_PROGRAM_ID).to.be.instanceOf(PublicKey);
     expect(SSS_TOKEN_PROGRAM_ID.toBase58()).to.equal(
-      "8PRbAdtmGWZRjQJpsybTgojq5UkYsCSujTERY3QhC9LW"
+      "tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz"
     );
   });
 
   it("SSS_TRANSFER_HOOK_PROGRAM_ID is a valid PublicKey matching expected base58", () => {
     expect(SSS_TRANSFER_HOOK_PROGRAM_ID).to.be.instanceOf(PublicKey);
     expect(SSS_TRANSFER_HOOK_PROGRAM_ID.toBase58()).to.equal(
-      "J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf"
+      "A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB"
     );
   });
 

@@ -9,7 +9,7 @@ pub mod utils;
 
 use instructions::*;
 
-declare_id!("8PRbAdtmGWZRjQJpsybTgojq5UkYsCSujTERY3QhC9LW");
+declare_id!("tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz");
 
 #[program]
 pub mod sss_token {

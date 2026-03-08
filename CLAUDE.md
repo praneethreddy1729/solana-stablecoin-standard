@@ -19,7 +19,7 @@ anchor idl type target/idl/sss_transfer_hook.json -o target/types/sss_transfer_h
 
 # Run tests manually (anchor test has env issues)
 pkill -f solana-test-validator; sleep 2
-solana-test-validator --deactivate-feature CxeBn9PVeeXbmjbNwLv6U4C6svNxnC4JX6mfkvgeMocM --reset --bind-address 127.0.0.1 --bpf-program 8PRbAdtmGWZRjQJpsybTgojq5UkYsCSujTERY3QhC9LW target/deploy/sss_token.so --bpf-program J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf target/deploy/sss_transfer_hook.so &
+solana-test-validator --deactivate-feature CxeBn9PVeeXbmjbNwLv6U4C6svNxnC4JX6mfkvgeMocM --reset --bind-address 127.0.0.1 --bpf-program tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz target/deploy/sss_token.so --bpf-program A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB target/deploy/sss_transfer_hook.so &
 sleep 5
 ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 ANCHOR_WALLET=~/.config/solana/id.json yarn run ts-mocha -p ./tsconfig.json -t 1000000 "tests/**/*.ts"
 ```
@@ -32,9 +32,9 @@ ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 ANCHOR_WALLET=~/.config/solana/id.json
 
 ## Architecture
 - **sss-token**: Main stablecoin program (15 instructions)
-  - Program ID: 8PRbAdtmGWZRjQJpsybTgojq5UkYsCSujTERY3QhC9LW
+  - Program ID: tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz
 - **sss-transfer-hook**: Transfer hook + blacklist PDAs
-  - Program ID: J9eLtU1WpAThPvysxzLKkYhoBZaMQJPwjNStTKSokJcf
+  - Program ID: A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB
 
 ## Role Types (6 total)
 - Minter(0), Burner(1), Pauser(2), Freezer(3), Blacklister(4), Seizer(5)
