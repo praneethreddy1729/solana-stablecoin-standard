@@ -187,14 +187,14 @@ Account layout: source(0), mint(1), destination(2), owner_delegate(3),
 | Instruction | Key Validations |
 |-------------|----------------|
 | `initialize` | Authority is signer, mint is signer (keypair), decimals 0-18, name <= 32, symbol <= 10, uri <= 200 |
-| `mint_tokens` | Config has_one mint, minter has active Minter role (seeds + constraints), not paused, `checked_add` quota check, amount > 0, auto-thaw if default_account_frozen |
-| `burn_tokens` | Config has_one mint, burner has active Burner role, not paused, from_authority is signer, amount > 0 |
+| `mint` | Config has_one mint, minter has active Minter role (seeds + constraints), not paused, `checked_add` quota check, amount > 0, auto-thaw if default_account_frozen |
+| `burn` | Config has_one mint, burner has active Burner role, not paused, from_authority is signer, amount > 0 |
 | `freeze_account` | Config has_one mint, freezer has active Freezer role, account not already frozen (checked by Token-2022) |
 | `thaw_account` | Config has_one mint, freezer has active Freezer role, account is frozen (checked by Token-2022) |
 | `pause` | Pauser has active Pauser role, token not already paused |
 | `unpause` | Pauser has active Pauser role, token is currently paused |
 | `update_roles` | Authority signer, valid role type (0-5 via `RoleType::from_u8`) |
-| `update_minter_quota` | Authority signer, config constraint |
+| `update_minter` | Authority signer, config constraint |
 | `transfer_authority` | Authority signer, no pending transfer (`AuthorityTransferAlreadyPending`) |
 | `accept_authority` | Signer matches `pending_authority`, transfer is pending |
 | `cancel_authority_transfer` | Authority signer, transfer is pending |

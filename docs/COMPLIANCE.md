@@ -61,7 +61,7 @@ const isBlacklisted = await stablecoin.compliance.isBlacklisted(userPubkey);
 Using direct PDA derivation:
 
 ```typescript
-import { findBlacklistPda } from "@sss/sdk";
+import { findBlacklistPda } from "@stbr/sss-token";
 
 const [blacklistPda] = findBlacklistPda(mintPubkey, userPubkey);
 const accountInfo = await connection.getAccountInfo(blacklistPda);

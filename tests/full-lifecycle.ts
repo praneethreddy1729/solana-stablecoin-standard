@@ -153,7 +153,7 @@ describe("full-lifecycle: SSS-1", () => {
     // Set minter quota
     const minterRole = rolePda(program.programId, configPda, 0, minter.publicKey);
     await program.methods
-      .updateMinterQuota(new anchor.BN(10_000_000))
+      .updateMinter(new anchor.BN(10_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -164,7 +164,7 @@ describe("full-lifecycle: SSS-1", () => {
     // 3. Mint tokens
     const userAta = await createAta(mintKp.publicKey, user.publicKey);
     const mintSig = await program.methods
-      .mintTokens(new anchor.BN(5_000_000))
+      .mint(new anchor.BN(5_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -183,7 +183,7 @@ describe("full-lifecycle: SSS-1", () => {
     // 4. Burn tokens
     const burnerRole = rolePda(program.programId, configPda, 1, burner.publicKey);
     const burnSig = await program.methods
-      .burnTokens(new anchor.BN(1_000_000))
+      .burn(new anchor.BN(1_000_000))
       .accountsStrict({
         burner: burner.publicKey,
         config: configPda,
@@ -308,7 +308,7 @@ describe("full-lifecycle: SSS-1", () => {
       .rpc();
 
     await program.methods
-      .updateMinterQuota(new anchor.BN(10_000_000))
+      .updateMinter(new anchor.BN(10_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -319,7 +319,7 @@ describe("full-lifecycle: SSS-1", () => {
     // Mint tokens
     const userAta = await createAta(mintKp.publicKey, user.publicKey);
     let sig = await program.methods
-      .mintTokens(new anchor.BN(5_000_000))
+      .mint(new anchor.BN(5_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -334,7 +334,7 @@ describe("full-lifecycle: SSS-1", () => {
 
     // Burn ALL tokens
     sig = await program.methods
-      .burnTokens(new anchor.BN(5_000_000))
+      .burn(new anchor.BN(5_000_000))
       .accountsStrict({
         burner: burner.publicKey,
         config: configPda,
@@ -359,7 +359,7 @@ describe("full-lifecycle: SSS-1", () => {
 
     // Token should still be usable: mint again
     sig = await program.methods
-      .mintTokens(new anchor.BN(1_000_000))
+      .mint(new anchor.BN(1_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -405,7 +405,7 @@ describe("full-lifecycle: SSS-1", () => {
       .rpc();
 
     await program.methods
-      .updateMinterQuota(new anchor.BN(10_000_000))
+      .updateMinter(new anchor.BN(10_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -416,7 +416,7 @@ describe("full-lifecycle: SSS-1", () => {
     // Mint with minter A
     const userAta = await createAta(mintKp.publicKey, user.publicKey);
     let sig = await program.methods
-      .mintTokens(new anchor.BN(1_000_000))
+      .mint(new anchor.BN(1_000_000))
       .accountsStrict({
         minter: minterA.publicKey,
         config: configPda,
@@ -446,7 +446,7 @@ describe("full-lifecycle: SSS-1", () => {
     // Minter A can no longer mint
     try {
       await program.methods
-        .mintTokens(new anchor.BN(1_000))
+        .mint(new anchor.BN(1_000))
         .accountsStrict({
           minter: minterA.publicKey,
           config: configPda,
@@ -475,7 +475,7 @@ describe("full-lifecycle: SSS-1", () => {
       .rpc();
 
     await program.methods
-      .updateMinterQuota(new anchor.BN(10_000_000))
+      .updateMinter(new anchor.BN(10_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -485,7 +485,7 @@ describe("full-lifecycle: SSS-1", () => {
 
     // Mint with minter B
     sig = await program.methods
-      .mintTokens(new anchor.BN(2_000_000))
+      .mint(new anchor.BN(2_000_000))
       .accountsStrict({
         minter: minterB.publicKey,
         config: configPda,
@@ -763,7 +763,7 @@ describe("full-lifecycle: SSS-2", () => {
 
     const minterRole = rolePda(configPda, 0, minter.publicKey);
     await program.methods
-      .updateMinterQuota(new anchor.BN(100_000_000_000))
+      .updateMinter(new anchor.BN(100_000_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -776,7 +776,7 @@ describe("full-lifecycle: SSS-2", () => {
     const ataB = await createAta(mintKp.publicKey, userB.publicKey);
 
     let sig = await program.methods
-      .mintTokens(new anchor.BN(10_000_000))
+      .mint(new anchor.BN(10_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -925,7 +925,7 @@ describe("full-lifecycle: SSS-2", () => {
 
     // 9. Mint more to A and transfer works again
     sig = await program.methods
-      .mintTokens(new anchor.BN(3_000_000))
+      .mint(new anchor.BN(3_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -1117,7 +1117,7 @@ describe("full-lifecycle: SSS-2", () => {
 
     const minterRole = rolePda(configPda, 0, minter.publicKey);
     await program.methods
-      .updateMinterQuota(new anchor.BN(100_000_000_000))
+      .updateMinter(new anchor.BN(100_000_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -1128,7 +1128,7 @@ describe("full-lifecycle: SSS-2", () => {
     // Mint to userA
     const ataA = await createAta(mintKp.publicKey, userA.publicKey);
     let sig = await program.methods
-      .mintTokens(new anchor.BN(5_000_000))
+      .mint(new anchor.BN(5_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,

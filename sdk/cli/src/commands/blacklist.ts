@@ -22,11 +22,11 @@ blacklistCommand
       : wallet.publicKey;
     const user = new PublicKey(address);
 
-    const txSig = await stablecoin.compliance.blacklistAdd({
+    const txSig = await stablecoin.compliance.blacklistAdd(
       user,
       blacklister,
-      reason: opts.reason,
-    });
+      opts.reason,
+    );
     console.log(`Added ${address} to blacklist`);
     if (opts.reason) {
       console.log(`Reason: ${opts.reason}`);
@@ -50,10 +50,10 @@ blacklistCommand
       : wallet.publicKey;
     const user = new PublicKey(address);
 
-    const txSig = await stablecoin.compliance.blacklistRemove({
+    const txSig = await stablecoin.compliance.blacklistRemove(
       user,
       blacklister,
-    });
+    );
     console.log(`Removed ${address} from blacklist`);
     console.log(`Tx: ${txSig}`);
   });

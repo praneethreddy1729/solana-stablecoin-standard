@@ -24,6 +24,12 @@ sleep 5
 ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 ANCHOR_WALLET=~/.config/solana/id.json yarn run ts-mocha -p ./tsconfig.json -t 1000000 "tests/**/*.ts"
 ```
 
+## Instruction Names (Post-Rename)
+- On-chain: `mint`, `burn`, `update_minter` (not mint_tokens/burn_tokens/update_minter_quota)
+- IDL/TS: `.mint()`, `.burn()`, `.updateMinter()`
+- SDK class: `.mint(to, amount, minter)`, `.burn(from, amount, burner, fromAuthority?)`
+- SDK package: `@stbr/sss-token` (not @sss/sdk)
+
 ## Architecture
 - **sss-token**: Main stablecoin program (15 instructions)
   - Program ID: 8PRbAdtmGWZRjQJpsybTgojq5UkYsCSujTERY3QhC9LW

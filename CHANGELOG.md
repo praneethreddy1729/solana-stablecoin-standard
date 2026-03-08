@@ -13,12 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **sss-token program** with 15 instructions:
   - `initialize` -- Create a Token-2022 mint with configurable extensions (MetadataPointer, TransferHook, PermanentDelegate, DefaultAccountState)
-  - `mint_tokens` -- Mint tokens with Minter role check, pause guard, and cumulative quota enforcement via `checked_add`
-  - `burn_tokens` -- Burn tokens with Burner role check, pause guard, and owner co-sign requirement
+  - `mint` -- Mint tokens with Minter role check, pause guard, and cumulative quota enforcement via `checked_add`
+  - `burn` -- Burn tokens with Burner role check, pause guard, and owner co-sign requirement
   - `freeze_account` / `thaw_account` -- Freeze and thaw individual token accounts (Freezer role)
   - `pause` / `unpause` -- Global pause toggle (Pauser role)
   - `update_roles` -- Create or update role assignments (authority only)
-  - `update_minter_quota` -- Set minter cumulative mint cap (authority only)
+  - `update_minter` -- Set minter cumulative mint cap (authority only)
   - `transfer_authority` / `accept_authority` / `cancel_authority_transfer` -- Two-step authority transfer
   - `add_to_blacklist` / `remove_from_blacklist` -- Manage blacklist via CPI to hook program (Blacklister role, SSS-2)
   - `seize` -- Transfer tokens from blacklisted account using permanent delegate (authority only, SSS-2)
@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### TypeScript SDK (`sdk/core`)
 
 - `SolanaStablecoin` class with factory methods (`create`, `load`)
-- Full instruction coverage: mintTokens, burn, freeze, thaw, pause, unpause, updateRoles, updateMinterQuota, transferAuthority, acceptAuthority, cancelAuthorityTransfer
+- Full instruction coverage: mint, burn, freeze, thaw, pause, unpause, updateRoles, updateMinterQuota, transferAuthority, acceptAuthority, cancelAuthorityTransfer
 - Compliance namespace: `compliance.blacklistAdd`, `compliance.blacklistRemove`, `compliance.seize`, `compliance.isBlacklisted`
 - PDA derivation helpers: `findConfigPda`, `findRolePda`, `findBlacklistPda`, `findExtraAccountMetasPda`
 - Error parsing utilities with `parseSSSError`

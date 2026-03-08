@@ -18,11 +18,11 @@ export const mintCommand = new Command("mint")
       ? new PublicKey(opts.minter)
       : wallet.publicKey;
 
-    const txSig = await stablecoin.mintTokens({
-      amount: new BN(opts.amount),
-      to: new PublicKey(opts.to),
+    const txSig = await stablecoin.mint(
+      new PublicKey(opts.to),
+      new BN(opts.amount),
       minter,
-    });
+    );
 
     console.log(`Minted ${opts.amount} tokens to ${opts.to}`);
     console.log(`Tx: ${txSig}`);

@@ -7,7 +7,7 @@ export async function statusRoutes(app: FastifyInstance): Promise<void> {
       const sdk = app.sdk;
       const mintInfo = await getMint(
         app.connection,
-        sdk.mint,
+        sdk.mintAddress,
         "confirmed",
         TOKEN_2022_PROGRAM_ID
       );
@@ -16,7 +16,7 @@ export async function statusRoutes(app: FastifyInstance): Promise<void> {
 
       return reply.status(200).send({
         mint: {
-          address: sdk.mint.toBase58(),
+          address: sdk.mintAddress.toBase58(),
           decimals: mintInfo.decimals,
           supply: mintInfo.supply.toString(),
           isInitialized: mintInfo.isInitialized,

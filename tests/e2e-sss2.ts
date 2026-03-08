@@ -159,7 +159,7 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
 
     // Set minter quota
     await program.methods
-      .updateMinterQuota(new anchor.BN(100_000_000_000))
+      .updateMinter(new anchor.BN(100_000_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -174,7 +174,7 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
 
     // ===== Step 5: Mint tokens to userA (auto-thaws frozen account) =====
     const mintSig = await program.methods
-      .mintTokens(new anchor.BN(50_000_000))
+      .mint(new anchor.BN(50_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -365,7 +365,7 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
     // ===== Step 12: Transfer succeeds after unblacklist =====
     // Mint fresh tokens to userA for this test
     const mint2Sig = await program.methods
-      .mintTokens(new anchor.BN(2_000_000))
+      .mint(new anchor.BN(2_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,

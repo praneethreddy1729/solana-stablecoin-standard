@@ -39,13 +39,13 @@ Create a new stablecoin. Sends the `initialize` transaction on-chain.
 ```typescript
 const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(
   connection,          // Connection
-  wallet,              // Wallet (Anchor Wallet interface)
   {
     name: "TestUSD",
     symbol: "TUSD",
     uri: "https://example.com/tusd.json",
     decimals: 6,
     preset: Preset.SSS_1,  // or Preset.SSS_2, or Preset.Custom
+    authority: keypair,     // Keypair (authority signer)
   },
   programId?,          // optional, defaults to SSS_TOKEN_PROGRAM_ID
   hookProgramId?,      // optional, defaults to SSS_TRANSFER_HOOK_PROGRAM_ID
@@ -80,7 +80,7 @@ const stablecoin = await SolanaStablecoin.load(
 | `program` | `Program` | Anchor program for sss-token |
 | `hookProgram` | `Program` | Anchor program for sss-transfer-hook |
 | `connection` | `Connection` | Solana connection |
-| `mint` | `PublicKey` | Mint address |
+| `mintAddress` | `PublicKey` | Mint address |
 | `configPda` | `PublicKey` | Derived config PDA |
 | `configBump` | `number` | Config PDA bump |
 | `programId` | `PublicKey` | sss-token program ID |
@@ -98,29 +98,29 @@ const config: StablecoinConfig = await stablecoin.getConfig();
 console.log(config.paused, config.authority.toBase58());
 ```
 
-#### `mintTokens(params: MintParams)`
+#### `mint(to, amount, minter)`
 
 Mint tokens. Caller must have the Minter role.
 
 ```typescript
-const sig = await stablecoin.mintTokens({
-  amount: new BN(1_000_000),
-  to: recipientAta,       // PublicKey of token account
-  minter: minterPubkey,   // PublicKey of minter signer
-});
+const sig = await stablecoin.mint(
+  recipientAta,            // PublicKey of token account
+  new BN(1_000_000),       // amount
+  minterPubkey,            // PublicKey of minter signer
+);
 ```
 
-#### `burn(params: BurnParams)`
+#### `burn(from, amount, burner, fromAuthority?)`
 
 Burn tokens. Requires Burner role and token account owner co-sign.
 
 ```typescript
-const sig = await stablecoin.burn({
-  amount: new BN(1_000_000),
-  from: tokenAccount,
-  fromAuthority: ownerPubkey,
-  burner: burnerPubkey,
-});
+const sig = await stablecoin.burn(
+  tokenAccount,            // PublicKey of source token account
+  new BN(1_000_000),       // amount
+  burnerPubkey,            // PublicKey of burner signer
+  ownerPubkey,             // optional: PublicKey of token account authority
+);
 ```
 
 #### `freeze(params: FreezeThawParams)`
@@ -203,38 +203,38 @@ await stablecoin.cancelAuthorityTransfer();
 
 Accessed via `stablecoin.compliance.*`:
 
-#### `compliance.blacklistAdd(params: BlacklistAddParams)`
+#### `compliance.blacklistAdd(address, blacklister, reason?)`
 
 Add an address to the blacklist via CPI to hook program. The `reason` field (max 64 bytes) is stored on-chain in the BlacklistEntry PDA.
 
 ```typescript
-await stablecoin.compliance.blacklistAdd({
-  user: addressToBlacklist,
-  blacklister: blacklisterPubkey,
-  reason: "OFAC SDN List",
-});
+await stablecoin.compliance.blacklistAdd(
+  addressToBlacklist,      // PublicKey
+  blacklisterPubkey,       // PublicKey
+  "OFAC SDN List",         // optional reason string
+);
 ```
 
-#### `compliance.blacklistRemove(params: BlacklistRemoveParams)`
+#### `compliance.blacklistRemove(address, blacklister)`
 
 Remove an address from the blacklist.
 
 ```typescript
-await stablecoin.compliance.blacklistRemove({
-  user: addressToUnblacklist,
-  blacklister: blacklisterPubkey,
-});
+await stablecoin.compliance.blacklistRemove(
+  addressToUnblacklist,    // PublicKey
+  blacklisterPubkey,       // PublicKey
+);
 ```
 
-#### `compliance.seize(params: SeizeParams)`
+#### `compliance.seize(frozenAccount, treasury)`
 
 Seize all tokens from an account using permanent delegate (requires Seizer role).
 
 ```typescript
-await stablecoin.compliance.seize({
-  from: sanctionedTokenAccount,
-  to: treasuryTokenAccount,
-});
+await stablecoin.compliance.seize(
+  sanctionedTokenAccount,  // PublicKey of source token account
+  treasuryTokenAccount,    // PublicKey of destination token account
+);
 ```
 
 #### `compliance.isBlacklisted(user: PublicKey)`
@@ -256,7 +256,7 @@ import {
   ROLE_SEED,                    // Buffer.from("role")
   BLACKLIST_SEED,               // Buffer.from("blacklist")
   EXTRA_ACCOUNT_METAS_SEED,     // Buffer.from("extra-account-metas")
-} from "@sss/sdk";
+} from "@stbr/sss-token";
 ```
 
 ## PDA Derivation
@@ -316,6 +316,9 @@ enum Preset {
   SSS_2 = "SSS_2",
   Custom = "Custom",
 }
+
+// Also exported as `Presets` (alias for Preset)
+const Presets = Preset;
 ```
 
 ### Account Interfaces
@@ -385,7 +388,7 @@ interface UpdateMinterQuotaParams { minterRole: PublicKey; newQuota: BN; }
 ### Error Code Maps
 
 ```typescript
-import { SSS_TOKEN_ERRORS, SSS_TRANSFER_HOOK_ERRORS, parseSSSError } from "@sss/sdk";
+import { SSS_TOKEN_ERRORS, SSS_TRANSFER_HOOK_ERRORS, parseSSSError } from "@stbr/sss-token";
 
 // SSS Token Program errors (6000-6024)
 SSS_TOKEN_ERRORS[6003]

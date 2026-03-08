@@ -55,8 +55,8 @@ Enabling both ConfidentialTransfer and TransferHook on the same mint is technica
 
 SSS-1 tokens do not use TransferHook, so ConfidentialTransfer could theoretically be added. However:
 - `freeze_account`/`thaw_account` operations would need updates for encrypted balances
-- `mint_tokens` would need confidential minting support
-- `burn_tokens` would need proof-based amount verification
+- `mint` would need confidential minting support
+- `burn` would need proof-based amount verification
 
 This is not currently supported.
 

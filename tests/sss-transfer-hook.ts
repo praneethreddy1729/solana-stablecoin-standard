@@ -85,7 +85,7 @@ describe("sss-transfer-hook", () => {
   async function mintTo(ata: PublicKey, amount: number) {
     const minterRole = rolePda(configPda, 0, minter.publicKey);
     const sig = await program.methods
-      .mintTokens(new anchor.BN(amount))
+      .mint(new anchor.BN(amount))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -176,7 +176,7 @@ describe("sss-transfer-hook", () => {
     // Set minter quota
     const minterRole = rolePda(configPda, 0, minter.publicKey);
     await program.methods
-      .updateMinterQuota(new anchor.BN(100_000_000_000))
+      .updateMinter(new anchor.BN(100_000_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,

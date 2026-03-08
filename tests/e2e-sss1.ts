@@ -120,7 +120,7 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
     // ----- Step 3: Set minter quota -----
     const minterRole = rolePda(0, minter.publicKey);
     await program.methods
-      .updateMinterQuota(new anchor.BN(50_000_000))
+      .updateMinter(new anchor.BN(50_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -148,7 +148,7 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
 
     // ----- Step 5: Mint tokens -----
     const mintSig = await program.methods
-      .mintTokens(new anchor.BN(10_000_000))
+      .mint(new anchor.BN(10_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -172,7 +172,7 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
     // ----- Step 6: Burn tokens -----
     const burnerRole = rolePda(1, burner.publicKey);
     const burnSig = await program.methods
-      .burnTokens(new anchor.BN(1_000_000))
+      .burn(new anchor.BN(1_000_000))
       .accountsStrict({
         burner: burner.publicKey,
         config: configPda,

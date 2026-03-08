@@ -1,6 +1,8 @@
 import { FastifyInstance } from "fastify";
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
+import { addAuditEntry } from "../services/compliance";
+import { sendWebhook } from "../services/webhook";
 
 interface BurnBody {
   from: string;
@@ -40,16 +42,30 @@ export async function burnRoutes(app: FastifyInstance): Promise<void> {
     try {
       const sdk = app.sdk;
 
-      const signature = await sdk.burn({
-        amount: amountBn,
-        from: fromPubkey,
-        fromAuthority: fromAuthorityPubkey,
-        burner: app.authority.publicKey,
+      const signature = await sdk.burn(
+        fromPubkey,
+        amountBn,
+        app.authority.publicKey,
+        fromAuthorityPubkey,
+      );
+
+      const mintAddress = sdk.mintAddress.toBase58();
+
+      addAuditEntry({
+        timestamp: new Date().toISOString(),
+        action: "burn",
+        actor: app.authority.publicKey.toBase58(),
+        txSignature: signature,
+        details: { mint: mintAddress, from, amount },
       });
+
+      sendWebhook("burn", { signature, mint: mintAddress, from, amount }).catch(
+        () => {}
+      );
 
       return reply.status(200).send({
         signature,
-        mint: sdk.mint.toBase58(),
+        mint: mintAddress,
         from,
         amount,
       });

@@ -32,7 +32,7 @@ const hookProgram = anchor.workspace.SssTransferHook as Program<SssTransferHook>
 ### Error Assertion Pattern
 ```typescript
 try {
-  await program.methods.mintTokens(amount).accountsStrict({...}).rpc();
+  await program.methods.mint(amount).accountsStrict({...}).rpc();
   expect.fail("Should have failed");
 } catch (err: any) {
   expect(err.toString()).to.include("ErrorName");

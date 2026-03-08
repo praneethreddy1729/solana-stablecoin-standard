@@ -1,0 +1,13 @@
+# Solana Stablecoin Standard - Custom Configuration
+# Use with: sss-token init --custom custom.toml
+
+name = "CustomToken"
+symbol = "CUST"
+uri = ""
+decimals = 9
+preset = "CUSTOM"
+
+# Token-2022 Extension Flags
+enableTransferHook = true
+enablePermanentDelegate = false
+defaultAccountFrozen = false

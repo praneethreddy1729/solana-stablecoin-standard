@@ -1,0 +1,7 @@
+{
+  "name": "CompliUSD",
+  "symbol": "CUSD",
+  "uri": "https://example.com/metadata.json",
+  "decimals": 6,
+  "preset": "SSS-2"
+}

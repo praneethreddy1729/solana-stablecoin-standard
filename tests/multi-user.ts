@@ -177,7 +177,7 @@ describe("multi-user", () => {
     // Set quotas: minterA=1_000_000, minterB=500_000
     const minterARole = rolePda(configPda, 0, minterA.publicKey);
     await program.methods
-      .updateMinterQuota(new anchor.BN(1_000_000))
+      .updateMinter(new anchor.BN(1_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -187,7 +187,7 @@ describe("multi-user", () => {
 
     const minterBRole = rolePda(configPda, 0, minterB.publicKey);
     await program.methods
-      .updateMinterQuota(new anchor.BN(500_000))
+      .updateMinter(new anchor.BN(500_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -215,7 +215,7 @@ describe("multi-user", () => {
       );
 
       await program.methods
-        .mintTokens(new anchor.BN(400_000))
+        .mint(new anchor.BN(400_000))
         .accountsStrict({
           minter: minterA.publicKey,
           config: configPda,
@@ -241,7 +241,7 @@ describe("multi-user", () => {
       );
 
       await program.methods
-        .mintTokens(new anchor.BN(300_000))
+        .mint(new anchor.BN(300_000))
         .accountsStrict({
           minter: minterB.publicKey,
           config: configPda,
@@ -278,7 +278,7 @@ describe("multi-user", () => {
       // minterB has 500_000 quota, already minted 300_000 — try minting 250_000 (exceeds)
       try {
         await program.methods
-          .mintTokens(new anchor.BN(250_000))
+          .mint(new anchor.BN(250_000))
           .accountsStrict({
             minter: minterB.publicKey,
             config: configPda,
@@ -332,7 +332,7 @@ describe("multi-user", () => {
       );
 
       const sig = await program.methods
-        .mintTokens(new anchor.BN(10_000))
+        .mint(new anchor.BN(10_000))
         .accountsStrict({
           minter: minterA.publicKey,
           config: configPda,
@@ -365,7 +365,7 @@ describe("multi-user", () => {
       );
 
       const sig = await program.methods
-        .burnTokens(new anchor.BN(5_000))
+        .burn(new anchor.BN(5_000))
         .accountsStrict({
           burner: minterA.publicKey,
           config: configPda,
@@ -405,7 +405,7 @@ describe("multi-user", () => {
 
       // Confirm minterB can still mint
       await program.methods
-        .mintTokens(new anchor.BN(50_000))
+        .mint(new anchor.BN(50_000))
         .accountsStrict({
           minter: minterB.publicKey,
           config: configPda,
@@ -431,7 +431,7 @@ describe("multi-user", () => {
       // Attempt to mint again — should fail
       try {
         await program.methods
-          .mintTokens(new anchor.BN(1_000))
+          .mint(new anchor.BN(1_000))
           .accountsStrict({
             minter: minterB.publicKey,
             config: configPda,
@@ -476,7 +476,7 @@ describe("multi-user", () => {
 
       try {
         await program.methods
-          .mintTokens(new anchor.BN(1_000))
+          .mint(new anchor.BN(1_000))
           .accountsStrict({
             minter: blacklister.publicKey,
             config: configPda,
@@ -489,7 +489,7 @@ describe("multi-user", () => {
           .rpc();
         expect.fail("Should have thrown");
       } catch (e: any) {
-        // PDA seed mismatch: blacklisterRole was derived with type=4, mintTokens expects type=0
+        // PDA seed mismatch: blacklisterRole was derived with type=4, mint expects type=0
         expect(e.toString()).to.include("Error");
       }
     });
@@ -524,7 +524,7 @@ describe("multi-user", () => {
 
       try {
         await program.methods
-          .burnTokens(new anchor.BN(1_000))
+          .burn(new anchor.BN(1_000))
           .accountsStrict({
             burner: freezer.publicKey,
             config: configPda,
@@ -616,7 +616,7 @@ describe("multi-user", () => {
       const minterARole = rolePda(configPda, 0, minterA.publicKey);
 
       await program.methods
-        .updateMinterQuota(new anchor.BN(2_000_000))
+        .updateMinter(new anchor.BN(2_000_000))
         .accountsStrict({
           authority: newAuthority.publicKey,
           config: configPda,

@@ -45,7 +45,7 @@ Since only MetadataPointer is enabled:
 
 ### Mint
 
-**Instruction**: `mint_tokens(amount: u64)`
+**Instruction**: `mint(amount: u64)`
 **Required Role**: Minter
 **Checks**: Amount > 0, not paused, role active, `checked_add` quota check
 
@@ -55,7 +55,7 @@ If `default_account_frozen` is enabled (SSS-2), the mint instruction automatical
 
 ### Burn
 
-**Instruction**: `burn_tokens(amount: u64)`
+**Instruction**: `burn(amount: u64)`
 **Required Role**: Burner
 **Checks**: Amount > 0, not paused, role active
 
@@ -83,7 +83,7 @@ Unfreezes a previously frozen token account.
 **Required Role**: Pauser
 **Checks**: Role active, token not already paused (TokenNotPaused)
 
-Sets `config.paused = true`. While paused, `mint_tokens` and `burn_tokens` will fail with `TokenPaused`. For SSS-2 tokens, the transfer hook also checks pause state, blocking all transfers.
+Sets `config.paused = true`. While paused, `mint` and `burn` will fail with `TokenPaused`. For SSS-2 tokens, the transfer hook also checks pause state, blocking all transfers.
 
 ### Unpause
 
@@ -114,7 +114,7 @@ Role types:
 
 ### Update Minter Quota
 
-**Instruction**: `update_minter_quota(new_quota: u64)`
+**Instruction**: `update_minter(new_quota: u64)`
 **Required**: Authority signer
 
 Sets the cumulative minting cap for a specific minter's `RoleAssignment`. The `minted_amount` field tracks total lifetime minting. To "refill" a minter, increase the quota. The `minted_amount` is never reset -- it tracks lifetime minting.

@@ -146,7 +146,7 @@ describe("edge-cases", () => {
     // Set minter quota to exactly 1_000_000
     const minterRole = rolePda(configPda, 0, minter.publicKey);
     await program.methods
-      .updateMinterQuota(new anchor.BN(1_000_000))
+      .updateMinter(new anchor.BN(1_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -164,7 +164,7 @@ describe("edge-cases", () => {
     );
 
     await program.methods
-      .mintTokens(new anchor.BN(500_000))
+      .mint(new anchor.BN(500_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -193,7 +193,7 @@ describe("edge-cases", () => {
 
       try {
         await program.methods
-          .mintTokens(new anchor.BN(0))
+          .mint(new anchor.BN(0))
           .accountsStrict({
             minter: minter.publicKey,
             config: configPda,
@@ -221,7 +221,7 @@ describe("edge-cases", () => {
 
       try {
         await program.methods
-          .burnTokens(new anchor.BN(0))
+          .burn(new anchor.BN(0))
           .accountsStrict({
             burner: burner.publicKey,
             config: configPda,
@@ -383,7 +383,7 @@ describe("edge-cases", () => {
 
       try {
         await program.methods
-          .mintTokens(new anchor.BN(1_000))
+          .mint(new anchor.BN(1_000))
           .accountsStrict({
             minter: burner.publicKey,
             config: configPda,
@@ -456,7 +456,7 @@ describe("edge-cases", () => {
 
       // Mint exactly the remaining amount
       await program.methods
-        .mintTokens(new anchor.BN(remaining))
+        .mint(new anchor.BN(remaining))
         .accountsStrict({
           minter: minter.publicKey,
           config: configPda,
@@ -485,7 +485,7 @@ describe("edge-cases", () => {
 
       try {
         await program.methods
-          .mintTokens(new anchor.BN(1))
+          .mint(new anchor.BN(1))
           .accountsStrict({
             minter: minter.publicKey,
             config: configPda,
@@ -525,7 +525,7 @@ describe("edge-cases", () => {
       // Bump quota to allow more minting
       const minterRole = rolePda(configPda, 0, minter.publicKey);
       await program.methods
-        .updateMinterQuota(new anchor.BN(2_000_000))
+        .updateMinter(new anchor.BN(2_000_000))
         .accountsStrict({
           authority: authority.publicKey,
           config: configPda,
@@ -534,7 +534,7 @@ describe("edge-cases", () => {
         .rpc();
 
       const mintSig = await program.methods
-        .mintTokens(new anchor.BN(1_000))
+        .mint(new anchor.BN(1_000))
         .accountsStrict({
           minter: minter.publicKey,
           config: configPda,
@@ -644,7 +644,7 @@ describe("edge-cases", () => {
 
       try {
         await program.methods
-          .mintTokens(new anchor.BN(1_000))
+          .mint(new anchor.BN(1_000))
           .accountsStrict({
             minter: randomUser.publicKey,
             config: configPda,
@@ -752,7 +752,7 @@ describe("edge-cases", () => {
 
       try {
         await program.methods
-          .mintTokens(new anchor.BN(1_000))
+          .mint(new anchor.BN(1_000))
           .accountsStrict({
             minter: minter.publicKey,
             config: configPda,

@@ -8,13 +8,13 @@ The Solana Stablecoin Standard is a two-program architecture built on Token-2022
 sss-token (main program)              sss-transfer-hook (hook program)
   15 instructions:                       5 instructions + fallback:
   - initialize                           - initialize_extra_account_metas
-  - mint_tokens                          - update_extra_account_metas
-  - burn_tokens                          - execute (blacklist + pause check)
+  - mint                          - update_extra_account_metas
+  - burn                          - execute (blacklist + pause check)
   - freeze_account                       - add_to_blacklist (via CPI)
   - thaw_account                         - remove_from_blacklist (via CPI)
   - pause / unpause                      - fallback (SPL Transfer Hook Execute)
   - update_roles
-  - update_minter_quota
+  - update_minter
   - transfer_authority
   - accept_authority
   - cancel_authority_transfer
@@ -36,14 +36,14 @@ The main program provides 15 instructions covering the full stablecoin lifecycle
 | Instruction | Role Required | SSS Level | Description |
 |-------------|--------------|-----------|-------------|
 | `initialize` | Authority (signer) | SSS-1 | Create stablecoin with Token-2022 extensions |
-| `mint_tokens` | Minter | SSS-1 | Mint tokens with quota enforcement |
-| `burn_tokens` | Burner | SSS-1 | Burn tokens from an account |
+| `mint` | Minter | SSS-1 | Mint tokens with quota enforcement |
+| `burn` | Burner | SSS-1 | Burn tokens from an account |
 | `freeze_account` | Freezer | SSS-1 | Freeze a token account |
 | `thaw_account` | Freezer | SSS-1 | Thaw a frozen token account |
 | `pause` | Pauser | SSS-1 | Pause all minting and burning |
 | `unpause` | Pauser | SSS-1 | Unpause the token |
 | `update_roles` | Authority | SSS-1 | Create or update role assignments |
-| `update_minter_quota` | Authority | SSS-1 | Set cumulative minting quota |
+| `update_minter` | Authority | SSS-1 | Set cumulative minting quota |
 | `transfer_authority` | Authority | SSS-1 | Initiate two-step authority transfer |
 | `accept_authority` | Pending Authority | SSS-1 | Accept pending authority transfer |
 | `cancel_authority_transfer` | Authority | SSS-1 | Cancel pending authority transfer |
@@ -168,8 +168,8 @@ The account is created with `extension_space` as the initial allocation but fund
 
 | Role | Value | Permissions |
 |------|-------|-------------|
-| Minter | 0 | `mint_tokens` (subject to cumulative quota, checked with `checked_add`) |
-| Burner | 1 | `burn_tokens` (requires token account owner co-sign) |
+| Minter | 0 | `mint` (subject to cumulative quota, checked with `checked_add`) |
+| Burner | 1 | `burn` (requires token account owner co-sign) |
 | Pauser | 2 | `pause`, `unpause` |
 | Freezer | 3 | `freeze_account`, `thaw_account` |
 | Blacklister | 4 | `add_to_blacklist`, `remove_from_blacklist` (SSS-2 only) |

@@ -28,18 +28,18 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
     try {
       const mint = await getMint(
         app.connection,
-        sdk.mint,
+        sdk.mintAddress,
         "confirmed",
         TOKEN_2022_PROGRAM_ID
       );
       health.mint = {
-        address: sdk.mint.toBase58(),
+        address: sdk.mintAddress.toBase58(),
         exists: true,
         supply: mint.supply.toString(),
       };
     } catch (err: any) {
       health.mint = {
-        address: sdk.mint.toBase58(),
+        address: sdk.mintAddress.toBase58(),
         exists: false,
         error: err.message,
       };

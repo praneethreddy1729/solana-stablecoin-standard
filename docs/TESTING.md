@@ -74,17 +74,17 @@ Tests organized by describe block:
 - Rejects role update from non-authority
 - Deactivates and reactivates a role
 
-**update_minter_quota** (2 tests)
+**update_minter** (2 tests)
 - Sets minter quota
 - Rejects quota update from non-authority
 
-**mint_tokens** (4 tests)
+**mint** (4 tests)
 - Mints tokens successfully
 - Tracks minted_amount cumulatively
 - Rejects mint exceeding quota
 - Rejects mint when paused
 
-**burn_tokens** (2 tests)
+**burn** (2 tests)
 - Burns tokens successfully
 - Rejects burn when paused
 

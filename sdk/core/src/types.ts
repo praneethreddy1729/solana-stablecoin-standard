@@ -1,4 +1,4 @@
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Keypair } from "@solana/web3.js";
 import BN from "bn.js";
 
 /** Must match on-chain RoleType repr(u8) */
@@ -60,6 +60,7 @@ export interface InitializeParams {
   symbol: string;
   uri: string;
   decimals: number;
+  authority: Keypair;
   preset?: Preset;
   enableTransferHook?: boolean;
   enablePermanentDelegate?: boolean;
@@ -109,3 +110,5 @@ export interface UpdateMinterQuotaParams {
   minterRole: PublicKey;
   newQuota: BN;
 }
+
+export const Presets = Preset;

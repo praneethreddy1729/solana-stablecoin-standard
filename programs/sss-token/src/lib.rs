@@ -21,12 +21,12 @@ pub mod sss_token {
     }
 
     /// Mint tokens (requires Minter role, checks pause + quota)
-    pub fn mint_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
+    pub fn mint(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
         instructions::mint::handler(ctx, amount)
     }
 
     /// Burn tokens (requires Burner role, checks pause)
-    pub fn burn_tokens(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
+    pub fn burn(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
         instructions::burn::handler(ctx, amount)
     }
 
@@ -61,7 +61,7 @@ pub mod sss_token {
     }
 
     /// Update minter quota (authority only)
-    pub fn update_minter_quota(ctx: Context<UpdateMinterQuota>, new_quota: u64) -> Result<()> {
+    pub fn update_minter(ctx: Context<UpdateMinterQuota>, new_quota: u64) -> Result<()> {
         instructions::update_minter_quota::handler(ctx, new_quota)
     }
 

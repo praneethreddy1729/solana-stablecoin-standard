@@ -12,10 +12,10 @@ export const seizeCommand = new Command("seize")
   .action(async (opts) => {
     const stablecoin = await loadStablecoin(opts.mint, opts);
 
-    const txSig = await stablecoin.compliance.seize({
-      from: new PublicKey(opts.from),
-      to: new PublicKey(opts.to),
-    });
+    const txSig = await stablecoin.compliance.seize(
+      new PublicKey(opts.from),
+      new PublicKey(opts.to),
+    );
 
     console.log(`Seized tokens from ${opts.from} to ${opts.to}`);
     console.log(`Tx: ${txSig}`);

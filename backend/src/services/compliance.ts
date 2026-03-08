@@ -63,3 +63,31 @@ export function getAuditLog(limit = 100, offset = 0): ScreeningResult[] {
 export function getAuditLogCount(): number {
   return auditLog.length;
 }
+
+// ---------------------------------------------------------------------------
+// Action audit trail (mint / burn / etc.)
+// ---------------------------------------------------------------------------
+
+export interface AuditEntry {
+  timestamp: string;
+  action: string;
+  actor: string;
+  txSignature: string;
+  details: Record<string, string>;
+}
+
+const actionAuditLog: AuditEntry[] = [];
+
+export function addAuditEntry(entry: AuditEntry): void {
+  actionAuditLog.push(entry);
+  if (actionAuditLog.length > 10000) actionAuditLog.shift();
+}
+
+export function getActionAuditLog(limit = 100, offset = 0): AuditEntry[] {
+  const sorted = [...actionAuditLog].reverse();
+  return sorted.slice(offset, offset + limit);
+}
+
+export function getActionAuditLogCount(): number {
+  return actionAuditLog.length;
+}

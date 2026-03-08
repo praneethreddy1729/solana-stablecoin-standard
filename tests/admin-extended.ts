@@ -107,7 +107,7 @@ describe("admin-extended", () => {
   async function setQuota(assignee: PublicKey, quota: number): Promise<void> {
     const role = rolePda(configPda, 0, assignee);
     await program.methods
-      .updateMinterQuota(new anchor.BN(quota))
+      .updateMinter(new anchor.BN(quota))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -215,7 +215,7 @@ describe("admin-extended", () => {
     );
     const minterRole = rolePda(configPda, 0, minter.publicKey);
     await program.methods
-      .mintTokens(new anchor.BN(10_000_000))
+      .mint(new anchor.BN(10_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -247,7 +247,7 @@ describe("admin-extended", () => {
 
       try {
         await program.methods
-          .mintTokens(new anchor.BN(1_000))
+          .mint(new anchor.BN(1_000))
           .accountsStrict({
             minter: minter.publicKey,
             config: configPda,
@@ -280,7 +280,7 @@ describe("admin-extended", () => {
 
       try {
         await program.methods
-          .burnTokens(new anchor.BN(1_000))
+          .burn(new anchor.BN(1_000))
           .accountsStrict({
             burner: burner.publicKey,
             config: configPda,
@@ -536,7 +536,7 @@ describe("admin-extended", () => {
       const multiAta = await createAta(multiRoleUser.publicKey);
 
       const mintSig = await program.methods
-        .mintTokens(new anchor.BN(100))
+        .mint(new anchor.BN(100))
         .accountsStrict({
           minter: multiRoleUser.publicKey,
           config: configPda,
@@ -551,7 +551,7 @@ describe("admin-extended", () => {
 
       // Verify burn also works with the same user's burner role
       const burnSig = await program.methods
-        .burnTokens(new anchor.BN(50))
+        .burn(new anchor.BN(50))
         .accountsStrict({
           burner: multiRoleUser.publicKey,
           config: configPda,
@@ -588,7 +588,7 @@ describe("admin-extended", () => {
 
       // Mint succeeds
       await program.methods
-        .mintTokens(new anchor.BN(1_000))
+        .mint(new anchor.BN(1_000))
         .accountsStrict({
           minter: tempMinter.publicKey,
           config: configPda,
@@ -606,7 +606,7 @@ describe("admin-extended", () => {
       // Mint should fail
       try {
         await program.methods
-          .mintTokens(new anchor.BN(1_000))
+          .mint(new anchor.BN(1_000))
           .accountsStrict({
             minter: tempMinter.publicKey,
             config: configPda,
@@ -640,7 +640,7 @@ describe("admin-extended", () => {
       // Verify blocked
       try {
         await program.methods
-          .mintTokens(new anchor.BN(500))
+          .mint(new anchor.BN(500))
           .accountsStrict({
             minter: tempMinter.publicKey,
             config: configPda,
@@ -661,7 +661,7 @@ describe("admin-extended", () => {
 
       // Now mint should succeed
       const mintSig = await program.methods
-        .mintTokens(new anchor.BN(500))
+        .mint(new anchor.BN(500))
         .accountsStrict({
           minter: tempMinter.publicKey,
           config: configPda,
@@ -701,7 +701,7 @@ describe("admin-extended", () => {
 
       // Mint 100
       await program.methods
-        .mintTokens(new anchor.BN(100))
+        .mint(new anchor.BN(100))
         .accountsStrict({
           minter: qMinter.publicKey,
           config: configPda,
@@ -715,7 +715,7 @@ describe("admin-extended", () => {
 
       // Mint 200
       await program.methods
-        .mintTokens(new anchor.BN(200))
+        .mint(new anchor.BN(200))
         .accountsStrict({
           minter: qMinter.publicKey,
           config: configPda,
@@ -742,7 +742,7 @@ describe("admin-extended", () => {
       const roleA = rolePda(configPda, 0, minterA.publicKey);
 
       await program.methods
-        .mintTokens(new anchor.BN(900))
+        .mint(new anchor.BN(900))
         .accountsStrict({
           minter: minterA.publicKey,
           config: configPda,
@@ -762,7 +762,7 @@ describe("admin-extended", () => {
 
       // Minter B should be able to mint full 1000 despite A being at 90%
       await program.methods
-        .mintTokens(new anchor.BN(1_000))
+        .mint(new anchor.BN(1_000))
         .accountsStrict({
           minter: minterB.publicKey,
           config: configPda,
@@ -780,7 +780,7 @@ describe("admin-extended", () => {
       expect(roleDataB.mintedAmount.toNumber()).to.equal(1_000);
     });
 
-    it("update_minter_quota to lower value doesn't affect already-minted", async () => {
+    it("update_minter to lower value doesn't affect already-minted", async () => {
       await ensureUnpaused();
       const qMinter = Keypair.generate();
       await fundKeypair(qMinter);
@@ -792,7 +792,7 @@ describe("admin-extended", () => {
 
       // Mint 500
       await program.methods
-        .mintTokens(new anchor.BN(500))
+        .mint(new anchor.BN(500))
         .accountsStrict({
           minter: qMinter.publicKey,
           config: configPda,
@@ -814,7 +814,7 @@ describe("admin-extended", () => {
 
       // Can mint 100 more (600 - 500)
       await program.methods
-        .mintTokens(new anchor.BN(100))
+        .mint(new anchor.BN(100))
         .accountsStrict({
           minter: qMinter.publicKey,
           config: configPda,
@@ -829,7 +829,7 @@ describe("admin-extended", () => {
       // Cannot mint even 1 more
       try {
         await program.methods
-          .mintTokens(new anchor.BN(1))
+          .mint(new anchor.BN(1))
           .accountsStrict({
             minter: qMinter.publicKey,
             config: configPda,

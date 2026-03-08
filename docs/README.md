@@ -38,17 +38,17 @@ solana program deploy target/deploy/sss_transfer_hook.so --program-id target/dep
 ## Create an SSS-1 Stablecoin
 
 ```typescript
-import { SolanaStablecoin, Preset } from "@sss/sdk";
+import { SolanaStablecoin, Preset } from "@stbr/sss-token";
 
 const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(
   connection,
-  wallet,
   {
     name: "USD Coin",
     symbol: "USDC",
     uri: "https://example.com/usdc.json",
     decimals: 6,
     preset: Preset.SSS_1,
+    authority: keypair,
   }
 );
 
@@ -64,11 +64,11 @@ await stablecoin.updateMinterQuota({
 });
 
 // Mint tokens
-await stablecoin.mintTokens({
-  amount: new BN(1_000_000),
-  to: recipientAta,
-  minter: minterPubkey,
-});
+await stablecoin.mint(
+  recipientAta,
+  new BN(1_000_000),
+  minterPubkey,
+);
 ```
 
 ## Create an SSS-2 Stablecoin (with Compliance)
@@ -76,25 +76,25 @@ await stablecoin.mintTokens({
 ```typescript
 const { stablecoin } = await SolanaStablecoin.create(
   connection,
-  wallet,
   {
     name: "Regulated USD",
     symbol: "rUSD",
     uri: "https://example.com/rusd.json",
     decimals: 6,
     preset: Preset.SSS_2, // Enables transfer hook + permanent delegate
+    authority: keypair,
   }
 );
 
 // Compliance operations
-await stablecoin.compliance.blacklistAdd({
-  user: sanctionedAddress,
-  blacklister: blacklisterPubkey,
-});
-await stablecoin.compliance.seize({
-  from: sanctionedTokenAccount,
-  to: treasuryAta,
-});
+await stablecoin.compliance.blacklistAdd(
+  sanctionedAddress,
+  blacklisterPubkey,
+);
+await stablecoin.compliance.seize(
+  sanctionedTokenAccount,
+  treasuryAta,
+);
 ```
 
 ## Program IDs

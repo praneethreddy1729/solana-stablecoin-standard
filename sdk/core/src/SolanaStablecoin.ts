@@ -8,6 +8,7 @@ import {
   TransactionSignature,
 } from "@solana/web3.js";
 import { TOKEN_2022_PROGRAM_ID, getMint } from "@solana/spl-token";
+import BN from "bn.js";
 import {
   SSS_TOKEN_PROGRAM_ID,
   SSS_TRANSFER_HOOK_PROGRAM_ID,
@@ -23,12 +24,8 @@ import {
   Preset,
   StablecoinConfig,
   InitializeParams,
-  MintParams,
-  BurnParams,
   FreezeThawParams,
   PauseParams,
-  BlacklistParams,
-  SeizeParams,
   UpdateRolesParams,
   UpdateMinterQuotaParams,
 } from "./types";
@@ -42,16 +39,16 @@ export class SolanaStablecoin {
   readonly program: Program<SssToken>;
   readonly hookProgram: Program<SssTransferHook>;
   readonly connection: Connection;
-  readonly mint: PublicKey;
+  readonly mintAddress: PublicKey;
   readonly configPda: PublicKey;
   readonly configBump: number;
   readonly programId: PublicKey;
   readonly hookProgramId: PublicKey;
 
   public compliance: {
-    blacklistAdd: (params: BlacklistParams) => Promise<TransactionSignature>;
-    blacklistRemove: (params: BlacklistParams) => Promise<TransactionSignature>;
-    seize: (params: SeizeParams) => Promise<TransactionSignature>;
+    blacklistAdd: (address: PublicKey, blacklister: PublicKey, reason?: string) => Promise<TransactionSignature>;
+    blacklistRemove: (address: PublicKey, blacklister: PublicKey) => Promise<TransactionSignature>;
+    seize: (frozenAccount: PublicKey, treasury: PublicKey) => Promise<TransactionSignature>;
     isBlacklisted: (user: PublicKey) => Promise<boolean>;
   };
 
@@ -64,7 +61,7 @@ export class SolanaStablecoin {
     hookProgram: Program<SssTransferHook>
   ) {
     this.connection = connection;
-    this.mint = mint;
+    this.mintAddress = mint;
     this.programId = programId;
     this.hookProgramId = hookProgramId;
     this.program = program;
@@ -102,11 +99,14 @@ export class SolanaStablecoin {
    */
   static async create(
     connection: Connection,
-    wallet: Wallet,
     params: InitializeParams,
     programId: PublicKey = SSS_TOKEN_PROGRAM_ID,
     hookProgramId: PublicKey = SSS_TRANSFER_HOOK_PROGRAM_ID
   ): Promise<{ stablecoin: SolanaStablecoin; mintKeypair: Keypair; txSig: TransactionSignature }> {
+    const wallet = params.authority instanceof Keypair
+      ? new Wallet(params.authority)
+      : params.authority;
+
     const { program, hookProgram } = SolanaStablecoin.buildPrograms(
       connection,
       wallet,
@@ -198,7 +198,7 @@ export class SolanaStablecoin {
   async getTotalSupply(): Promise<bigint> {
     const mintInfo = await getMint(
       this.connection,
-      this.mint,
+      this.mintAddress,
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
@@ -213,45 +213,45 @@ export class SolanaStablecoin {
   }
 
   /** Mint tokens (requires Minter role). */
-  async mintTokens(params: MintParams): Promise<TransactionSignature> {
+  async mint(to: PublicKey, amount: BN, minter: PublicKey): Promise<TransactionSignature> {
     const [minterRole] = findRolePda(
       this.configPda,
       RoleType.Minter,
-      params.minter,
+      minter,
       this.programId
     );
 
     return this.program.methods
-      .mintTokens(params.amount)
+      .mint(amount)
       .accountsStrict({
-        minter: params.minter,
+        minter,
         config: this.configPda,
         minterRole,
-        mint: this.mint,
-        to: params.to,
+        mint: this.mintAddress,
+        to,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
   }
 
   /** Burn tokens (requires Burner role). */
-  async burn(params: BurnParams): Promise<TransactionSignature> {
+  async burn(from: PublicKey, amount: BN, burner: PublicKey, fromAuthority?: PublicKey): Promise<TransactionSignature> {
     const [burnerRole] = findRolePda(
       this.configPda,
       RoleType.Burner,
-      params.burner,
+      burner,
       this.programId
     );
 
     return this.program.methods
-      .burnTokens(params.amount)
+      .burn(amount)
       .accountsStrict({
-        burner: params.burner,
+        burner,
         config: this.configPda,
         burnerRole,
-        mint: this.mint,
-        from: params.from,
-        fromAuthority: params.fromAuthority,
+        mint: this.mintAddress,
+        from,
+        fromAuthority: fromAuthority ?? burner,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
@@ -272,7 +272,7 @@ export class SolanaStablecoin {
         freezer: params.freezer,
         config: this.configPda,
         freezerRole,
-        mint: this.mint,
+        mint: this.mintAddress,
         tokenAccount: params.tokenAccount,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
@@ -294,7 +294,7 @@ export class SolanaStablecoin {
         freezer: params.freezer,
         config: this.configPda,
         freezerRole,
-        mint: this.mint,
+        mint: this.mintAddress,
         tokenAccount: params.tokenAccount,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
@@ -367,7 +367,7 @@ export class SolanaStablecoin {
     const provider = this.program.provider as AnchorProvider;
 
     return this.program.methods
-      .updateMinterQuota(params.newQuota)
+      .updateMinter(params.newQuota)
       .accountsStrict({
         authority: provider.wallet.publicKey,
         config: this.configPda,
@@ -420,75 +420,78 @@ export class SolanaStablecoin {
   // --- Compliance sub-object methods (SSS-2) ---
 
   private async _blacklistAdd(
-    params: BlacklistParams
+    address: PublicKey,
+    blacklister: PublicKey,
+    reason?: string
   ): Promise<TransactionSignature> {
     const [blacklisterRole] = findRolePda(
       this.configPda,
       RoleType.Blacklister,
-      params.blacklister,
+      blacklister,
       this.programId
     );
     const [blacklistEntry] = findBlacklistPda(
-      this.mint,
-      params.user,
+      this.mintAddress,
+      address,
       this.hookProgramId
     );
 
     return this.program.methods
-      .addToBlacklist(params.user, params.reason ?? "")
+      .addToBlacklist(address, reason ?? "")
       .accountsStrict({
-        blacklister: params.blacklister,
+        blacklister,
         config: this.configPda,
         blacklisterRole,
         hookProgram: this.hookProgramId,
         blacklistEntry,
-        mint: this.mint,
+        mint: this.mintAddress,
         systemProgram: SystemProgram.programId,
       })
       .rpc();
   }
 
   private async _blacklistRemove(
-    params: BlacklistParams
+    address: PublicKey,
+    blacklister: PublicKey
   ): Promise<TransactionSignature> {
     const [blacklisterRole] = findRolePda(
       this.configPda,
       RoleType.Blacklister,
-      params.blacklister,
+      blacklister,
       this.programId
     );
     const [blacklistEntry] = findBlacklistPda(
-      this.mint,
-      params.user,
+      this.mintAddress,
+      address,
       this.hookProgramId
     );
 
     return this.program.methods
-      .removeFromBlacklist(params.user)
+      .removeFromBlacklist(address)
       .accountsStrict({
-        blacklister: params.blacklister,
+        blacklister,
         config: this.configPda,
         blacklisterRole,
         hookProgram: this.hookProgramId,
         blacklistEntry,
-        mint: this.mint,
+        mint: this.mintAddress,
       })
       .rpc();
   }
 
-  private async _seize(params: SeizeParams): Promise<TransactionSignature> {
+  private async _seize(frozenAccount: PublicKey, treasury: PublicKey): Promise<TransactionSignature> {
     const provider = this.program.provider as AnchorProvider;
-    const [extraAccountMetasPda] = findExtraAccountMetasPda(this.mint, this.hookProgramId);
+    const [extraAccountMetasPda] = findExtraAccountMetasPda(this.mintAddress, this.hookProgramId);
     // Derive blacklist PDAs for the from/to token account owners.
     // These may not exist on-chain (non-blacklisted) but must be passed for the hook.
-    const fromOwner = (await this.connection.getParsedAccountInfo(params.from))
+    const fromOwner = (await this.connection.getParsedAccountInfo(frozenAccount))
       ?.value?.data as any;
-    const toOwner = (await this.connection.getParsedAccountInfo(params.to))
+    const toOwner = (await this.connection.getParsedAccountInfo(treasury))
       ?.value?.data as any;
     const fromOwnerKey = new PublicKey(fromOwner?.parsed?.info?.owner ?? PublicKey.default);
     const toOwnerKey = new PublicKey(toOwner?.parsed?.info?.owner ?? PublicKey.default);
-    const [senderBlacklist] = findBlacklistPda(this.mint, fromOwnerKey, this.hookProgramId);
-    const [receiverBlacklist] = findBlacklistPda(this.mint, toOwnerKey, this.hookProgramId);
+    const [senderBlacklist] = findBlacklistPda(this.mintAddress, fromOwnerKey, this.hookProgramId);
+    const [receiverBlacklist] = findBlacklistPda(this.mintAddress, toOwnerKey, this.hookProgramId);
 
     const [seizerRole] = findRolePda(this.configPda, 5, provider.wallet.publicKey, this.program.programId);
 
@@ -498,9 +501,9 @@ export class SolanaStablecoin {
         authority: provider.wallet.publicKey,
         config: this.configPda,
         seizerRole,
-        mint: this.mint,
-        from: params.from,
-        to: params.to,
+        mint: this.mintAddress,
+        from: frozenAccount,
+        to: treasury,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .remainingAccounts([
@@ -515,7 +518,7 @@ export class SolanaStablecoin {
 
   private async _isBlacklisted(user: PublicKey): Promise<boolean> {
     const [blacklistEntry] = findBlacklistPda(
-      this.mint,
+      this.mintAddress,
       user,
       this.hookProgramId
     );

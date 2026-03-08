@@ -143,7 +143,7 @@ describe("invariants", () => {
     // Set minter quota
     const minterRole = rolePda(configPda, 0, minter.publicKey);
     await program.methods
-      .updateMinterQuota(new anchor.BN(10_000_000_000))
+      .updateMinter(new anchor.BN(10_000_000_000))
       .accountsStrict({
         authority: authority.publicKey,
         config: configPda,
@@ -170,7 +170,7 @@ describe("invariants", () => {
 
     const mintAmount = 1_000_000;
     const sig = await program.methods
-      .mintTokens(new anchor.BN(mintAmount))
+      .mint(new anchor.BN(mintAmount))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -215,7 +215,7 @@ describe("invariants", () => {
 
     const burnAmount = 200_000;
     const sig = await program.methods
-      .burnTokens(new anchor.BN(burnAmount))
+      .burn(new anchor.BN(burnAmount))
       .accountsStrict({
         burner: burner.publicKey,
         config: configPda,
@@ -255,7 +255,7 @@ describe("invariants", () => {
     // Mint additional tokens
     const mintAmount = 500_000;
     let sig = await program.methods
-      .mintTokens(new anchor.BN(mintAmount))
+      .mint(new anchor.BN(mintAmount))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -271,7 +271,7 @@ describe("invariants", () => {
     // Burn some more
     const burnAmount = 100_000;
     sig = await program.methods
-      .burnTokens(new anchor.BN(burnAmount))
+      .burn(new anchor.BN(burnAmount))
       .accountsStrict({
         burner: burner.publicKey,
         config: configPda,
@@ -343,7 +343,7 @@ describe("invariants", () => {
     // Attempt mint (should fail)
     try {
       await program.methods
-        .mintTokens(new anchor.BN(1_000))
+        .mint(new anchor.BN(1_000))
         .accountsStrict({
           minter: minter.publicKey,
           config: configPda,
@@ -416,7 +416,7 @@ describe("invariants", () => {
     // Attempt burn on frozen account (should fail)
     try {
       await program.methods
-        .burnTokens(new anchor.BN(1_000))
+        .burn(new anchor.BN(1_000))
         .accountsStrict({
           burner: burner.publicKey,
           config: configPda,
@@ -489,7 +489,7 @@ describe("invariants", () => {
     // Attempt mint with deactivated role (should fail)
     try {
       await program.methods
-        .mintTokens(new anchor.BN(1_000))
+        .mint(new anchor.BN(1_000))
         .accountsStrict({
           minter: minter.publicKey,
           config: configPda,
@@ -541,7 +541,7 @@ describe("invariants", () => {
 
     // Mint
     await program.methods
-      .mintTokens(new anchor.BN(100_000))
+      .mint(new anchor.BN(100_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
@@ -711,7 +711,7 @@ describe("invariants", () => {
     const minterRole = rolePda(configPda, 0, minter.publicKey);
 
     const sig = await program.methods
-      .mintTokens(new anchor.BN(250_000))
+      .mint(new anchor.BN(250_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,

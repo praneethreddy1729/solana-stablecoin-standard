@@ -304,11 +304,11 @@ describe("sss-token", () => {
   // 3. Minter Quota
   // ============================================================
 
-  describe("update_minter_quota", () => {
+  describe("update_minter", () => {
     it("sets minter quota", async () => {
       const role = rolePda(configPda, 0, minter.publicKey);
       await program.methods
-        .updateMinterQuota(new anchor.BN(1_000_000_000))
+        .updateMinter(new anchor.BN(1_000_000_000))
         .accountsStrict({
           authority: authority.publicKey,
           config: configPda,
@@ -324,7 +324,7 @@ describe("sss-token", () => {
       const role = rolePda(configPda, 0, minter.publicKey);
       try {
         await program.methods
-          .updateMinterQuota(new anchor.BN(999))
+          .updateMinter(new anchor.BN(999))
           .accountsStrict({
             authority: minter.publicKey,
             config: configPda,
@@ -343,7 +343,7 @@ describe("sss-token", () => {
   // 4. Mint Tokens
   // ============================================================
 
-  describe("mint_tokens", () => {
+  describe("mint", () => {
     let recipientAta: PublicKey;
 
     before(async () => {
@@ -353,7 +353,7 @@ describe("sss-token", () => {
     it("mints tokens successfully", async () => {
       const minterRole = rolePda(configPda, 0, minter.publicKey);
       const sig = await program.methods
-        .mintTokens(new anchor.BN(500_000))
+        .mint(new anchor.BN(500_000))
         .accountsStrict({
           minter: minter.publicKey,
           config: configPda,
@@ -378,7 +378,7 @@ describe("sss-token", () => {
     it("tracks minted_amount cumulatively", async () => {
       const minterRole = rolePda(configPda, 0, minter.publicKey);
       await program.methods
-        .mintTokens(new anchor.BN(300_000))
+        .mint(new anchor.BN(300_000))
         .accountsStrict({
           minter: minter.publicKey,
           config: configPda,
@@ -398,7 +398,7 @@ describe("sss-token", () => {
       const minterRole = rolePda(configPda, 0, minter.publicKey);
       try {
         await program.methods
-          .mintTokens(new anchor.BN(1_000_000_000)) // way over quota
+          .mint(new anchor.BN(1_000_000_000)) // way over quota
           .accountsStrict({
             minter: minter.publicKey,
             config: configPda,
@@ -431,7 +431,7 @@ describe("sss-token", () => {
       const minterRole = rolePda(configPda, 0, minter.publicKey);
       try {
         await program.methods
-          .mintTokens(new anchor.BN(1_000))
+          .mint(new anchor.BN(1_000))
           .accountsStrict({
             minter: minter.publicKey,
             config: configPda,
@@ -464,7 +464,7 @@ describe("sss-token", () => {
   // 5. Burn Tokens
   // ============================================================
 
-  describe("burn_tokens", () => {
+  describe("burn", () => {
     it("burns tokens successfully", async () => {
       const burnerRole = rolePda(configPda, 1, burner.publicKey);
       const recipientAta = getAssociatedTokenAddressSync(
@@ -483,7 +483,7 @@ describe("sss-token", () => {
       const beforeAmount = Number(beforeAccount.amount);
 
       const burnSig = await program.methods
-        .burnTokens(new anchor.BN(100_000))
+        .burn(new anchor.BN(100_000))
         .accountsStrict({
           burner: burner.publicKey,
           config: configPda,
@@ -528,7 +528,7 @@ describe("sss-token", () => {
 
       try {
         await program.methods
-          .burnTokens(new anchor.BN(1_000))
+          .burn(new anchor.BN(1_000))
           .accountsStrict({
             burner: burner.publicKey,
             config: configPda,

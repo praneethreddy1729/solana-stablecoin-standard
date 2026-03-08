@@ -1,6 +1,7 @@
 import { Command } from "commander";
-import { SolanaStablecoin, Preset } from "../../../core/src";
-import { loadWallet, getConnection } from "../helpers";
+import { SolanaStablecoin, Preset, Presets } from "../../../core/src";
+import { loadKeypair, getConnection } from "../helpers";
+import { parseConfigFile } from "../config-parser";
 
 const PRESET_MAP: Record<string, Preset> = {
   SSS_1: Preset.SSS_1,
@@ -12,11 +13,12 @@ const PRESET_MAP: Record<string, Preset> = {
 
 export const initCommand = new Command("init")
   .description("Create a new stablecoin")
-  .requiredOption("--name <name>", "Token name")
-  .requiredOption("--symbol <symbol>", "Token symbol")
+  .option("--name <name>", "Token name")
+  .option("--symbol <symbol>", "Token symbol")
   .option("--uri <uri>", "Metadata URI", "")
   .option("--decimals <n>", "Decimals", "6")
   .option("--preset <preset>", "Preset: SSS-1, SSS-2, or CUSTOM", "SSS_1")
+  .option("--custom <path>", "Custom config file (JSON or TOML)")
   .option("--transfer-hook", "Enable transfer hook (CUSTOM preset)")
   .option("--permanent-delegate", "Enable permanent delegate (CUSTOM preset)")
   .option("--default-frozen", "Default account state frozen (CUSTOM preset)")
@@ -24,25 +26,58 @@ export const initCommand = new Command("init")
   .option("--keypair <path>", "Keypair file path")
   .action(async (opts) => {
     const connection = getConnection(opts.rpcUrl);
-    const wallet = loadWallet(opts.keypair);
+    const authority = loadKeypair(opts.keypair);
 
-    const preset = PRESET_MAP[opts.preset.toUpperCase()] ?? Preset.SSS_1;
+    let name: string;
+    let symbol: string;
+    let uri: string;
+    let decimals: number;
+    let preset: Preset;
+    let enableTransferHook: boolean;
+    let enablePermanentDelegate: boolean;
+    let defaultAccountFrozen: boolean;
 
-    console.log(`Creating stablecoin: ${opts.name} (${opts.symbol})`);
+    if (opts.custom) {
+      const config = parseConfigFile(opts.custom);
+      name = config.name;
+      symbol = config.symbol;
+      uri = config.uri ?? "";
+      decimals = config.decimals ?? 6;
+      const presetStr = config.preset?.toUpperCase() ?? "SSS_1";
+      preset = PRESET_MAP[presetStr] ?? Preset.Custom;
+      enableTransferHook = config.enableTransferHook ?? false;
+      enablePermanentDelegate = config.enablePermanentDelegate ?? false;
+      defaultAccountFrozen = config.defaultAccountFrozen ?? false;
+    } else {
+      if (!opts.name || !opts.symbol) {
+        console.error("Error: --name and --symbol are required (or use --custom <config-file>)");
+        process.exit(1);
+      }
+      name = opts.name;
+      symbol = opts.symbol;
+      uri = opts.uri;
+      decimals = parseInt(opts.decimals, 10);
+      preset = PRESET_MAP[opts.preset.toUpperCase()] ?? Preset.SSS_1;
+      enableTransferHook = opts.transferHook ?? false;
+      enablePermanentDelegate = opts.permanentDelegate ?? false;
+      defaultAccountFrozen = opts.defaultFrozen ?? false;
+    }
+
+    console.log(`Creating stablecoin: ${name} (${symbol})`);
     console.log(`Preset: ${preset}`);
 
     const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(
       connection,
-      wallet,
       {
-        name: opts.name,
-        symbol: opts.symbol,
-        uri: opts.uri,
-        decimals: parseInt(opts.decimals, 10),
+        name,
+        symbol,
+        uri,
+        decimals,
         preset,
-        enableTransferHook: opts.transferHook ?? false,
-        enablePermanentDelegate: opts.permanentDelegate ?? false,
-        defaultAccountFrozen: opts.defaultFrozen ?? false,
+        enableTransferHook,
+        enablePermanentDelegate,
+        defaultAccountFrozen,
+        authority,
       }
     );
 

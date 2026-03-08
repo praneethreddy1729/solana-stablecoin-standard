@@ -58,17 +58,17 @@ The test validator deactivates SIMD-0219 (feature `CxeBn9PVeeXbmjbNwLv6U4C6svNxn
 ### Create an SSS-1 Token (Basic)
 
 ```typescript
-import { SolanaStablecoin, Preset } from "@sss/sdk";
+import { SolanaStablecoin, Preset } from "@stbr/sss-token";
 
 const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(
   connection,
-  wallet,
   {
     name: "TestUSD",
     symbol: "TUSD",
     uri: "https://example.com/tusd.json",
     decimals: 6,
     preset: Preset.SSS_1,
+    authority: keypair,
   }
 );
 ```
@@ -78,13 +78,13 @@ const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(
 ```typescript
 const { stablecoin } = await SolanaStablecoin.create(
   connection,
-  wallet,
   {
     name: "Regulated USD",
     symbol: "rUSD",
     uri: "https://example.com/rusd.json",
     decimals: 6,
     preset: Preset.SSS_2,
+    authority: keypair,
   }
 );
 ```
@@ -94,28 +94,28 @@ const { stablecoin } = await SolanaStablecoin.create(
 ```typescript
 import BN from "bn.js";
 
-await stablecoin.mintTokens({
-  amount: new BN(1_000_000),   // 1.0 TUSD (6 decimals)
-  to: recipientTokenAccount,
-  minter: minterKeypair.publicKey,
-});
+await stablecoin.mint(
+  recipientTokenAccount,
+  new BN(1_000_000),           // 1.0 TUSD (6 decimals)
+  minterKeypair.publicKey,
+);
 ```
 
 ### Compliance Operations (SSS-2)
 
 ```typescript
 // Blacklist a sanctioned address
-await stablecoin.compliance.blacklistAdd({
-  user: sanctionedWallet,
-  blacklister: blacklisterKeypair.publicKey,
-  reason: "OFAC SDN List",
-});
+await stablecoin.compliance.blacklistAdd(
+  sanctionedWallet,
+  blacklisterKeypair.publicKey,
+  "OFAC SDN List",
+);
 
 // Seize tokens from blacklisted account
-await stablecoin.compliance.seize({
-  from: sanctionedTokenAccount,
-  to: treasuryTokenAccount,
-});
+await stablecoin.compliance.seize(
+  sanctionedTokenAccount,
+  treasuryTokenAccount,
+);
 
 // Check blacklist status
 const isBlacklisted = await stablecoin.compliance.isBlacklisted(someWallet);
@@ -220,14 +220,14 @@ PDA existence means the address is blacklisted. Closed on removal.
 | Instruction | Signer | Description |
 |-------------|--------|-------------|
 | `initialize` | Authority | Create mint with Token-2022 extensions + config PDA |
-| `mint_tokens` | Minter | Mint tokens to a token account (checks pause + quota) |
-| `burn_tokens` | Burner | Burn tokens from a token account (requires owner co-sign) |
+| `mint` | Minter | Mint tokens to a token account (checks pause + quota) |
+| `burn` | Burner | Burn tokens from a token account (requires owner co-sign) |
 | `freeze_account` | Freezer | Freeze a token account via Token-2022 |
 | `thaw_account` | Freezer | Thaw a frozen token account |
 | `pause` | Pauser | Set global pause flag (blocks mint, burn, transfer) |
 | `unpause` | Pauser | Clear global pause flag |
 | `update_roles` | Authority | Create or update a role assignment |
-| `update_minter_quota` | Authority | Set a minter's cumulative mint cap |
+| `update_minter` | Authority | Set a minter's cumulative mint cap |
 | `transfer_authority` | Authority | Propose a new authority (two-step) |
 | `accept_authority` | Pending Authority | Accept the authority transfer |
 | `cancel_authority_transfer` | Authority | Cancel a pending authority transfer |
@@ -377,15 +377,15 @@ The SDK exposes the `SolanaStablecoin` class as the primary interface.
 ```typescript
 class SolanaStablecoin {
   // Factory methods
-  static create(connection, wallet, params: InitializeParams): Promise<{ stablecoin, mintKeypair, txSig }>
+  static create(connection, params: InitializeParams & { authority: Keypair }): Promise<{ stablecoin, mintKeypair, txSig }>
   static load(connection, wallet, mintAddress): Promise<SolanaStablecoin>
 
   // Read
   getConfig(): Promise<StablecoinConfig>
 
   // Core operations
-  mintTokens(params: MintParams): Promise<TransactionSignature>
-  burn(params: BurnParams): Promise<TransactionSignature>
+  mint(to: PublicKey, amount: BN, minter: PublicKey): Promise<TransactionSignature>
+  burn(from: PublicKey, amount: BN, burner: PublicKey, fromAuthority?: PublicKey): Promise<TransactionSignature>
   freeze(params: FreezeThawParams): Promise<TransactionSignature>
   thaw(params: FreezeThawParams): Promise<TransactionSignature>
   pause(params: PauseParams): Promise<TransactionSignature>
@@ -402,9 +402,9 @@ class SolanaStablecoin {
 
   // SSS-2 Compliance
   compliance: {
-    blacklistAdd(params: BlacklistAddParams): Promise<TransactionSignature>
-    blacklistRemove(params: BlacklistRemoveParams): Promise<TransactionSignature>
-    seize(params: SeizeParams): Promise<TransactionSignature>
+    blacklistAdd(address: PublicKey, blacklister: PublicKey, reason?: string): Promise<TransactionSignature>
+    blacklistRemove(address: PublicKey, blacklister: PublicKey): Promise<TransactionSignature>
+    seize(frozenAccount: PublicKey, treasury: PublicKey): Promise<TransactionSignature>
     isBlacklisted(user: PublicKey): Promise<boolean>
   }
 }
@@ -413,7 +413,7 @@ class SolanaStablecoin {
 ### PDA Helpers
 
 ```typescript
-import { findConfigPda, findRolePda, findBlacklistPda, findExtraAccountMetasPda } from "@sss/sdk";
+import { findConfigPda, findRolePda, findBlacklistPda, findExtraAccountMetasPda } from "@stbr/sss-token";
 
 const [configPda, bump] = findConfigPda(mintPublicKey);
 const [rolePda]         = findRolePda(configPda, RoleType.Minter, assignee);
@@ -424,10 +424,10 @@ const [extraMetas]      = findExtraAccountMetasPda(mintPublicKey);
 ### Error Handling
 
 ```typescript
-import { parseSSSError } from "@sss/sdk";
+import { parseSSSError } from "@stbr/sss-token";
 
 try {
-  await stablecoin.mintTokens({ ... });
+  await stablecoin.mint(recipientAta, amount, minterPubkey);
 } catch (err) {
   const parsed = parseSSSError(err);
   if (parsed) {
@@ -487,14 +487,14 @@ All state-changing instructions emit Anchor events for off-chain indexing.
 | Event | Fields | Emitted By |
 |-------|--------|------------|
 | `StablecoinInitialized` | mint, authority, decimals, name, symbol, enable_transfer_hook, enable_permanent_delegate, default_account_frozen | `initialize` |
-| `TokensMinted` | mint, to, amount, minter | `mint_tokens` |
-| `TokensBurned` | mint, from, amount, burner | `burn_tokens` |
+| `TokensMinted` | mint, to, amount, minter | `mint` |
+| `TokensBurned` | mint, from, amount, burner | `burn` |
 | `AccountFrozen` | mint, account, freezer | `freeze_account` |
 | `AccountThawed` | mint, account, freezer | `thaw_account` |
 | `TokenPaused` | mint, pauser | `pause` |
 | `TokenUnpaused` | mint, pauser | `unpause` |
 | `RoleUpdated` | config, assignee, role_type, is_active | `update_roles` |
-| `MinterQuotaUpdated` | config, minter, new_quota | `update_minter_quota` |
+| `MinterQuotaUpdated` | config, minter, new_quota | `update_minter` |
 | `AuthorityTransferInitiated` | config, current_authority, pending_authority | `transfer_authority` |
 | `AuthorityTransferAccepted` | config, old_authority, new_authority | `accept_authority` |
 | `AuthorityTransferCancelled` | config, authority | `cancel_authority_transfer` |

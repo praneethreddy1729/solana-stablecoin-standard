@@ -22,12 +22,12 @@ export const burnCommand = new Command("burn")
       ? new PublicKey(opts.fromAuthority)
       : wallet.publicKey;
 
-    const txSig = await stablecoin.burn({
-      amount: new BN(opts.amount),
-      from: new PublicKey(opts.from),
-      fromAuthority,
+    const txSig = await stablecoin.burn(
+      new PublicKey(opts.from),
+      new BN(opts.amount),
       burner,
-    });
+      fromAuthority,
+    );
 
     console.log(`Burned ${opts.amount} tokens from ${opts.from}`);
     console.log(`Tx: ${txSig}`);

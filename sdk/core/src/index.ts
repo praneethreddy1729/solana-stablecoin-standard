@@ -17,6 +17,7 @@ export {
 export {
   RoleType,
   Preset,
+  Presets,
   type StablecoinConfig,
   type RoleAssignment,
   type BlacklistEntry,

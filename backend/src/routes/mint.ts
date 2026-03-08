@@ -6,7 +6,8 @@ import {
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
-import { screenAddress } from "../services/compliance";
+import { screenAddress, addAuditEntry } from "../services/compliance";
+import { sendWebhook } from "../services/webhook";
 
 interface MintBody {
   to: string;
@@ -46,21 +47,35 @@ export async function mintRoutes(app: FastifyInstance): Promise<void> {
     try {
       const sdk = app.sdk;
       const toAta = getAssociatedTokenAddressSync(
-        sdk.mint,
+        sdk.mintAddress,
         toPubkey,
         true,
         TOKEN_2022_PROGRAM_ID
       );
 
-      const signature = await sdk.mintTokens({
-        amount: amountBn,
-        to: toAta,
-        minter: app.authority.publicKey,
+      const signature = await sdk.mint(
+        toAta,
+        amountBn,
+        app.authority.publicKey,
+      );
+
+      const mintAddress = sdk.mintAddress.toBase58();
+
+      addAuditEntry({
+        timestamp: new Date().toISOString(),
+        action: "mint",
+        actor: app.authority.publicKey.toBase58(),
+        txSignature: signature,
+        details: { mint: mintAddress, to, amount },
       });
+
+      sendWebhook("mint", { signature, mint: mintAddress, to, amount }).catch(
+        () => {}
+      );
 
       return reply.status(200).send({
         signature,
-        mint: sdk.mint.toBase58(),
+        mint: mintAddress,
         to,
         amount,
       });

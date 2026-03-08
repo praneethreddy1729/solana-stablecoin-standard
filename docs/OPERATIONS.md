@@ -40,13 +40,14 @@ Program IDs (from `Anchor.toml`):
 **SSS-1 (basic)** using the SDK:
 ```typescript
 const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(
-  connection, wallet,
+  connection,
   {
     name: "USD Stablecoin",
     symbol: "USDS",
     uri: "https://your-domain.com/metadata.json",
     decimals: 6,
     preset: Preset.SSS_1,
+    authority: keypair,
   }
 );
 ```
@@ -54,13 +55,14 @@ const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(
 **SSS-2 (compliance)** using the SDK:
 ```typescript
 const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(
-  connection, wallet,
+  connection,
   {
     name: "Regulated USD",
     symbol: "rUSD",
     uri: "https://your-domain.com/metadata.json",
     decimals: 6,
     preset: Preset.SSS_2,
+    authority: keypair,
   }
 );
 ```
@@ -194,11 +196,11 @@ To increase a minter's capacity, update the quota to a higher value. The `minted
 ### Minting Tokens
 
 ```typescript
-await stablecoin.mintTokens({
-  amount: new BN(1_000_000),
-  to: recipientAta,
-  minter: minterPubkey,
-});
+await stablecoin.mint(
+  recipientAta,
+  new BN(1_000_000),
+  minterPubkey,
+);
 ```
 
 If `default_account_frozen` is enabled, the instruction automatically thaws the recipient's account before minting.
@@ -212,7 +214,7 @@ await stablecoin.pause({ pauser: pauserPubkey });
 ```
 
 **Scope of pause**:
-- SSS-1: Blocks `mint_tokens` and `burn_tokens`
+- SSS-1: Blocks `mint` and `burn`
 - SSS-2: Also blocks all transfers (via transfer hook pause check at config byte offset 145)
 
 ### Resume Operations

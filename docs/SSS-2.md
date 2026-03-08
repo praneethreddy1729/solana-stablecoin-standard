@@ -166,7 +166,7 @@ If `owner_delegate` matches the permanent delegate, all blacklist and pause chec
 When `default_account_frozen = true`, every new Associated Token Account for this mint starts frozen. This means:
 
 1. Users cannot transfer tokens until their account is explicitly thawed
-2. The `mint_tokens` instruction automatically thaws the recipient before minting (if `config.default_account_frozen && to.is_frozen()`)
+2. The `mint` instruction automatically thaws the recipient before minting (if `config.default_account_frozen && to.is_frozen()`)
 3. Provides a "whitelist by default" model where accounts must be approved before use
 
 Note: The SDK's `Preset.SSS_2` sets `default_account_frozen = false`. To enable it, use `Preset.Custom` with `defaultAccountFrozen: true`.
