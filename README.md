@@ -11,7 +11,7 @@ SSS defines two composable specification levels. Choose the one that matches you
 | Mint / Burn | Yes | Yes |
 | Freeze / Thaw | Yes | Yes |
 | Pause / Unpause | Yes | Yes |
-| Role-Based Access Control (6 roles) | Yes | Yes |
+| Role-Based Access Control (7 roles) | Yes | Yes |
 | Two-Step Authority Transfer | Yes | Yes |
 | Minter Quota (cumulative cap) | Yes | Yes |
 | Token-2022 Metadata | Yes | Yes |
@@ -140,7 +140,7 @@ const isBlacklisted = await stablecoin.compliance.isBlacklisted(someWallet);
                                    v
 +----------------------------------+------------------------------------+
 |          sss-token program          |    sss-transfer-hook program    |
-|          (15 instructions)          |    (5 instructions + fallback)  |
+|          (17 instructions)          |    (5 instructions + fallback)  |
 |                                     |                                 |
 |  Initialize   Mint      Burn       |  InitializeExtraAccountMetas    |
 |  Freeze       Thaw      Pause      |  UpdateExtraAccountMetas        |
@@ -152,6 +152,8 @@ const isBlacklisted = await stablecoin.compliance.isBlacklisted(someWallet);
 |  AddToBlacklist (CPI ->)           |                                 |
 |  RemoveFromBlacklist (CPI ->)      |                                 |
 |  Seize (permanent delegate)        |                                 |
+|  UpdateTreasury (authority)        |                                 |
+|  AttestReserves (attestor)         |                                 |
 +----------------------------------+------------------------------------+
                                    |
                                    v
@@ -182,8 +184,10 @@ The central configuration account for each stablecoin instance. One per mint.
 | `enable_permanent_delegate` | `bool` | 1 | SSS-2 permanent delegate enabled |
 | `default_account_frozen` | `bool` | 1 | New accounts start frozen |
 | `bump` | `u8` | 1 | PDA bump seed |
-| `_reserved` | `[u8; 64]` | 64 | Reserved for future upgrades |
-| | **Total** | **214** | (including 8-byte Anchor discriminator) |
+| `treasury` | `Pubkey` | 32 | Treasury token account for seized funds |
+| `paused_by_attestation` | `bool` | 1 | Auto-pause flag from reserve attestation |
+| `_reserved` | `[u8; 31]` | 31 | Reserved for future upgrades |
+| | **Total** | **247** | (including 8-byte Anchor discriminator) |
 
 ### RoleAssignment Account
 
@@ -193,7 +197,7 @@ One PDA per (config, role_type, assignee) triple.
 |-------|------|:---:|-------------|
 | `config` | `Pubkey` | 32 | Parent StablecoinConfig |
 | `assignee` | `Pubkey` | 32 | Wallet holding this role |
-| `role_type` | `u8` | 1 | Role enum value (0-5) |
+| `role_type` | `u8` | 1 | Role enum value (0-6) |
 | `is_active` | `bool` | 1 | Whether the role is currently active |
 | `minter_quota` | `u64` | 8 | Cumulative mint cap (Minter only) |
 | `minted_amount` | `u64` | 8 | Amount already minted (Minter only) |
@@ -221,6 +225,7 @@ PDA existence means the address is blacklisted. Closed on removal.
 | `RoleAssignment` | sss-token | `["role", config, role_type_u8, assignee]` |
 | `BlacklistEntry` | sss-transfer-hook | `["blacklist", mint, user]` |
 | `ExtraAccountMetas` | sss-transfer-hook | `["extra-account-metas", mint]` |
+| `ReserveAttestation` | sss-token | `["attestation", config]` |
 
 ### Core Instructions (SSS-1 + SSS-2)
 
@@ -246,6 +251,8 @@ PDA existence means the address is blacklisted. Closed on removal.
 | `add_to_blacklist` | Blacklister | Blacklist an address via CPI to hook program (accepts reason string, max 64 bytes) |
 | `remove_from_blacklist` | Blacklister | Remove address from blacklist via CPI |
 | `seize` | Seizer | Transfer tokens from blacklisted account using permanent delegate |
+| `update_treasury` | Authority | Set treasury Pubkey for seized token destination |
+| `attest_reserves` | Attestor | Submit reserve proof; auto-pauses if undercollateralized |
 
 ### Role-Based Access Control
 
@@ -257,6 +264,7 @@ PDA existence means the address is blacklisted. Closed on removal.
 | Freezer | 3 | Freeze / thaw individual token accounts |
 | Blacklister | 4 | Manage transfer blacklist (SSS-2 only) |
 | Seizer | 5 | Seize tokens from blacklisted accounts (SSS-2 only) |
+| Attestor | 6 | Submit reserve attestations (proof of reserves) |
 
 The **authority** manages all roles and quotas. Authority transfer uses a two-step propose-accept pattern to prevent accidental lockout.
 
@@ -474,6 +482,15 @@ try {
 | 6022 | `ComplianceNotEnabled` | Compliance module not enabled for this token |
 | 6023 | `PermanentDelegateNotEnabled` | Permanent delegate not enabled for this token |
 | 6024 | `ReasonTooLong` | Blacklist reason exceeds 64 bytes |
+| 6025 | `InvalidTreasury` | Seized tokens must go to the designated treasury |
+| 6026 | `TargetNotBlacklisted` | Target account owner is not blacklisted |
+| 6027 | `AccountDeliberatelyFrozen` | Account is deliberately frozen and cannot be auto-thawed |
+| 6028 | `InvalidBlacklistEntry` | Invalid blacklist entry PDA |
+| 6029 | `InvalidFromOwner` | Invalid from account owner |
+| 6030 | `AttestationUriTooLong` | Attestation URI too long (max 256 bytes) |
+| 6031 | `InvalidExpiration` | Invalid expiration: must be positive |
+| 6032 | `Undercollateralized` | Undercollateralized: reserves are below token supply |
+| 6033 | `CannotFreezeTreasury` | Cannot freeze the treasury account |
 
 ### sss-transfer-hook Program Errors
 
@@ -507,7 +524,9 @@ All state-changing instructions emit Anchor events for off-chain indexing.
 | `AuthorityTransferCancelled` | config, authority | `cancel_authority_transfer` |
 | `AddressBlacklisted` | mint, address, blacklister, reason | `add_to_blacklist` |
 | `AddressUnblacklisted` | mint, address, blacklister | `remove_from_blacklist` |
-| `TokensSeized` | mint, from, amount, seizer | `seize` |
+| `TokensSeized` | mint, from, to, amount, seizer | `seize` |
+| `ReservesAttested` | config, attestor, reserve_amount, token_supply, collateralization_ratio_bps, auto_paused, timestamp | `attest_reserves` |
+| `TreasuryUpdated` | config, old_treasury, new_treasury, authority | `update_treasury` |
 
 ## Security
 
@@ -566,10 +585,10 @@ solana-stablecoin-standard/
   programs/
     sss-token/                 Main stablecoin program (Anchor/Rust)
       src/
-        instructions/          15 instruction handlers
+        instructions/          17 instruction handlers
         state/                 StablecoinConfig, RoleAssignment
-        errors.rs              25 error variants (6000-6024)
-        events.rs              15 event structs
+        errors.rs              34 error variants (6000-6033)
+        events.rs              17 event structs
         constants.rs           PDA seeds, account sizes, CPI discriminators
         utils/                 Validation, PDA, Token-2022 helpers
     sss-transfer-hook/         Transfer hook program (Anchor/Rust)

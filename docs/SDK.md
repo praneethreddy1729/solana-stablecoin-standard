@@ -199,6 +199,43 @@ Cancel pending authority transfer (current authority only).
 await stablecoin.cancelAuthorityTransfer();
 ```
 
+#### `updateTreasury(newTreasury: PublicKey)`
+
+Set the treasury token account for seized funds (authority only).
+
+```typescript
+await stablecoin.updateTreasury(treasuryPublicKey);
+```
+
+#### `attestReserves(params: AttestReservesParams)`
+
+Submit a reserve attestation proving the stablecoin is backed. Auto-pauses if undercollateralized. Requires Attestor role.
+
+```typescript
+await stablecoin.attestReserves({
+  reserveAmount: new BN(1_000_000_000),
+  expiresInSeconds: new BN(86400),
+  attestationUri: "https://example.com/attestation.json",
+  attestor: attestorPubkey,
+});
+```
+
+#### `getAttestation()`
+
+Fetch the current reserve attestation, or null if none exists.
+
+```typescript
+const attestation: ReserveAttestation | null = await stablecoin.getAttestation();
+```
+
+#### `getCollateralizationRatio()`
+
+Returns the collateralization ratio as a percentage (100.0 = fully backed), or null if no attestation exists.
+
+```typescript
+const ratio: number | null = await stablecoin.getCollateralizationRatio();
+```
+
 ### Compliance Sub-Object (SSS-2)
 
 Accessed via `stablecoin.compliance.*`:
@@ -274,7 +311,7 @@ const [configPda, bump] = findConfigPda(mintPublicKey);
 ```typescript
 const [rolePda, bump] = findRolePda(
   configPda,
-  RoleType.Minter,  // 0-5
+  RoleType.Minter,  // 0-6
   assigneePublicKey,
 );
 // Seeds: [b"role", config, role_type_byte, assignee]
@@ -297,6 +334,14 @@ const [metasPda, bump] = findExtraAccountMetasPda(mintPublicKey);
 // Program: SSS_TRANSFER_HOOK_PROGRAM_ID (default)
 ```
 
+### findAttestationPda
+
+```typescript
+const [attestationPda, bump] = findAttestationPda(configPda);
+// Seeds: [b"attestation", config]
+// Program: SSS_TOKEN_PROGRAM_ID (default)
+```
+
 ## Types
 
 ### Enums
@@ -309,6 +354,7 @@ enum RoleType {
   Freezer = 3,
   Blacklister = 4,
   Seizer = 5,
+  Attestor = 6,
 }
 
 enum Preset {
@@ -336,6 +382,8 @@ interface StablecoinConfig {
   enablePermanentDelegate: boolean;
   defaultAccountFrozen: boolean;
   bump: number;
+  treasury: PublicKey;
+  pausedByAttestation: boolean;
   _reserved: number[];
 }
 
@@ -354,6 +402,18 @@ interface BlacklistEntry {
   mint: PublicKey;
   user: PublicKey;
   reason: string;
+  bump: number;
+}
+
+interface ReserveAttestation {
+  config: PublicKey;
+  attestor: PublicKey;
+  reserveAmount: BN;
+  tokenSupply: BN;
+  timestamp: BN;
+  expiresAt: BN;
+  attestationUri: string;
+  isValid: boolean;
   bump: number;
 }
 ```
@@ -381,6 +441,7 @@ interface BlacklistRemoveParams { user: PublicKey; blacklister: PublicKey; }
 interface SeizeParams { from: PublicKey; to: PublicKey; }
 interface UpdateRolesParams { roleType: RoleType; assignee: PublicKey; isActive: boolean; }
 interface UpdateMinterQuotaParams { minterRole: PublicKey; newQuota: BN; }
+interface AttestReservesParams { reserveAmount: BN; expiresInSeconds: BN; attestationUri: string; attestor: PublicKey; }
 ```
 
 ## Error Handling
@@ -390,7 +451,7 @@ interface UpdateMinterQuotaParams { minterRole: PublicKey; newQuota: BN; }
 ```typescript
 import { SSS_TOKEN_ERRORS, SSS_TRANSFER_HOOK_ERRORS, parseSSSError } from "@stbr/sss-token";
 
-// SSS Token Program errors (6000-6024)
+// SSS Token Program errors (6000-6033)
 SSS_TOKEN_ERRORS[6003]
 // { code: 6003, name: "TokenPaused", msg: "Token is paused" }
 
@@ -420,7 +481,7 @@ The parser extracts error codes from:
 - `error.message` matching `"Error Number: NNNN"`
 - `error.logs[]` matching `"Error Number: NNNN"`
 
-### SSS Token Program Error Codes (6000-6024)
+### SSS Token Program Error Codes (6000-6033)
 
 | Code | Name | Message |
 |------|------|---------|
@@ -449,6 +510,15 @@ The parser extracts error codes from:
 | 6022 | ComplianceNotEnabled | Compliance module not enabled for this token |
 | 6023 | PermanentDelegateNotEnabled | Permanent delegate not enabled for this token |
 | 6024 | ReasonTooLong | Blacklist reason exceeds 64 bytes |
+| 6025 | InvalidTreasury | Seized tokens must go to the designated treasury |
+| 6026 | TargetNotBlacklisted | Target account owner is not blacklisted |
+| 6027 | AccountDeliberatelyFrozen | Account is deliberately frozen and cannot be auto-thawed |
+| 6028 | InvalidBlacklistEntry | Invalid blacklist entry PDA |
+| 6029 | InvalidFromOwner | Invalid from account owner |
+| 6030 | AttestationUriTooLong | Attestation URI too long (max 256 bytes) |
+| 6031 | InvalidExpiration | Invalid expiration: must be positive |
+| 6032 | Undercollateralized | Undercollateralized: reserves are below token supply |
+| 6033 | CannotFreezeTreasury | Cannot freeze the treasury account |
 
 ### SSS Transfer Hook Error Codes (6000-6006)
 

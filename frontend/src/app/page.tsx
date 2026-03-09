@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const WalletMultiButtonDynamic = dynamic(
   async () =>
@@ -14,8 +15,18 @@ const Dashboard = dynamic(
   { ssr: false }
 );
 
+function getNetworkLabel(): string {
+  const rpc = process.env.NEXT_PUBLIC_RPC_URL ?? "";
+  if (rpc.includes("devnet")) return "Devnet";
+  if (rpc.includes("mainnet")) return "Mainnet";
+  if (rpc.includes("localhost") || rpc.includes("127.0.0.1")) return "Localnet";
+  if (rpc) return "Custom";
+  return "Devnet";
+}
+
 export default function Home() {
   const { connected } = useWallet();
+  const networkLabel = getNetworkLabel();
 
   return (
     <div className="min-h-screen">
@@ -40,7 +51,7 @@ export default function Home() {
             {connected && (
               <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-text-muted">
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                Devnet
+                {networkLabel}
               </span>
             )}
             <WalletMultiButtonDynamic />
@@ -51,7 +62,9 @@ export default function Home() {
       {/* Main Content */}
       <main className="pt-6">
         {connected ? (
-          <Dashboard />
+          <ErrorBoundary>
+            <Dashboard />
+          </ErrorBoundary>
         ) : (
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="text-center py-24">
@@ -90,8 +103,8 @@ export default function Home() {
                     desc: "Create and destroy tokens with role-based access control",
                   },
                   {
-                    title: "6 Role Types",
-                    desc: "Minter, Burner, Pauser, Freezer, Blacklister, Seizer",
+                    title: "7 Role Types",
+                    desc: "Minter, Burner, Pauser, Freezer, Blacklister, Seizer, Attestor",
                   },
                   {
                     title: "Compliance",
@@ -123,7 +136,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between text-xs text-text-muted">
           <span>Solana Stablecoin Standard (SSS)</span>
           <a
-            href="https://github.com"
+            href="https://github.com/solanabr/solana-stablecoin-standard"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-text-secondary transition-colors"

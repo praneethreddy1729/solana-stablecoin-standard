@@ -4,7 +4,7 @@ export interface SSSErrorInfo {
   msg: string;
 }
 
-/** SSS Token Program errors (codes 6000-6023) */
+/** SSS Token Program errors (codes 6000-6033) */
 export const SSS_TOKEN_ERRORS: Record<number, SSSErrorInfo> = {
   6000: { code: 6000, name: "Unauthorized", msg: "Unauthorized: signer is not the authority" },
   6001: { code: 6001, name: "InvalidRoleType", msg: "Invalid role type" },
@@ -31,6 +31,11 @@ export const SSS_TOKEN_ERRORS: Record<number, SSSErrorInfo> = {
   6022: { code: 6022, name: "ComplianceNotEnabled", msg: "Compliance module not enabled for this token" },
   6023: { code: 6023, name: "PermanentDelegateNotEnabled", msg: "Permanent delegate not enabled for this token" },
   6024: { code: 6024, name: "ReasonTooLong", msg: "Blacklist reason too long (max 64 bytes)" },
+  6025: { code: 6025, name: "InvalidTreasury", msg: "Seized tokens must go to the designated treasury" },
+  6026: { code: 6026, name: "TargetNotBlacklisted", msg: "Target account owner is not blacklisted" },
+  6027: { code: 6027, name: "AccountDeliberatelyFrozen", msg: "Account is deliberately frozen and cannot be auto-thawed" },
+  6028: { code: 6028, name: "InvalidBlacklistEntry", msg: "Invalid blacklist entry PDA" },
+  6029: { code: 6029, name: "InvalidFromOwner", msg: "Invalid from account owner" },
   6030: { code: 6030, name: "AttestationUriTooLong", msg: "Attestation URI too long (max 256 bytes)" },
   6031: { code: 6031, name: "InvalidExpiration", msg: "Expiration must be positive" },
   6032: { code: 6032, name: "Undercollateralized", msg: "Reserves less than supply; token auto-paused" },

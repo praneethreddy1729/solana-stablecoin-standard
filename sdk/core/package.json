@@ -1,6 +1,25 @@
 {
   "name": "@stbr/sss-token",
   "version": "0.1.0",
+  "description": "TypeScript SDK for the Solana Stablecoin Standard (SSS) — role-based stablecoin issuance, compliance, and reserve attestation on Token-2022",
+  "keywords": [
+    "solana",
+    "stablecoin",
+    "token-2022",
+    "spl-token",
+    "anchor",
+    "compliance",
+    "blacklist",
+    "transfer-hook",
+    "permanent-delegate",
+    "reserve-attestation"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/solanabr/solana-stablecoin-standard"
+  },
+  "author": "Solana Stablecoin Standard Contributors",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist/", "src/", "src/idl/"],

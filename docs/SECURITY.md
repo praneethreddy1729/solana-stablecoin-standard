@@ -54,6 +54,10 @@ Blacklister (SSS-2 only)
 Seizer (SSS-2 only)
   |-- Can: seize tokens from blacklisted accounts
   |-- Cannot: mint, burn, pause, freeze, blacklist, manage roles
+
+Attestor
+  |-- Can: submit reserve attestations (auto-pauses if undercollateralized)
+  |-- Cannot: mint, burn, pause, freeze, blacklist, seize, manage roles
 ```
 
 ### Role Validation
@@ -89,6 +93,7 @@ pub minter_role: Account<'info, RoleAssignment>,
 | Freezer | Can freeze/thaw individual accounts | Can freeze accounts but not steal funds; authority can deactivate |
 | Blacklister | Can blacklist/unblacklist addresses | Can block transfers but not steal funds; authority can deactivate |
 | Seizer | Can seize tokens from blacklisted accounts | Can move funds from blacklisted accounts; authority can deactivate |
+| Attestor | Can submit reserve attestations and trigger auto-pause | Can pause token via false undercollateralization report; authority can deactivate |
 | Authority | Full control over configuration | Two-step transfer prevents instant takeover if detected |
 
 ## Authority Transfer Security
@@ -193,14 +198,16 @@ Account layout: source(0), mint(1), destination(2), owner_delegate(3),
 | `thaw_account` | Config has_one mint, freezer has active Freezer role, account is frozen (checked by Token-2022) |
 | `pause` | Pauser has active Pauser role, token not already paused |
 | `unpause` | Pauser has active Pauser role, token is currently paused |
-| `update_roles` | Authority signer, valid role type (0-5 via `RoleType::from_u8`) |
+| `update_roles` | Authority signer, valid role type (0-6 via `RoleType::from_u8`) |
 | `update_minter` | Authority signer, config constraint |
 | `transfer_authority` | Authority signer, no pending transfer (`AuthorityTransferAlreadyPending`) |
 | `accept_authority` | Signer matches `pending_authority`, transfer is pending |
 | `cancel_authority_transfer` | Authority signer, transfer is pending |
 | `add_to_blacklist` | Blacklister has active Blacklister role, `enable_transfer_hook == true`, `hook_program == config.hook_program_id`, hook validates config PDA derivation + program ownership |
 | `remove_from_blacklist` | Same as add_to_blacklist |
-| `seize` | Seizer role active, permanent delegate enabled, from balance > 0, uses `invoke_transfer_checked` with remaining_accounts for hook |
+| `seize` | Seizer role active, permanent delegate enabled, from balance > 0, destination must match `config.treasury` (InvalidTreasury), target owner must be blacklisted (TargetNotBlacklisted), uses `invoke_transfer_checked` with remaining_accounts for hook |
+| `update_treasury` | Authority signer, `new_treasury != Pubkey::default()` (InvalidTreasury) |
+| `attest_reserves` | Attestor has active Attestor role (RoleType 6), `expires_in_seconds > 0` (InvalidExpiration), `attestation_uri.len() <= 256` (AttestationUriTooLong), auto-sets `paused_by_attestation` if `reserve_amount < token_supply` |
 
 ## Threat Model
 

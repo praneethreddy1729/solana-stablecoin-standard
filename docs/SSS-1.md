@@ -100,7 +100,7 @@ Sets `config.paused = false`, resuming normal operations.
 **Instruction**: `update_roles(role_type: u8, assignee: Pubkey, is_active: bool)`
 **Required**: Authority signer
 
-Creates or updates a `RoleAssignment` PDA. If the PDA doesn't exist, it is initialized. If it exists, only `is_active` is updated. The `role_type` is validated via `RoleType::from_u8()` which accepts values 0-5.
+Creates or updates a `RoleAssignment` PDA. If the PDA doesn't exist, it is initialized. If it exists, only `is_active` is updated. The `role_type` is validated via `RoleType::from_u8()` which accepts values 0-6.
 
 Role types:
 | Value | Role |
@@ -111,6 +111,7 @@ Role types:
 | 3 | Freezer |
 | 4 | Blacklister |
 | 5 | Seizer |
+| 6 | Attestor |
 
 ### Update Minter Quota
 
@@ -171,7 +172,7 @@ SSS-1 emits Anchor events for all state changes (defined in `programs/sss-token/
 | Code | Name | Description |
 |------|------|-------------|
 | 6000 | Unauthorized | Signer is not the authority |
-| 6001 | InvalidRoleType | Role type value out of range (must be 0-5) |
+| 6001 | InvalidRoleType | Role type value out of range (must be 0-6) |
 | 6002 | RoleNotActive | Role exists but is_active = false |
 | 6003 | TokenPaused | Operation blocked because token is paused |
 | 6004 | TokenNotPaused | Cannot unpause a token that isn't paused |

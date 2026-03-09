@@ -21,6 +21,12 @@ pub struct UpdateTreasury<'info> {
 /// Update the treasury token account where seized tokens are sent.
 /// Authority-only operation.
 pub fn handler(ctx: Context<UpdateTreasury>, new_treasury: Pubkey) -> Result<()> {
+    // Treasury must not be zero address — seize would fail
+    require!(
+        new_treasury != Pubkey::default(),
+        SSSError::InvalidTreasury
+    );
+
     let config = &mut ctx.accounts.config;
     let old_treasury = config.treasury;
     config.treasury = new_treasury;

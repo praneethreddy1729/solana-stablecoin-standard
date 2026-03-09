@@ -69,14 +69,21 @@ pub fn handler(
         .ok_or(SSSError::ArithmeticOverflow)?;
 
     // Calculate collateralization ratio in basis points (10000 = 100%)
+    // Use u128 intermediary to prevent overflow for high-supply tokens
     let collateralization_ratio_bps = if token_supply == 0 {
         10_000u64 // 100% if no tokens minted
     } else {
-        reserve_amount
+        let ratio_128 = (reserve_amount as u128)
             .checked_mul(10_000)
             .ok_or(SSSError::ArithmeticOverflow)?
-            .checked_div(token_supply)
-            .ok_or(SSSError::ArithmeticOverflow)?
+            .checked_div(token_supply as u128)
+            .ok_or(SSSError::ArithmeticOverflow)?;
+        // Cap at u64::MAX (practically unreachable — 100% = 10_000)
+        if ratio_128 > u64::MAX as u128 {
+            u64::MAX
+        } else {
+            ratio_128 as u64
+        }
     };
 
     // Auto-pause/unpause based on collateralization.

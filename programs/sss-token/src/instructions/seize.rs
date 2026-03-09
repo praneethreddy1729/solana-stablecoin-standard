@@ -5,7 +5,9 @@ use crate::constants::*;
 use crate::errors::SSSError;
 use crate::events::TokensSeized;
 use crate::state::{RoleAssignment, RoleType, StablecoinConfig};
-use crate::utils::{require_permanent_delegate_enabled, require_role_active};
+use crate::utils::{
+    require_permanent_delegate_enabled, require_role_active, thaw_token_account,
+};
 
 /// Blacklist PDA seed used by the transfer hook program.
 /// Must match `programs/sss-transfer-hook/src/state.rs::BLACKLIST_SEED`.
@@ -118,6 +120,19 @@ pub fn handler<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Resul
     let mint_key = ctx.accounts.mint.key();
     let bump = ctx.accounts.config.bump;
     let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, mint_key.as_ref(), &[bump]]];
+
+    // If the account is frozen (common for blacklisted accounts), thaw it first.
+    // Token-2022 rejects transfer_checked on frozen accounts even when using
+    // permanent delegate. Config PDA is the freeze authority so we can thaw.
+    if ctx.accounts.from.is_frozen() {
+        thaw_token_account(
+            &ctx.accounts.token_program.to_account_info(),
+            &ctx.accounts.from.to_account_info(),
+            &ctx.accounts.mint.to_account_info(),
+            &ctx.accounts.config.to_account_info(),
+            signer_seeds,
+        )?;
+    }
 
     // Use spl_token_2022::onchain::invoke_transfer_checked which automatically
     // handles transfer hook resolution from the mint's extension data.

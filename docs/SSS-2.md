@@ -161,6 +161,56 @@ If `owner_delegate` matches the permanent delegate, all blacklist and pause chec
 - Source account may still be frozen
 - `TokensSeized` event emitted with mint, from, amount, seizer
 
+## Treasury Management
+
+### Update Treasury
+
+**Instruction**: `update_treasury(new_treasury: Pubkey)`
+**Required**: Authority signer
+**Checks**: `new_treasury != Pubkey::default()` (InvalidTreasury)
+
+Sets the treasury token account where seized tokens are sent. The `seize` instruction validates that the destination account matches `config.treasury`. This ensures seized funds always flow to a known, controlled account.
+
+Emits `TreasuryUpdated` event with `config`, `old_treasury`, `new_treasury`, `authority`.
+
+## Reserve Attestation
+
+### Attest Reserves
+
+**Instruction**: `attest_reserves(reserve_amount: u64, expires_in_seconds: i64, attestation_uri: String)`
+**Required Role**: Attestor (RoleType 6)
+**Checks**: `expires_in_seconds > 0` (InvalidExpiration), `attestation_uri.len() <= 256` (AttestationUriTooLong), role active
+
+Allows an Attestor to submit proof that the stablecoin is backed by off-chain reserves. The instruction reads the current token supply from the mint, calculates a collateralization ratio in basis points (10000 = 100%), and stores the attestation in a `ReserveAttestation` PDA.
+
+**Auto-pause behavior**: If `reserve_amount < token_supply`, the `paused_by_attestation` flag on the config is set to `true`, which blocks mint, burn, and (via hook) transfer operations. This flag is separate from the manual `paused` flag so that attestor-triggered pauses and manual pauses do not interfere with each other.
+
+### ReserveAttestation PDA
+
+```
+Account: ReserveAttestation
+Seeds: [b"attestation", config.key()]
+Owner: sss-token program
+
+Fields:
+  - config: Pubkey (32 bytes)
+  - attestor: Pubkey (32 bytes)
+  - reserve_amount: u64 (8 bytes)
+  - token_supply: u64 (8 bytes)
+  - timestamp: i64 (8 bytes)
+  - expires_at: i64 (8 bytes)
+  - attestation_uri: String (4 + len bytes, max 256 bytes)
+  - is_valid: bool (1 byte)
+  - bump: u8 (1 byte)
+```
+
+### Additional Events
+
+| Event | Fields |
+|-------|--------|
+| `ReservesAttested` | config, attestor, reserve_amount, token_supply, collateralization_ratio_bps, auto_paused, timestamp |
+| `TreasuryUpdated` | config, old_treasury, new_treasury, authority |
+
 ## Default Frozen Accounts
 
 When `default_account_frozen = true`, every new Associated Token Account for this mint starts frozen. This means:

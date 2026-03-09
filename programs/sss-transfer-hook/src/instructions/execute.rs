@@ -94,9 +94,16 @@ pub fn handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
     )?;
 
     // Check pause state from config
-    // Layout: 8 discriminator + 32 authority + 32 pending + 8 transfer_initiated_at + 32 mint + 32 hook_program_id + 1 decimals = byte 145 is paused
+    // Layout: 8 discriminator + 32 authority + 32 pending + 8 transfer_initiated_at
+    //         + 32 mint + 32 hook_program_id + 1 decimals = offset 145 is paused
+    //         + 1 enable_transfer_hook + 1 enable_permanent_delegate + 1 default_account_frozen
+    //         + 1 bump + 32 treasury = offset 182 is paused_by_attestation
     let config_data = ctx.accounts.config.try_borrow_data()?;
     if config_data.len() > 145 && config_data[145] == 1 {
+        return Err(HookError::TokenPaused.into());
+    }
+    // Also check paused_by_attestation (undercollateralized reserves)
+    if config_data.len() > 182 && config_data[182] == 1 {
         return Err(HookError::TokenPaused.into());
     }
     drop(config_data);
@@ -154,9 +161,12 @@ pub fn fallback_execute<'info>(
     // Validate config account: owner + PDA derivation
     validate_config(config, &mint_info.key())?;
 
-    // Check pause state from config
+    // Check pause state from config (byte 145 = paused, byte 182 = paused_by_attestation)
     let config_data = config.try_borrow_data()?;
     if config_data.len() > 145 && config_data[145] == 1 {
+        return Err(HookError::TokenPaused.into());
+    }
+    if config_data.len() > 182 && config_data[182] == 1 {
         return Err(HookError::TokenPaused.into());
     }
     drop(config_data);

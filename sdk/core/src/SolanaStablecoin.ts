@@ -420,6 +420,19 @@ export class SolanaStablecoin {
       .rpc();
   }
 
+  /** Update the treasury token account for seized funds (authority only). */
+  async updateTreasury(newTreasury: PublicKey): Promise<TransactionSignature> {
+    const provider = this.program.provider as AnchorProvider;
+
+    return this.program.methods
+      .updateTreasury(newTreasury)
+      .accountsStrict({
+        authority: provider.wallet.publicKey,
+        config: this.configPda,
+      })
+      .rpc();
+  }
+
   // --- Compliance sub-object methods (SSS-2) ---
 
   private async _blacklistAdd(

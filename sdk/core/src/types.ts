@@ -55,6 +55,7 @@ export interface RoleAssignment {
 export interface BlacklistEntry {
   mint: PublicKey;
   user: PublicKey;
+  reason: string;
   bump: number;
 }
 

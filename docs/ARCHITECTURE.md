@@ -6,7 +6,7 @@ The Solana Stablecoin Standard is a two-program architecture built on Token-2022
 
 ```
 sss-token (main program)              sss-transfer-hook (hook program)
-  15 instructions:                       5 instructions + fallback:
+  17 instructions:                       5 instructions + fallback:
   - initialize                           - initialize_extra_account_metas
   - mint                          - update_extra_account_metas
   - burn                          - execute (blacklist + pause check)
@@ -21,6 +21,8 @@ sss-token (main program)              sss-transfer-hook (hook program)
   - add_to_blacklist (CPI to hook)
   - remove_from_blacklist (CPI to hook)
   - seize (permanent delegate)
+  - update_treasury
+  - attest_reserves
 ```
 
 The Config PDA serves as mint authority, freeze authority, and permanent delegate -- ensuring all privileged operations go through the program's access control layer.
@@ -31,7 +33,7 @@ The Config PDA serves as mint authority, freeze authority, and permanent delegat
 
 Program ID: `tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz`
 
-The main program provides 15 instructions covering the full stablecoin lifecycle:
+The main program provides 17 instructions covering the full stablecoin lifecycle:
 
 | Instruction | Role Required | SSS Level | Description |
 |-------------|--------------|-----------|-------------|
@@ -50,6 +52,8 @@ The main program provides 15 instructions covering the full stablecoin lifecycle
 | `add_to_blacklist` | Blacklister | SSS-2 | Blacklist address via CPI to hook (accepts reason string, max 64 bytes) |
 | `remove_from_blacklist` | Blacklister | SSS-2 | Remove address from blacklist via CPI |
 | `seize` | Seizer | SSS-2 | Seize all tokens using permanent delegate |
+| `update_treasury` | Authority | SSS-1 | Set treasury Pubkey for seized token destination |
+| `attest_reserves` | Attestor | SSS-1 | Submit reserve proof; auto-pauses if undercollateralized |
 
 ### sss-transfer-hook (Hook Program)
 
@@ -72,7 +76,7 @@ The hook program also has a `fallback` handler that routes SPL Transfer Hook Exe
 ### StablecoinConfig PDA
 
 Seeds: `[b"config", mint.key()]`
-Size: 214 bytes (8 discriminator + 142 fields + 64 reserved)
+Size: 247 bytes (8 discriminator + 175 fields + 64 reserved)
 
 ```
 Offset  Size  Field
@@ -88,7 +92,9 @@ Offset  Size  Field
 147     1     enable_permanent_delegate
 148     1     default_account_frozen
 149     1     bump
-150     64    _reserved
+150     32    treasury
+182     1     paused_by_attestation
+183     31    _reserved
 ```
 
 Stores all configuration for a stablecoin including authority, mint address, hook program ID, feature flags, and pause state. The Config PDA itself serves as both the **mint authority** and **freeze authority** for the Token-2022 mint, enabling the program to sign mint/freeze/thaw operations via PDA seeds.
@@ -119,6 +125,13 @@ Seeds: `[b"blacklist", mint.key(), user.key()]`
 Size: 77 + reason_len bytes (8 discriminator + 32 mint + 32 user + 4 + reason_len + 1 bump)
 
 Existence-based blacklist: if the PDA account exists and has data (>= 8 bytes indicating an initialized Anchor account), the address is blacklisted. The `reason` field (max 64 bytes) stores an optional human-readable justification (e.g., "OFAC SDN List"). The transfer hook checks both sender and receiver BlacklistEntry PDAs during every transfer.
+
+### ReserveAttestation PDA
+
+Seeds: `[b"attestation", config.key()]`
+Size: Variable
+
+Stores the latest reserve attestation data including reserve amount, token supply, expiration, attestation URI, and validity flag. Created or updated by the `attest_reserves` instruction. If reserves are below token supply, the config's `paused_by_attestation` flag is set to `true`, auto-pausing the token.
 
 ### ExtraAccountMetas PDA (Hook Program)
 
@@ -174,6 +187,7 @@ The account is created with `extension_space` as the initial allocation but fund
 | Freezer | 3 | `freeze_account`, `thaw_account` |
 | Blacklister | 4 | `add_to_blacklist`, `remove_from_blacklist` (SSS-2 only) |
 | Seizer | 5 | `seize` (SSS-2 only) |
+| Attestor | 6 | `attest_reserves` (proof of reserves) |
 
 The authority can assign multiple users to the same role. Each assignment is an independent PDA. Roles can be deactivated (`is_active = false`) without closing the account, allowing reactivation later.
 

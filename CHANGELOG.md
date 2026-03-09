@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### On-Chain Programs
 
-- **sss-token program** with 15 instructions:
+- **sss-token program** with 17 instructions:
   - `initialize` -- Create a Token-2022 mint with configurable extensions (MetadataPointer, TransferHook, PermanentDelegate, DefaultAccountState)
   - `mint` -- Mint tokens with Minter role check, pause guard, and cumulative quota enforcement via `checked_add`
   - `burn` -- Burn tokens with Burner role check, pause guard, and owner co-sign requirement
@@ -21,17 +21,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `update_minter` -- Set minter cumulative mint cap (authority only)
   - `transfer_authority` / `accept_authority` / `cancel_authority_transfer` -- Two-step authority transfer
   - `add_to_blacklist` / `remove_from_blacklist` -- Manage blacklist via CPI to hook program (Blacklister role, SSS-2)
-  - `seize` -- Transfer tokens from blacklisted account using permanent delegate (authority only, SSS-2)
+  - `seize` -- Transfer tokens from blacklisted account using permanent delegate (Seizer role, SSS-2)
+  - `update_treasury` -- Set treasury Pubkey for seized token destination (authority only)
+  - `attest_reserves` -- Submit reserve proof, auto-pauses if undercollateralized (Attestor role)
 - **sss-transfer-hook program** with 5 instructions + fallback:
   - `initialize_extra_account_metas` / `update_extra_account_metas` -- Configure transfer hook account resolution
   - `execute` -- Enforce blacklist and pause checks on every Token-2022 transfer
   - `add_to_blacklist` / `remove_from_blacklist` -- BlacklistEntry PDA creation and closure
   - `fallback` -- Route SPL Transfer Hook Execute discriminator to `execute`
 - Two specification presets: **SSS-1** (basic) and **SSS-2** (compliance)
-- 6 role types: Minter, Burner, Pauser, Freezer, Blacklister, Seizer
-- 24 custom error codes for sss-token (6000-6023)
+- 7 role types: Minter, Burner, Pauser, Freezer, Blacklister, Seizer, Attestor
+- 34 custom error codes for sss-token (6000-6033)
 - 7 custom error codes for sss-transfer-hook (6000-6006)
-- 15 Anchor events for off-chain indexing
+- 17 Anchor events for off-chain indexing
 - 64-byte reserved fields on StablecoinConfig and RoleAssignment for future upgrades
 - `overflow-checks = true` in release profile
 
