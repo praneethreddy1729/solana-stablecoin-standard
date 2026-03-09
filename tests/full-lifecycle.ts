@@ -816,11 +816,11 @@ describe("full-lifecycle: SSS-2", () => {
     let accountB = await getAccount(provider.connection, ataB, "confirmed", TOKEN_2022_PROGRAM_ID);
     expect(Number(accountB.amount)).to.equal(2_000_000);
 
-    // 5. Blacklist userA (hook requires payer == config authority)
+    // 5. Blacklist userA (any authorized Blacklister role holder can do this)
     const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
     const blEntry = blacklistPda(mintKp.publicKey, userA.publicKey);
 
-    // Assign blacklister role to authority (hook CPI requires payer == config authority)
+    // Assign blacklister role to authority (any Blacklister role holder can blacklist via config PDA CPI)
     await program.methods
       .updateRoles(4, authority.publicKey, true)
       .accountsStrict({
@@ -997,11 +997,11 @@ describe("full-lifecycle: SSS-2", () => {
 
     const { configPda } = await initSSS2(mintKp);
 
-    // Assign roles (hook requires payer == config authority for blacklist CPI)
+    // Assign roles (any Blacklister role holder can blacklist via config PDA CPI)
     for (const [roleType, signer] of [
       [0, minter],
       [3, freezer],
-      [4, authority],  // authority as blacklister (hook CPI requires payer == config authority)
+      [4, authority],  // authority as blacklister
     ] as [number, Keypair][]) {
       const role = rolePda(configPda, roleType, signer.publicKey);
       await program.methods
@@ -1113,12 +1113,12 @@ describe("full-lifecycle: SSS-2", () => {
 
     const { configPda, extraAccountMetasPda } = await initSSS2(mintKp);
 
-    // Assign roles (hook requires payer == config authority for blacklist CPI)
+    // Assign roles (any Blacklister role holder can blacklist via config PDA CPI)
     for (const [roleType, signer] of [
       [0, minter],
       [2, pauser],
       [3, freezer],
-      [4, authority],  // authority as blacklister (hook CPI requires payer == config authority)
+      [4, authority],  // authority as blacklister
     ] as [number, Keypair][]) {
       const role = rolePda(configPda, roleType, signer.publicKey);
       await program.methods

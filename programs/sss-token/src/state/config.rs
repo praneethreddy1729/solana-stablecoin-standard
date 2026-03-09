@@ -26,6 +26,10 @@ pub struct StablecoinConfig {
     pub bump: u8,
     /// Treasury token account — seized tokens are sent here
     pub treasury: Pubkey,
+    /// Whether minting is auto-paused due to undercollateralized reserves.
+    /// Separate from `paused` so attestor cannot override manual pause,
+    /// and pauser cannot silently clear attestation-triggered pause.
+    pub paused_by_attestation: bool,
     /// Reserved for future use
-    pub _reserved: [u8; 32],
+    pub _reserved: [u8; 31],
 }

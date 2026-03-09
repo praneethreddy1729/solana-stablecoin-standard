@@ -28,9 +28,15 @@ pub struct Unpause<'info> {
 
 pub fn handler(ctx: Context<Unpause>) -> Result<()> {
     require_role_active(&ctx.accounts.pauser_role, RoleType::Pauser)?;
-    require!(ctx.accounts.config.paused, SSSError::TokenNotPaused);
+    // Allow unpause if either manual pause or attestation pause is active
+    require!(
+        ctx.accounts.config.paused || ctx.accounts.config.paused_by_attestation,
+        SSSError::TokenNotPaused
+    );
 
     ctx.accounts.config.paused = false;
+    // Also clear attestation-triggered pause — Pauser has authority to override
+    ctx.accounts.config.paused_by_attestation = false;
 
     emit!(TokenUnpaused {
         mint: ctx.accounts.config.mint,

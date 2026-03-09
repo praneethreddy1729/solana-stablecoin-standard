@@ -118,7 +118,7 @@ describe("compliance-extended", () => {
 
   async function addBlacklist(user: PublicKey, reason: string) {
     const blEntry = blacklistPda(mint.publicKey, user);
-    // Hook requires payer == config authority, so authority must be the blacklister
+    // Any authorized Blacklister role holder can blacklist (config PDA signs the CPI)
     const sig = await program.methods
       .addToBlacklist(user, reason)
       .accountsStrict({
@@ -137,7 +137,7 @@ describe("compliance-extended", () => {
 
   async function removeBlacklist(user: PublicKey) {
     const blEntry = blacklistPda(mint.publicKey, user);
-    // Hook requires payer == config authority, so authority must be the blacklister
+    // Any authorized Blacklister role holder can remove from blacklist (config PDA signs the CPI)
     const sig = await program.methods
       .removeFromBlacklist(user)
       .accountsStrict({
@@ -300,7 +300,7 @@ describe("compliance-extended", () => {
       [2, pauser],       // Pauser
       [3, freezer],      // Freezer
       [4, blacklister],  // Blacklister (dedicated, for non-authority tests)
-      [4, authority],    // Blacklister (authority, needed for CPI since hook requires payer == authority)
+      [4, authority],    // Blacklister (authority, used in addBlacklist/removeBlacklist helpers)
       [5, authority],    // Seizer (authority as seizer)
       [5, seizer],       // Seizer (dedicated seizer)
     ];

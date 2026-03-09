@@ -125,3 +125,11 @@ pub struct ReservesAttested {
     pub auto_paused: bool,
     pub timestamp: i64,
 }
+
+#[event]
+pub struct TreasuryUpdated {
+    pub config: Pubkey,
+    pub old_treasury: Pubkey,
+    pub new_treasury: Pubkey,
+    pub authority: Pubkey,
+}

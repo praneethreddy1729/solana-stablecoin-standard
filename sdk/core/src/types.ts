@@ -34,6 +34,8 @@ export interface StablecoinConfig {
   enablePermanentDelegate: boolean;
   defaultAccountFrozen: boolean;
   bump: number;
+  treasury: PublicKey;
+  pausedByAttestation: boolean;
   _reserved: number[];
 }
 

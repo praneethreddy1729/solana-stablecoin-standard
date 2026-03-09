@@ -160,7 +160,7 @@ describe("sss-transfer-hook", () => {
       .rpc();
 
     // Assign roles: minter, blacklister, freezer
-    // Authority also gets blacklister role since hook requires payer == config authority for CPI
+    // Authority also gets blacklister role for convenience (any Blacklister role holder can blacklist)
     for (const [roleType, signer] of [
       [0, minter],
       [3, freezer],

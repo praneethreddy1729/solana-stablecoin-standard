@@ -68,4 +68,6 @@ pub enum SSSError {
     InvalidExpiration, // 6031
     #[msg("Undercollateralized: reserves are below token supply")]
     Undercollateralized, // 6032
+    #[msg("Cannot freeze the treasury account")]
+    CannotFreezeTreasury, // 6033
 }

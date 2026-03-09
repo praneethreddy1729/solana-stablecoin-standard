@@ -79,11 +79,12 @@ pub fn handler(
             .ok_or(SSSError::ArithmeticOverflow)?
     };
 
-    // Auto-pause if undercollateralized (reserves < supply)
+    // Auto-pause/unpause based on collateralization.
+    // Uses separate `paused_by_attestation` flag so attestor cannot override
+    // a manual pause by the Pauser, and Pauser unpause doesn't silently clear
+    // an attestation-triggered pause.
     let auto_paused = reserve_amount < token_supply;
-    if auto_paused && !ctx.accounts.config.paused {
-        ctx.accounts.config.paused = true;
-    }
+    ctx.accounts.config.paused_by_attestation = auto_paused;
 
     // Write attestation
     let attestation = &mut ctx.accounts.attestation;

@@ -30,6 +30,11 @@ export const SSS_TOKEN_ERRORS: Record<number, SSSErrorInfo> = {
   6021: { code: 6021, name: "ZeroAmount", msg: "Mint amount must be greater than zero" },
   6022: { code: 6022, name: "ComplianceNotEnabled", msg: "Compliance module not enabled for this token" },
   6023: { code: 6023, name: "PermanentDelegateNotEnabled", msg: "Permanent delegate not enabled for this token" },
+  6024: { code: 6024, name: "ReasonTooLong", msg: "Blacklist reason too long (max 64 bytes)" },
+  6030: { code: 6030, name: "AttestationUriTooLong", msg: "Attestation URI too long (max 256 bytes)" },
+  6031: { code: 6031, name: "InvalidExpiration", msg: "Expiration must be positive" },
+  6032: { code: 6032, name: "Undercollateralized", msg: "Reserves less than supply; token auto-paused" },
+  6033: { code: 6033, name: "CannotFreezeTreasury", msg: "Cannot freeze the treasury account" },
 };
 
 /** SSS Transfer Hook Program errors (codes 6000-6006) */

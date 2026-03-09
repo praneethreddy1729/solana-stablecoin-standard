@@ -47,16 +47,13 @@ pub fn handler(ctx: Context<AddToBlacklist>, user: Pubkey, reason: String) -> Re
         HookError::Unauthorized
     );
 
-    // Verify payer is the config authority (bytes 8..40 after Anchor discriminator)
-    let config_data = ctx.accounts.config.try_borrow_data()?;
-    require!(config_data.len() >= 40, HookError::Unauthorized);
-    let config_authority =
-        Pubkey::try_from(&config_data[8..40]).map_err(|_| error!(HookError::Unauthorized))?;
+    // Verify the CPI came from the sss-token program by checking that the config
+    // PDA was passed as a signer. Only the sss-token program can sign for this PDA
+    // via invoke_signed, so this proves the call is authorized.
     require!(
-        ctx.accounts.payer.key() == config_authority,
+        ctx.accounts.config.is_signer,
         HookError::Unauthorized
     );
-    drop(config_data);
 
     let entry = &mut ctx.accounts.blacklist_entry;
     entry.mint = ctx.accounts.mint.key();

@@ -218,7 +218,8 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
     config.default_account_frozen = args.default_account_frozen;
     config.bump = bump;
     config.treasury = args.treasury;
-    config._reserved = [0u8; 32];
+    config.paused_by_attestation = false;
+    config._reserved = [0u8; 31];
 
     emit!(StablecoinInitialized {
         mint: mint_key,

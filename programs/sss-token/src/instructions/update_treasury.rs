@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::constants::*;
 use crate::errors::SSSError;
+use crate::events::TreasuryUpdated;
 use crate::state::StablecoinConfig;
 
 #[derive(Accounts)]
@@ -21,13 +22,15 @@ pub struct UpdateTreasury<'info> {
 /// Authority-only operation.
 pub fn handler(ctx: Context<UpdateTreasury>, new_treasury: Pubkey) -> Result<()> {
     let config = &mut ctx.accounts.config;
+    let old_treasury = config.treasury;
     config.treasury = new_treasury;
 
-    msg!(
-        "Treasury updated to {} for mint {}",
+    emit!(TreasuryUpdated {
+        config: config.key(),
+        old_treasury,
         new_treasury,
-        config.mint
-    );
+        authority: ctx.accounts.authority.key(),
+    });
 
     Ok(())
 }

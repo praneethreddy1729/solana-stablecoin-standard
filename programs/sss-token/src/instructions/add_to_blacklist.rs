@@ -51,9 +51,12 @@ pub fn handler(ctx: Context<AddToBlacklist>, user: Pubkey, reason: String) -> Re
     require!(reason.len() <= 64, SSSError::ReasonTooLong);
 
     let mint_key = ctx.accounts.config.mint;
+    let bump = ctx.accounts.config.bump;
 
     // CPI into hook program to create BlacklistEntry PDA
-    // Data layout: [disc(8) | user(32) | reason_len(4) | reason_bytes(...)]
+    // We use invoke_signed with the config PDA as a signer to prove this CPI
+    // originates from the sss-token program. The hook verifies config.is_signer
+    // instead of checking payer == authority, so any authorized Blacklister can call this.
     let ix = anchor_lang::solana_program::instruction::Instruction {
         program_id: ctx.accounts.hook_program.key(),
         accounts: vec![
@@ -71,7 +74,7 @@ pub fn handler(ctx: Context<AddToBlacklist>, user: Pubkey, reason: String) -> Re
             ),
             anchor_lang::solana_program::instruction::AccountMeta::new_readonly(
                 ctx.accounts.config.key(),
-                false,
+                true, // config as signer — proves CPI from sss-token
             ),
             anchor_lang::solana_program::instruction::AccountMeta::new_readonly(
                 ctx.accounts.system_program.key(),
@@ -89,7 +92,9 @@ pub fn handler(ctx: Context<AddToBlacklist>, user: Pubkey, reason: String) -> Re
         },
     };
 
-    anchor_lang::solana_program::program::invoke(
+    let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, mint_key.as_ref(), &[bump]]];
+
+    anchor_lang::solana_program::program::invoke_signed(
         &ix,
         &[
             ctx.accounts.blacklister.to_account_info(),
@@ -98,6 +103,7 @@ pub fn handler(ctx: Context<AddToBlacklist>, user: Pubkey, reason: String) -> Re
             ctx.accounts.config.to_account_info(),
             ctx.accounts.system_program.to_account_info(),
         ],
+        signer_seeds,
     )?;
 
     emit!(AddressBlacklisted {

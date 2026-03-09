@@ -48,11 +48,6 @@ pub fn handler(
     role.is_active = is_active;
     role.bump = ctx.bumps.role;
 
-    // Don't reset quota/minted_amount if already initialized
-    if role._reserved == [0u8; 64] && role.minter_quota == 0 && role.minted_amount == 0 {
-        role._reserved = [0u8; 64];
-    }
-
     emit!(RoleUpdated {
         config: ctx.accounts.config.key(),
         assignee,

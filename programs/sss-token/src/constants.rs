@@ -10,7 +10,9 @@ pub const STABLECOIN_CONFIG_SIZE: usize = 8 // discriminator
     + 32  // mint
     + 32  // hook_program_id
     + 6   // decimals (1) + paused (1) + enable_transfer_hook (1) + enable_permanent_delegate (1) + default_account_frozen (1) + bump (1)
-    + 64; // _reserved
+    + 32  // treasury
+    + 1   // paused_by_attestation
+    + 31; // _reserved
 
 pub const ROLE_ASSIGNMENT_SIZE: usize = 8 // discriminator
     + 32 // config

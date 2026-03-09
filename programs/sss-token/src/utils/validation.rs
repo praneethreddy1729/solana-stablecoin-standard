@@ -2,9 +2,13 @@ use crate::errors::SSSError;
 use crate::state::{RoleAssignment, RoleType, StablecoinConfig};
 use anchor_lang::prelude::*;
 
-/// Require that the token is NOT paused
+/// Require that the token is NOT paused (neither manually nor by attestation)
 pub fn require_not_paused(config: &StablecoinConfig) -> Result<()> {
     require!(!config.paused, SSSError::TokenPaused);
+    require!(
+        !config.paused_by_attestation,
+        SSSError::Undercollateralized
+    );
     Ok(())
 }
 

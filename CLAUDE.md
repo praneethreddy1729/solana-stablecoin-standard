@@ -69,6 +69,13 @@ ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 ANCHOR_WALLET=~/.config/solana/id.json
 - 6030: AttestationUriTooLong (> 256 bytes)
 - 6031: InvalidExpiration (must be positive)
 - 6032: Undercollateralized (reserves < supply, auto-pauses)
+- 6033: CannotFreezeTreasury (cannot freeze the treasury account)
+
+## Security Design
+- Blacklister CPI: sss-token uses `invoke_signed` with config PDA signer seeds; hook checks `config.is_signer` (any Blacklister role holder can blacklist)
+- Auto-pause separation: `paused` (manual) vs `paused_by_attestation` (undercollateralized); `require_not_paused` checks BOTH; `unpause` clears BOTH
+- Treasury freeze protection: `freeze_account` rejects if target is the treasury ATA
+- Config struct: includes `paused_by_attestation: bool` field, `_reserved: [u8; 31]`
 
 ## Known Issues
 - Agave 3.0.x SIMD-0219 breaks Token-2022 metadata realloc (anza-xyz/agave#9799)

@@ -46,8 +46,10 @@ pub fn handler(ctx: Context<RemoveFromBlacklist>, user: Pubkey) -> Result<()> {
     require_role_active(&ctx.accounts.blacklister_role, RoleType::Blacklister)?;
 
     let mint_key = ctx.accounts.config.mint;
+    let bump = ctx.accounts.config.bump;
 
     // CPI into hook program to close BlacklistEntry PDA
+    // invoke_signed with config PDA proves CPI from sss-token program
     let ix = anchor_lang::solana_program::instruction::Instruction {
         program_id: ctx.accounts.hook_program.key(),
         accounts: vec![
@@ -65,7 +67,7 @@ pub fn handler(ctx: Context<RemoveFromBlacklist>, user: Pubkey) -> Result<()> {
             ),
             anchor_lang::solana_program::instruction::AccountMeta::new_readonly(
                 ctx.accounts.config.key(),
-                false,
+                true, // config as signer — proves CPI from sss-token
             ),
         ],
         data: {
@@ -76,7 +78,9 @@ pub fn handler(ctx: Context<RemoveFromBlacklist>, user: Pubkey) -> Result<()> {
         },
     };
 
-    anchor_lang::solana_program::program::invoke(
+    let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, mint_key.as_ref(), &[bump]]];
+
+    anchor_lang::solana_program::program::invoke_signed(
         &ix,
         &[
             ctx.accounts.blacklister.to_account_info(),
@@ -84,6 +88,7 @@ pub fn handler(ctx: Context<RemoveFromBlacklist>, user: Pubkey) -> Result<()> {
             ctx.accounts.mint.to_account_info(),
             ctx.accounts.config.to_account_info(),
         ],
+        signer_seeds,
     )?;
 
     emit!(AddressUnblacklisted {

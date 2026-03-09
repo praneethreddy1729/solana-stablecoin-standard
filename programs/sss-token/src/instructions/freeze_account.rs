@@ -53,6 +53,12 @@ pub fn handler(ctx: Context<FreezeTokenAccount>) -> Result<()> {
         SSSError::AccountAlreadyFrozen
     );
 
+    // Prevent freezing the treasury account — would block seize operations
+    require!(
+        ctx.accounts.token_account.key() != ctx.accounts.config.treasury,
+        SSSError::CannotFreezeTreasury
+    );
+
     let mint_key = ctx.accounts.mint.key();
     let bump = ctx.accounts.config.bump;
     let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, mint_key.as_ref(), &[bump]]];
