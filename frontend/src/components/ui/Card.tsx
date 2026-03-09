@@ -8,12 +8,13 @@ interface CardProps {
   title?: string;
   subtitle?: string;
   headerRight?: React.ReactNode;
+  hover?: boolean;
 }
 
-export function Card({ children, className = "", title, subtitle, headerRight }: CardProps) {
+export function Card({ children, className = "", title, subtitle, headerRight, hover = true }: CardProps) {
   return (
     <div
-      className={`bg-surface border border-border rounded-xl overflow-hidden ${className}`}
+      className={`bg-surface border border-border rounded-xl overflow-hidden ${hover ? "card-hover" : ""} ${className}`}
     >
       {(title || headerRight) && (
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">

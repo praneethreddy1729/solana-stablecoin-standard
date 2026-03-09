@@ -19,12 +19,14 @@ import {
   findBlacklistPda,
   findExtraAccountMetasPda,
   findAttestationPda,
+  findRegistryEntryPda,
 } from "./pda";
 import {
   RoleType,
   Preset,
   StablecoinConfig,
   ReserveAttestation,
+  RegistryEntry,
   InitializeParams,
   FreezeThawParams,
   PauseParams,
@@ -134,10 +136,13 @@ export class SolanaStablecoin {
       defaultAccountFrozen = false;
     }
 
+    const [registryEntry] = findRegistryEntryPda(mintKeypair.publicKey, programId);
+
     const accounts = {
       authority: wallet.publicKey,
       config: configPda,
       mint: mintKeypair.publicKey,
+      registryEntry,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       systemProgram: SystemProgram.programId,
       rent: SYSVAR_RENT_PUBKEY,
@@ -597,5 +602,26 @@ export class SolanaStablecoin {
 
     const reserves = attestation.reserveAmount.toNumber();
     return (reserves / supply) * 100;
+  }
+
+  /**
+   * List all SSS-registered stablecoins by fetching RegistryEntry accounts
+   * via getProgramAccounts with discriminator filter.
+   */
+  static async listAll(
+    connection: Connection,
+    wallet: Wallet,
+    programId: PublicKey = SSS_TOKEN_PROGRAM_ID,
+    hookProgramId: PublicKey = SSS_TRANSFER_HOOK_PROGRAM_ID,
+  ): Promise<RegistryEntry[]> {
+    const { program } = SolanaStablecoin.buildPrograms(
+      connection,
+      wallet,
+      programId,
+      hookProgramId,
+    );
+
+    const accounts = await program.account.registryEntry.all();
+    return accounts.map((a) => a.account as unknown as RegistryEntry);
   }
 }

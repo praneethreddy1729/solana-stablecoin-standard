@@ -48,6 +48,20 @@ pub const RESERVE_ATTESTATION_SIZE: usize = 8  // discriminator
     + 1   // is_valid
     + 1;  // bump
 
+/// Registry PDA seed
+pub const REGISTRY_SEED: &[u8] = b"registry";
+
+/// Registry entry account size
+pub const REGISTRY_ENTRY_SIZE: usize = 8  // discriminator
+    + 32  // mint
+    + 32  // issuer
+    + 1   // compliance_level
+    + 8   // created_at
+    + 4 + 32  // name (String)
+    + 4 + 10  // symbol (String)
+    + 1   // decimals
+    + 1;  // bump
+
 /// Max name/symbol lengths for token metadata
 pub const MAX_NAME_LEN: usize = 32;
 pub const MAX_SYMBOL_LEN: usize = 10;

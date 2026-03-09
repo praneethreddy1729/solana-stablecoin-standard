@@ -135,4 +135,16 @@ export interface AttestReservesParams {
   attestor: PublicKey;
 }
 
+/** Mirrors on-chain RegistryEntry account */
+export interface RegistryEntry {
+  mint: PublicKey;
+  issuer: PublicKey;
+  complianceLevel: number;
+  createdAt: number;
+  name: string;
+  symbol: string;
+  decimals: number;
+  bump: number;
+}
+
 export const Presets = Preset;

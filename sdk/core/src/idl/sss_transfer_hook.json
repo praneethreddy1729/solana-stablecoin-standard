@@ -1,14 +1,14 @@
 {
   "address": "A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB",
   "metadata": {
-    "name": "sss_transfer_hook",
+    "name": "sssTransferHook",
     "version": "0.1.0",
     "spec": "0.1.0",
-    "description": "Solana Stablecoin Standard — Transfer Hook Program"
+    "description": "Solana Stablecoin Standard \u2014 Transfer Hook Program"
   },
   "instructions": [
     {
-      "name": "add_to_blacklist",
+      "name": "addToBlacklist",
       "discriminator": [
         90,
         115,
@@ -26,7 +26,7 @@
           "signer": true
         },
         {
-          "name": "blacklist_entry",
+          "name": "blacklistEntry",
           "writable": true,
           "pda": {
             "seeds": [
@@ -62,7 +62,7 @@
           "name": "config"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -109,13 +109,13 @@
           ]
         },
         {
-          "name": "owner_delegate",
+          "name": "ownerDelegate",
           "docs": [
             "Owner or delegate of source"
           ]
         },
         {
-          "name": "extra_account_metas",
+          "name": "extraAccountMetas",
           "pda": {
             "seeds": [
               {
@@ -150,13 +150,13 @@
           }
         },
         {
-          "name": "sender_blacklist",
+          "name": "senderBlacklist",
           "docs": [
             "Sender blacklist PDA (may not exist = not blacklisted)"
           ]
         },
         {
-          "name": "receiver_blacklist",
+          "name": "receiverBlacklist",
           "docs": [
             "Receiver blacklist PDA (may not exist = not blacklisted)"
           ]
@@ -173,7 +173,7 @@
       ]
     },
     {
-      "name": "initialize_extra_account_metas",
+      "name": "initializeExtraAccountMetas",
       "discriminator": [
         22,
         213,
@@ -191,7 +191,7 @@
           "signer": true
         },
         {
-          "name": "extra_account_metas",
+          "name": "extraAccountMetas",
           "writable": true,
           "pda": {
             "seeds": [
@@ -233,14 +233,14 @@
           "name": "config"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "remove_from_blacklist",
+      "name": "removeFromBlacklist",
       "discriminator": [
         47,
         105,
@@ -258,7 +258,7 @@
           "signer": true
         },
         {
-          "name": "blacklist_entry",
+          "name": "blacklistEntry",
           "writable": true,
           "pda": {
             "seeds": [
@@ -302,7 +302,7 @@
       ]
     },
     {
-      "name": "update_extra_account_metas",
+      "name": "updateExtraAccountMetas",
       "discriminator": [
         125,
         37,
@@ -319,7 +319,7 @@
           "signer": true
         },
         {
-          "name": "extra_account_metas",
+          "name": "extraAccountMetas",
           "writable": true,
           "pda": {
             "seeds": [
@@ -366,7 +366,7 @@
   ],
   "accounts": [
     {
-      "name": "BlacklistEntry",
+      "name": "blacklistEntry",
       "discriminator": [
         218,
         179,
@@ -382,45 +382,45 @@
   "errors": [
     {
       "code": 6000,
-      "name": "SenderBlacklisted",
+      "name": "senderBlacklisted",
       "msg": "Sender is blacklisted"
     },
     {
       "code": 6001,
-      "name": "ReceiverBlacklisted",
+      "name": "receiverBlacklisted",
       "msg": "Receiver is blacklisted"
     },
     {
       "code": 6002,
-      "name": "TokenPaused",
+      "name": "tokenPaused",
       "msg": "Token is paused"
     },
     {
       "code": 6003,
-      "name": "InvalidBlacklistEntry",
+      "name": "invalidBlacklistEntry",
       "msg": "Invalid blacklist entry"
     },
     {
       "code": 6004,
-      "name": "AlreadyBlacklisted",
+      "name": "alreadyBlacklisted",
       "msg": "Already blacklisted"
     },
     {
       "code": 6005,
-      "name": "NotBlacklisted",
+      "name": "notBlacklisted",
       "msg": "Not blacklisted"
     },
     {
       "code": 6006,
-      "name": "Unauthorized",
-      "msg": "Unauthorized"
+      "name": "unauthorized",
+      "msg": "unauthorized"
     }
   ],
   "types": [
     {
-      "name": "BlacklistEntry",
+      "name": "blacklistEntry",
       "docs": [
-        "BlacklistEntry PDA — existence means the address is blacklisted",
+        "BlacklistEntry PDA \u2014 existence means the address is blacklisted",
         "Seeds: [b\"blacklist\", mint.key(), user.key()]",
         "Owned by the transfer hook program (NOT the main program)"
       ],

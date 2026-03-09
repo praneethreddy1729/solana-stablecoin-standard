@@ -14,8 +14,8 @@ use spl_token_metadata_interface::instruction::initialize as initialize_token_me
 
 use crate::constants::*;
 use crate::errors::SSSError;
-use crate::events::StablecoinInitialized;
-use crate::state::StablecoinConfig;
+use crate::events::{StablecoinInitialized, StablecoinRegistered};
+use crate::state::{RegistryEntry, StablecoinConfig};
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct InitializeArgs {
@@ -49,6 +49,15 @@ pub struct Initialize<'info> {
     /// CHECK: Initialized via raw CPI to Token-2022
     #[account(mut)]
     pub mint: Signer<'info>,
+
+    #[account(
+        init,
+        payer = authority,
+        space = REGISTRY_ENTRY_SIZE,
+        seeds = [REGISTRY_SEED, mint.key().as_ref()],
+        bump,
+    )]
+    pub registry_entry: Account<'info, RegistryEntry>,
 
     /// CHECK: Transfer hook program, validated if transfer hook is enabled
     pub hook_program: Option<UncheckedAccount<'info>>,
@@ -221,15 +230,34 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
     config.paused_by_attestation = false;
     config._reserved = [0u8; 31];
 
+    // Populate registry entry
+    let registry = &mut ctx.accounts.registry_entry;
+    registry.mint = mint_key;
+    registry.issuer = ctx.accounts.authority.key();
+    registry.compliance_level = if args.enable_transfer_hook && args.enable_permanent_delegate { 2 } else { 1 };
+    registry.created_at = Clock::get()?.unix_timestamp;
+    registry.name = args.name.clone();
+    registry.symbol = args.symbol.clone();
+    registry.decimals = args.decimals;
+    registry.bump = ctx.bumps.registry_entry;
+
     emit!(StablecoinInitialized {
         mint: mint_key,
         authority: ctx.accounts.authority.key(),
         decimals: args.decimals,
-        name: args.name,
-        symbol: args.symbol,
+        name: args.name.clone(),
+        symbol: args.symbol.clone(),
         enable_transfer_hook: args.enable_transfer_hook,
         enable_permanent_delegate: args.enable_permanent_delegate,
         default_account_frozen: args.default_account_frozen,
+    });
+
+    emit!(StablecoinRegistered {
+        mint: mint_key,
+        issuer: ctx.accounts.authority.key(),
+        compliance_level: registry.compliance_level,
+        name: args.name,
+        symbol: args.symbol,
     });
 
     Ok(())

@@ -139,6 +139,7 @@ describe("sss-transfer-hook", () => {
         authority: authority.publicKey,
         config: configPda,
         mint: mint.publicKey,
+        registryEntry: PublicKey.findProgramAddressSync([Buffer.from("registry"), mint.publicKey.toBuffer()], program.programId)[0],
         hookProgram: hookProgram.programId,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SystemProgram.programId,

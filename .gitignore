@@ -11,3 +11,4 @@ dist/
 devnet-deployer.json
 *-keypair.json
 *.pem
+frontend/.next/

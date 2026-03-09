@@ -79,6 +79,7 @@ describe("authority-pause-extended", () => {
         authority: authority.publicKey,
         config,
         mint: mint.publicKey,
+        registryEntry: PublicKey.findProgramAddressSync([Buffer.from("registry"), mint.publicKey.toBuffer()], program.programId)[0],
         hookProgram: null,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SystemProgram.programId,

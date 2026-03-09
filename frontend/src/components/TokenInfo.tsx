@@ -4,7 +4,7 @@ import React from "react";
 import { PublicKey } from "@solana/web3.js";
 import { Card, CardSkeleton } from "./ui/Card";
 import { Badge } from "./ui/Badge";
-import { explorerUrl, shortenAddress } from "@/lib/constants";
+import { explorerUrl, shortenAddress, formatNumber } from "@/lib/constants";
 import type { StablecoinConfig, TokenAccountInfo } from "@/hooks/useStablecoin";
 
 interface TokenInfoProps {
@@ -17,11 +17,7 @@ interface TokenInfoProps {
 }
 
 function formatSupply(supply: bigint, decimals: number): string {
-  const divisor = BigInt(10 ** decimals);
-  const whole = supply / divisor;
-  const frac = supply % divisor;
-  const fracStr = frac.toString().padStart(decimals, "0").replace(/0+$/, "");
-  return fracStr ? `${whole.toLocaleString()}.${fracStr}` : whole.toLocaleString();
+  return formatNumber(supply, decimals);
 }
 
 export function TokenInfo({
@@ -65,7 +61,7 @@ export function TokenInfo({
             <span className="text-text-primary font-medium">{decimals}</span>
           </InfoRow>
           <InfoRow label="Total Supply">
-            <span className="text-text-primary font-medium text-lg">
+            <span className="text-text-primary font-medium text-lg number-appear font-mono">
               {totalSupply !== null ? formatSupply(totalSupply, decimals) : "--"}
             </span>
           </InfoRow>
@@ -117,7 +113,7 @@ export function TokenInfo({
         {userTokenAccount ? (
           <div className="space-y-4">
             <InfoRow label="Balance">
-              <span className="text-2xl font-semibold text-text-primary">
+              <span className="text-2xl font-semibold text-text-primary number-appear font-mono">
                 {formatSupply(userTokenAccount.balance, decimals)}
               </span>
             </InfoRow>

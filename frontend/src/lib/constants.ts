@@ -46,3 +46,12 @@ export function explorerUrl(
 export function shortenAddress(address: string, chars = 4): string {
   return `${address.slice(0, chars)}...${address.slice(-chars)}`;
 }
+
+export function formatNumber(supply: bigint, decimals: number): string {
+  const divisor = BigInt(10 ** decimals);
+  const whole = supply / divisor;
+  const frac = supply % divisor;
+  const fracStr = frac.toString().padStart(decimals, "0").replace(/0+$/, "");
+  const wholeFormatted = whole.toLocaleString();
+  return fracStr ? `${wholeFormatted}.${fracStr}` : wholeFormatted;
+}

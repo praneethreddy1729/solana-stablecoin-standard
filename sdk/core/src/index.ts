@@ -8,6 +8,7 @@ export {
   BLACKLIST_SEED,
   EXTRA_ACCOUNT_METAS_SEED,
   ATTESTATION_SEED,
+  REGISTRY_SEED,
 } from "./constants";
 export {
   findConfigPda,
@@ -15,6 +16,7 @@ export {
   findBlacklistPda,
   findExtraAccountMetasPda,
   findAttestationPda,
+  findRegistryEntryPda,
 } from "./pda";
 export {
   RoleType,
@@ -33,6 +35,7 @@ export {
   type UpdateRolesParams,
   type UpdateMinterQuotaParams,
   type ReserveAttestation,
+  type RegistryEntry,
   type AttestReservesParams,
 } from "./types";
 export {

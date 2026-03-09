@@ -1,14 +1,14 @@
 {
   "address": "tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz",
   "metadata": {
-    "name": "sss_token",
+    "name": "sssToken",
     "version": "0.1.0",
     "spec": "0.1.0",
-    "description": "Solana Stablecoin Standard — Main Token Program"
+    "description": "Solana Stablecoin Standard \u2014 Main Token Program"
   },
   "instructions": [
     {
-      "name": "accept_authority",
+      "name": "acceptAuthority",
       "docs": [
         "Accept authority transfer (pending authority only)"
       ],
@@ -24,7 +24,7 @@
       ],
       "accounts": [
         {
-          "name": "new_authority",
+          "name": "newAuthority",
           "signer": true
         },
         {
@@ -46,7 +46,7 @@
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "StablecoinConfig"
+                "account": "stablecoinConfig"
               }
             ]
           }
@@ -55,7 +55,7 @@
       "args": []
     },
     {
-      "name": "add_to_blacklist",
+      "name": "addToBlacklist",
       "docs": [
         "Add address to blacklist via CPI to hook program (SSS-2, requires Blacklister role)"
       ],
@@ -93,26 +93,26 @@
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "StablecoinConfig"
+                "account": "stablecoinConfig"
               }
             ]
           }
         },
         {
-          "name": "blacklister_role"
+          "name": "blacklisterRole"
         },
         {
-          "name": "hook_program"
+          "name": "hookProgram"
         },
         {
-          "name": "blacklist_entry",
+          "name": "blacklistEntry",
           "writable": true
         },
         {
           "name": "mint"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -128,7 +128,7 @@
       ]
     },
     {
-      "name": "attest_reserves",
+      "name": "attestReserves",
       "docs": [
         "Submit a reserve attestation proving the stablecoin is fully backed.",
         "Auto-pauses minting if reserves < token supply (undercollateralized)."
@@ -168,13 +168,13 @@
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "StablecoinConfig"
+                "account": "stablecoinConfig"
               }
             ]
           }
         },
         {
-          "name": "attestor_role"
+          "name": "attestorRole"
         },
         {
           "name": "mint",
@@ -211,21 +211,21 @@
           }
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "reserve_amount",
+          "name": "reserveAmount",
           "type": "u64"
         },
         {
-          "name": "expires_in_seconds",
+          "name": "expiresInSeconds",
           "type": "i64"
         },
         {
-          "name": "attestation_uri",
+          "name": "attestationUri",
           "type": "string"
         }
       ]
@@ -273,7 +273,7 @@
           }
         },
         {
-          "name": "burner_role"
+          "name": "burnerRole"
         },
         {
           "name": "mint",
@@ -287,11 +287,11 @@
           "writable": true
         },
         {
-          "name": "from_authority",
+          "name": "fromAuthority",
           "signer": true
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -302,7 +302,7 @@
       ]
     },
     {
-      "name": "cancel_authority_transfer",
+      "name": "cancelAuthorityTransfer",
       "docs": [
         "Cancel pending authority transfer (current authority only)"
       ],
@@ -340,7 +340,7 @@
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "StablecoinConfig"
+                "account": "stablecoinConfig"
               }
             ]
           }
@@ -349,7 +349,7 @@
       "args": []
     },
     {
-      "name": "freeze_account",
+      "name": "freezeAccount",
       "docs": [
         "Freeze a token account (requires Freezer role)"
       ],
@@ -391,7 +391,7 @@
           }
         },
         {
-          "name": "freezer_role"
+          "name": "freezerRole"
         },
         {
           "name": "mint",
@@ -401,11 +401,11 @@
           ]
         },
         {
-          "name": "token_account",
+          "name": "tokenAccount",
           "writable": true
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": []
@@ -460,14 +460,39 @@
           "signer": true
         },
         {
-          "name": "hook_program",
+          "name": "registryEntry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "hookProgram",
           "optional": true
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
@@ -480,7 +505,7 @@
           "name": "args",
           "type": {
             "defined": {
-              "name": "InitializeArgs"
+              "name": "initializeArgs"
             }
           }
         }
@@ -530,7 +555,7 @@
           }
         },
         {
-          "name": "minter_role",
+          "name": "minterRole",
           "writable": true
         },
         {
@@ -548,7 +573,7 @@
           "writable": true
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -597,19 +622,19 @@
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "StablecoinConfig"
+                "account": "stablecoinConfig"
               }
             ]
           }
         },
         {
-          "name": "pauser_role"
+          "name": "pauserRole"
         }
       ],
       "args": []
     },
     {
-      "name": "remove_from_blacklist",
+      "name": "removeFromBlacklist",
       "docs": [
         "Remove address from blacklist via CPI to hook program (SSS-2, requires Blacklister role)"
       ],
@@ -647,19 +672,19 @@
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "StablecoinConfig"
+                "account": "stablecoinConfig"
               }
             ]
           }
         },
         {
-          "name": "blacklister_role"
+          "name": "blacklisterRole"
         },
         {
-          "name": "hook_program"
+          "name": "hookProgram"
         },
         {
-          "name": "blacklist_entry",
+          "name": "blacklistEntry",
           "writable": true
         },
         {
@@ -716,7 +741,7 @@
           }
         },
         {
-          "name": "seizer_role"
+          "name": "seizerRole"
         },
         {
           "name": "mint",
@@ -733,13 +758,13 @@
           "writable": true
         },
         {
-          "name": "from_owner",
+          "name": "fromOwner",
           "docs": [
             "Validated in handler to match `from.owner`."
           ]
         },
         {
-          "name": "blacklist_entry",
+          "name": "blacklistEntry",
           "docs": [
             "Seeds: [b\"blacklist\", mint, from_owner] under hook_program_id.",
             "Verified manually in handler because this PDA belongs to another program."
@@ -748,20 +773,20 @@
         {
           "name": "to",
           "docs": [
-            "The treasury token account — seized tokens MUST go here.",
+            "The treasury token account \u2014 seized tokens MUST go here.",
             "SECURITY: Constraining destination prevents a seizer from redirecting",
             "seized funds to their own account."
           ],
           "writable": true
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": []
     },
     {
-      "name": "thaw_account",
+      "name": "thawAccount",
       "docs": [
         "Thaw a frozen token account (requires Freezer role)"
       ],
@@ -803,7 +828,7 @@
           }
         },
         {
-          "name": "freezer_role"
+          "name": "freezerRole"
         },
         {
           "name": "mint",
@@ -813,17 +838,17 @@
           ]
         },
         {
-          "name": "token_account",
+          "name": "tokenAccount",
           "writable": true
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": []
     },
     {
-      "name": "transfer_authority",
+      "name": "transferAuthority",
       "docs": [
         "Initiate authority transfer (current authority only)"
       ],
@@ -861,7 +886,7 @@
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "StablecoinConfig"
+                "account": "stablecoinConfig"
               }
             ]
           }
@@ -869,7 +894,7 @@
       ],
       "args": [
         {
-          "name": "new_authority",
+          "name": "newAuthority",
           "type": "pubkey"
         }
       ]
@@ -913,19 +938,19 @@
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "StablecoinConfig"
+                "account": "stablecoinConfig"
               }
             ]
           }
         },
         {
-          "name": "pauser_role"
+          "name": "pauserRole"
         }
       ],
       "args": []
     },
     {
-      "name": "update_minter",
+      "name": "updateMinter",
       "docs": [
         "Update minter quota (authority only)"
       ],
@@ -962,25 +987,25 @@
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "StablecoinConfig"
+                "account": "stablecoinConfig"
               }
             ]
           }
         },
         {
-          "name": "minter_role",
+          "name": "minterRole",
           "writable": true
         }
       ],
       "args": [
         {
-          "name": "new_quota",
+          "name": "newQuota",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "update_roles",
+      "name": "updateRoles",
       "docs": [
         "Create or update a role assignment (authority only)"
       ],
@@ -1018,7 +1043,7 @@
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "StablecoinConfig"
+                "account": "stablecoinConfig"
               }
             ]
           }
@@ -1028,13 +1053,13 @@
           "writable": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "role_type",
+          "name": "roleType",
           "type": "u8"
         },
         {
@@ -1042,13 +1067,13 @@
           "type": "pubkey"
         },
         {
-          "name": "is_active",
+          "name": "isActive",
           "type": "bool"
         }
       ]
     },
     {
-      "name": "update_treasury",
+      "name": "updateTreasury",
       "docs": [
         "Update the treasury address where seized tokens are sent (authority only)"
       ],
@@ -1086,7 +1111,7 @@
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "StablecoinConfig"
+                "account": "stablecoinConfig"
               }
             ]
           }
@@ -1094,7 +1119,7 @@
       ],
       "args": [
         {
-          "name": "new_treasury",
+          "name": "newTreasury",
           "type": "pubkey"
         }
       ]
@@ -1102,7 +1127,20 @@
   ],
   "accounts": [
     {
-      "name": "ReserveAttestation",
+      "name": "registryEntry",
+      "discriminator": [
+        48,
+        198,
+        240,
+        252,
+        155,
+        186,
+        72,
+        16
+      ]
+    },
+    {
+      "name": "reserveAttestation",
       "discriminator": [
         105,
         212,
@@ -1115,7 +1153,7 @@
       ]
     },
     {
-      "name": "RoleAssignment",
+      "name": "roleAssignment",
       "discriminator": [
         205,
         130,
@@ -1128,7 +1166,7 @@
       ]
     },
     {
-      "name": "StablecoinConfig",
+      "name": "stablecoinConfig",
       "discriminator": [
         127,
         25,
@@ -1143,7 +1181,7 @@
   ],
   "events": [
     {
-      "name": "AccountFrozen",
+      "name": "accountFrozen",
       "discriminator": [
         221,
         214,
@@ -1156,7 +1194,7 @@
       ]
     },
     {
-      "name": "AccountThawed",
+      "name": "accountThawed",
       "discriminator": [
         49,
         63,
@@ -1169,7 +1207,7 @@
       ]
     },
     {
-      "name": "AddressBlacklisted",
+      "name": "addressBlacklisted",
       "discriminator": [
         170,
         43,
@@ -1182,7 +1220,7 @@
       ]
     },
     {
-      "name": "AddressUnblacklisted",
+      "name": "addressUnblacklisted",
       "discriminator": [
         134,
         21,
@@ -1195,7 +1233,7 @@
       ]
     },
     {
-      "name": "AuthorityTransferAccepted",
+      "name": "authorityTransferAccepted",
       "discriminator": [
         149,
         165,
@@ -1208,7 +1246,7 @@
       ]
     },
     {
-      "name": "AuthorityTransferCancelled",
+      "name": "authorityTransferCancelled",
       "discriminator": [
         31,
         228,
@@ -1221,7 +1259,7 @@
       ]
     },
     {
-      "name": "AuthorityTransferInitiated",
+      "name": "authorityTransferInitiated",
       "discriminator": [
         194,
         206,
@@ -1234,7 +1272,7 @@
       ]
     },
     {
-      "name": "MinterQuotaUpdated",
+      "name": "minterQuotaUpdated",
       "discriminator": [
         43,
         253,
@@ -1247,7 +1285,7 @@
       ]
     },
     {
-      "name": "ReservesAttested",
+      "name": "reservesAttested",
       "discriminator": [
         77,
         249,
@@ -1260,7 +1298,7 @@
       ]
     },
     {
-      "name": "RoleUpdated",
+      "name": "roleUpdated",
       "discriminator": [
         155,
         222,
@@ -1273,7 +1311,7 @@
       ]
     },
     {
-      "name": "StablecoinInitialized",
+      "name": "stablecoinInitialized",
       "discriminator": [
         238,
         217,
@@ -1286,7 +1324,20 @@
       ]
     },
     {
-      "name": "TokenPaused",
+      "name": "stablecoinRegistered",
+      "discriminator": [
+        118,
+        131,
+        122,
+        142,
+        124,
+        67,
+        20,
+        138
+      ]
+    },
+    {
+      "name": "tokenPaused",
       "discriminator": [
         126,
         54,
@@ -1299,7 +1350,7 @@
       ]
     },
     {
-      "name": "TokenUnpaused",
+      "name": "tokenUnpaused",
       "discriminator": [
         225,
         17,
@@ -1312,7 +1363,7 @@
       ]
     },
     {
-      "name": "TokensBurned",
+      "name": "tokensBurned",
       "discriminator": [
         230,
         255,
@@ -1325,7 +1376,7 @@
       ]
     },
     {
-      "name": "TokensMinted",
+      "name": "tokensMinted",
       "discriminator": [
         207,
         212,
@@ -1338,7 +1389,7 @@
       ]
     },
     {
-      "name": "TokensSeized",
+      "name": "tokensSeized",
       "discriminator": [
         51,
         129,
@@ -1349,178 +1400,196 @@
         140,
         122
       ]
+    },
+    {
+      "name": "treasuryUpdated",
+      "discriminator": [
+        80,
+        239,
+        54,
+        168,
+        43,
+        38,
+        85,
+        145
+      ]
     }
   ],
   "errors": [
     {
       "code": 6000,
-      "name": "Unauthorized",
+      "name": "unauthorized",
       "msg": "Unauthorized: signer is not the authority"
     },
     {
       "code": 6001,
-      "name": "InvalidRoleType",
+      "name": "invalidRoleType",
       "msg": "Invalid role type"
     },
     {
       "code": 6002,
-      "name": "RoleNotActive",
+      "name": "roleNotActive",
       "msg": "Role is not active"
     },
     {
       "code": 6003,
-      "name": "TokenPaused",
+      "name": "tokenPaused",
       "msg": "Token is paused"
     },
     {
       "code": 6004,
-      "name": "TokenNotPaused",
+      "name": "tokenNotPaused",
       "msg": "Token is not paused"
     },
     {
       "code": 6005,
-      "name": "MinterQuotaExceeded",
+      "name": "minterQuotaExceeded",
       "msg": "Minter quota exceeded"
     },
     {
       "code": 6006,
-      "name": "InvalidMint",
+      "name": "invalidMint",
       "msg": "Invalid mint"
     },
     {
       "code": 6007,
-      "name": "InvalidConfig",
+      "name": "invalidConfig",
       "msg": "Invalid config"
     },
     {
       "code": 6008,
-      "name": "AuthorityTransferNotPending",
+      "name": "authorityTransferNotPending",
       "msg": "Authority transfer not pending"
     },
     {
       "code": 6009,
-      "name": "AuthorityTransferAlreadyPending",
+      "name": "authorityTransferAlreadyPending",
       "msg": "Authority transfer already pending"
     },
     {
       "code": 6010,
-      "name": "InvalidPendingAuthority",
+      "name": "invalidPendingAuthority",
       "msg": "Invalid pending authority"
     },
     {
       "code": 6011,
-      "name": "AccountAlreadyFrozen",
+      "name": "accountAlreadyFrozen",
       "msg": "Account is already frozen"
     },
     {
       "code": 6012,
-      "name": "AccountNotFrozen",
+      "name": "accountNotFrozen",
       "msg": "Account is not frozen"
     },
     {
       "code": 6013,
-      "name": "ArithmeticOverflow",
+      "name": "arithmeticOverflow",
       "msg": "Arithmetic overflow"
     },
     {
       "code": 6014,
-      "name": "InvalidDecimals",
+      "name": "invalidDecimals",
       "msg": "Invalid decimals: must be between 0 and 18"
     },
     {
       "code": 6015,
-      "name": "NameTooLong",
+      "name": "nameTooLong",
       "msg": "Name too long"
     },
     {
       "code": 6016,
-      "name": "SymbolTooLong",
+      "name": "symbolTooLong",
       "msg": "Symbol too long"
     },
     {
       "code": 6017,
-      "name": "UriTooLong",
+      "name": "uriTooLong",
       "msg": "URI too long"
     },
     {
       "code": 6018,
-      "name": "AccountBlacklisted",
+      "name": "accountBlacklisted",
       "msg": "Account is blacklisted"
     },
     {
       "code": 6019,
-      "name": "AccountNotBlacklisted",
+      "name": "accountNotBlacklisted",
       "msg": "Account is not blacklisted"
     },
     {
       "code": 6020,
-      "name": "InvalidHookProgram",
+      "name": "invalidHookProgram",
       "msg": "Invalid hook program"
     },
     {
       "code": 6021,
-      "name": "ZeroAmount",
+      "name": "zeroAmount",
       "msg": "Mint amount must be greater than zero"
     },
     {
       "code": 6022,
-      "name": "ComplianceNotEnabled",
+      "name": "complianceNotEnabled",
       "msg": "Compliance module not enabled for this token"
     },
     {
       "code": 6023,
-      "name": "PermanentDelegateNotEnabled",
+      "name": "permanentDelegateNotEnabled",
       "msg": "Permanent delegate not enabled for this token"
     },
     {
       "code": 6024,
-      "name": "ReasonTooLong",
+      "name": "reasonTooLong",
       "msg": "Blacklist reason too long (max 64 bytes)"
     },
     {
       "code": 6025,
-      "name": "InvalidTreasury",
+      "name": "invalidTreasury",
       "msg": "Seized tokens must go to the designated treasury"
     },
     {
       "code": 6026,
-      "name": "TargetNotBlacklisted",
+      "name": "targetNotBlacklisted",
       "msg": "Target account owner is not blacklisted"
     },
     {
       "code": 6027,
-      "name": "AccountDeliberatelyFrozen",
+      "name": "accountDeliberatelyFrozen",
       "msg": "Account is deliberately frozen and cannot be auto-thawed"
     },
     {
       "code": 6028,
-      "name": "InvalidBlacklistEntry",
+      "name": "invalidBlacklistEntry",
       "msg": "Invalid blacklist entry PDA"
     },
     {
       "code": 6029,
-      "name": "InvalidFromOwner",
+      "name": "invalidFromOwner",
       "msg": "Invalid from account owner"
     },
     {
       "code": 6030,
-      "name": "AttestationUriTooLong",
+      "name": "attestationUriTooLong",
       "msg": "Attestation URI too long (max 256 bytes)"
     },
     {
       "code": 6031,
-      "name": "InvalidExpiration",
+      "name": "invalidExpiration",
       "msg": "Invalid expiration: must be positive"
     },
     {
       "code": 6032,
-      "name": "Undercollateralized",
+      "name": "undercollateralized",
       "msg": "Undercollateralized: reserves are below token supply"
+    },
+    {
+      "code": 6033,
+      "name": "cannotFreezeTreasury",
+      "msg": "Cannot freeze the treasury account"
     }
   ],
   "types": [
     {
-      "name": "AccountFrozen",
+      "name": "accountFrozen",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1540,7 +1609,7 @@
       }
     },
     {
-      "name": "AccountThawed",
+      "name": "accountThawed",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1560,7 +1629,7 @@
       }
     },
     {
-      "name": "AddressBlacklisted",
+      "name": "addressBlacklisted",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1584,7 +1653,7 @@
       }
     },
     {
-      "name": "AddressUnblacklisted",
+      "name": "addressUnblacklisted",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1604,7 +1673,7 @@
       }
     },
     {
-      "name": "AuthorityTransferAccepted",
+      "name": "authorityTransferAccepted",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1613,18 +1682,18 @@
             "type": "pubkey"
           },
           {
-            "name": "old_authority",
+            "name": "oldAuthority",
             "type": "pubkey"
           },
           {
-            "name": "new_authority",
+            "name": "newAuthority",
             "type": "pubkey"
           }
         ]
       }
     },
     {
-      "name": "AuthorityTransferCancelled",
+      "name": "authorityTransferCancelled",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1640,7 +1709,7 @@
       }
     },
     {
-      "name": "AuthorityTransferInitiated",
+      "name": "authorityTransferInitiated",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1649,18 +1718,18 @@
             "type": "pubkey"
           },
           {
-            "name": "current_authority",
+            "name": "currentAuthority",
             "type": "pubkey"
           },
           {
-            "name": "pending_authority",
+            "name": "pendingAuthority",
             "type": "pubkey"
           }
         ]
       }
     },
     {
-      "name": "InitializeArgs",
+      "name": "initializeArgs",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1681,15 +1750,15 @@
             "type": "u8"
           },
           {
-            "name": "enable_transfer_hook",
+            "name": "enableTransferHook",
             "type": "bool"
           },
           {
-            "name": "enable_permanent_delegate",
+            "name": "enablePermanentDelegate",
             "type": "bool"
           },
           {
-            "name": "default_account_frozen",
+            "name": "defaultAccountFrozen",
             "type": "bool"
           },
           {
@@ -1704,7 +1773,7 @@
       }
     },
     {
-      "name": "MinterQuotaUpdated",
+      "name": "minterQuotaUpdated",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1717,14 +1786,78 @@
             "type": "pubkey"
           },
           {
-            "name": "new_quota",
+            "name": "newQuota",
             "type": "u64"
           }
         ]
       }
     },
     {
-      "name": "ReserveAttestation",
+      "name": "registryEntry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "docs": [
+              "The stablecoin mint address"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "issuer",
+            "docs": [
+              "The issuer (authority at creation time)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "complianceLevel",
+            "docs": [
+              "SSS compliance level: 1 = SSS-1 (basic), 2 = SSS-2 (compliance)"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "createdAt",
+            "docs": [
+              "Creation timestamp"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "name",
+            "docs": [
+              "Token name (copied from init args, max 32 bytes)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "docs": [
+              "Token symbol (copied from init args, max 10 bytes)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "decimals",
+            "docs": [
+              "Token decimals"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "reserveAttestation",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1743,14 +1876,14 @@
             "type": "pubkey"
           },
           {
-            "name": "reserve_amount",
+            "name": "reserveAmount",
             "docs": [
               "Reserve balance in token base units"
             ],
             "type": "u64"
           },
           {
-            "name": "token_supply",
+            "name": "tokenSupply",
             "docs": [
               "Token supply at time of attestation"
             ],
@@ -1764,21 +1897,21 @@
             "type": "i64"
           },
           {
-            "name": "expires_at",
+            "name": "expiresAt",
             "docs": [
               "Unix timestamp when this attestation expires"
             ],
             "type": "i64"
           },
           {
-            "name": "attestation_uri",
+            "name": "attestationUri",
             "docs": [
               "Link to off-chain proof document (e.g., audit report URL)"
             ],
             "type": "string"
           },
           {
-            "name": "is_valid",
+            "name": "isValid",
             "docs": [
               "Whether this attestation is still valid (can be invalidated)"
             ],
@@ -1795,7 +1928,7 @@
       }
     },
     {
-      "name": "ReservesAttested",
+      "name": "reservesAttested",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1808,22 +1941,22 @@
             "type": "pubkey"
           },
           {
-            "name": "reserve_amount",
+            "name": "reserveAmount",
             "type": "u64"
           },
           {
-            "name": "token_supply",
+            "name": "tokenSupply",
             "type": "u64"
           },
           {
-            "name": "collateralization_ratio_bps",
+            "name": "collateralizationRatioBps",
             "docs": [
               "Collateralization ratio in basis points (10000 = 100%)"
             ],
             "type": "u64"
           },
           {
-            "name": "auto_paused",
+            "name": "autoPaused",
             "docs": [
               "Whether the token was auto-paused due to undercollateralization"
             ],
@@ -1837,7 +1970,7 @@
       }
     },
     {
-      "name": "RoleAssignment",
+      "name": "roleAssignment",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1856,28 +1989,28 @@
             "type": "pubkey"
           },
           {
-            "name": "role_type",
+            "name": "roleType",
             "docs": [
               "The type of role"
             ],
             "type": "u8"
           },
           {
-            "name": "is_active",
+            "name": "isActive",
             "docs": [
               "Whether this role is currently active"
             ],
             "type": "bool"
           },
           {
-            "name": "minter_quota",
+            "name": "minterQuota",
             "docs": [
               "Minter quota (cumulative cap, only used for Minter role)"
             ],
             "type": "u64"
           },
           {
-            "name": "minted_amount",
+            "name": "mintedAmount",
             "docs": [
               "Amount already minted (cumulative, only used for Minter role)"
             ],
@@ -1891,7 +2024,7 @@
             "type": "u8"
           },
           {
-            "name": "_reserved",
+            "name": "reserved",
             "docs": [
               "Reserved for future use"
             ],
@@ -1906,7 +2039,7 @@
       }
     },
     {
-      "name": "RoleUpdated",
+      "name": "roleUpdated",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1919,18 +2052,18 @@
             "type": "pubkey"
           },
           {
-            "name": "role_type",
+            "name": "roleType",
             "type": "u8"
           },
           {
-            "name": "is_active",
+            "name": "isActive",
             "type": "bool"
           }
         ]
       }
     },
     {
-      "name": "StablecoinConfig",
+      "name": "stablecoinConfig",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1942,14 +2075,14 @@
             "type": "pubkey"
           },
           {
-            "name": "pending_authority",
+            "name": "pendingAuthority",
             "docs": [
               "Pending authority for two-step transfer"
             ],
             "type": "pubkey"
           },
           {
-            "name": "transfer_initiated_at",
+            "name": "transferInitiatedAt",
             "docs": [
               "Timestamp when authority transfer was initiated (0 if none)"
             ],
@@ -1963,7 +2096,7 @@
             "type": "pubkey"
           },
           {
-            "name": "hook_program_id",
+            "name": "hookProgramId",
             "docs": [
               "The transfer hook program ID (Pubkey::default() if not enabled)"
             ],
@@ -1984,21 +2117,21 @@
             "type": "bool"
           },
           {
-            "name": "enable_transfer_hook",
+            "name": "enableTransferHook",
             "docs": [
               "Whether transfer hook compliance is enabled (SSS-2)"
             ],
             "type": "bool"
           },
           {
-            "name": "enable_permanent_delegate",
+            "name": "enablePermanentDelegate",
             "docs": [
               "Whether permanent delegate is enabled (SSS-2)"
             ],
             "type": "bool"
           },
           {
-            "name": "default_account_frozen",
+            "name": "defaultAccountFrozen",
             "docs": [
               "Whether default account state is frozen"
             ],
@@ -2014,19 +2147,28 @@
           {
             "name": "treasury",
             "docs": [
-              "Treasury token account — seized tokens are sent here"
+              "Treasury token account \u2014 seized tokens are sent here"
             ],
             "type": "pubkey"
           },
           {
-            "name": "_reserved",
+            "name": "pausedByAttestation",
+            "docs": [
+              "Whether minting is auto-paused due to undercollateralized reserves.",
+              "Separate from `paused` so attestor cannot override manual pause,",
+              "and pauser cannot silently clear attestation-triggered pause."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "reserved",
             "docs": [
               "Reserved for future use"
             ],
             "type": {
               "array": [
                 "u8",
-                32
+                31
               ]
             }
           }
@@ -2034,7 +2176,7 @@
       }
     },
     {
-      "name": "StablecoinInitialized",
+      "name": "stablecoinInitialized",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2059,22 +2201,50 @@
             "type": "string"
           },
           {
-            "name": "enable_transfer_hook",
+            "name": "enableTransferHook",
             "type": "bool"
           },
           {
-            "name": "enable_permanent_delegate",
+            "name": "enablePermanentDelegate",
             "type": "bool"
           },
           {
-            "name": "default_account_frozen",
+            "name": "defaultAccountFrozen",
             "type": "bool"
           }
         ]
       }
     },
     {
-      "name": "TokenPaused",
+      "name": "stablecoinRegistered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "issuer",
+            "type": "pubkey"
+          },
+          {
+            "name": "complianceLevel",
+            "type": "u8"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "tokenPaused",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2090,7 +2260,7 @@
       }
     },
     {
-      "name": "TokenUnpaused",
+      "name": "tokenUnpaused",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2106,7 +2276,7 @@
       }
     },
     {
-      "name": "TokensBurned",
+      "name": "tokensBurned",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2130,7 +2300,7 @@
       }
     },
     {
-      "name": "TokensMinted",
+      "name": "tokensMinted",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2154,7 +2324,7 @@
       }
     },
     {
-      "name": "TokensSeized",
+      "name": "tokensSeized",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2176,6 +2346,30 @@
           },
           {
             "name": "seizer",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "treasuryUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "config",
+            "type": "pubkey"
+          },
+          {
+            "name": "oldTreasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "newTreasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
             "type": "pubkey"
           }
         ]

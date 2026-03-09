@@ -114,6 +114,7 @@ describe("edge-cases", () => {
         authority: authority.publicKey,
         config: configPda,
         mint: mint.publicKey,
+        registryEntry: PublicKey.findProgramAddressSync([Buffer.from("registry"), mint.publicKey.toBuffer()], program.programId)[0],
         hookProgram: null,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SystemProgram.programId,

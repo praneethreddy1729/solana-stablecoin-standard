@@ -13,6 +13,15 @@ pub struct StablecoinInitialized {
 }
 
 #[event]
+pub struct StablecoinRegistered {
+    pub mint: Pubkey,
+    pub issuer: Pubkey,
+    pub compliance_level: u8,
+    pub name: String,
+    pub symbol: String,
+}
+
+#[event]
 pub struct TokensMinted {
     pub mint: Pubkey,
     pub to: Pubkey,
