@@ -34,8 +34,31 @@ SSS defines two composable specification levels. Choose the one that matches you
 
 Both programs are deployed and verified on Solana Devnet:
 
-- **sss-token**: [tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz](https://explorer.solana.com/address/tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz?cluster=devnet)
-- **sss-transfer-hook**: [A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB](https://explorer.solana.com/address/A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB?cluster=devnet)
+- **sss-token**: [`tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz`](https://explorer.solana.com/address/tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz?cluster=devnet)
+- **sss-transfer-hook**: [`A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB`](https://explorer.solana.com/address/A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB?cluster=devnet)
+
+### Devnet Proof Script
+
+A self-contained script demonstrates the full SSS-1 lifecycle on devnet:
+
+```bash
+npx ts-node scripts/devnet-proof.ts
+```
+
+The script performs the following operations against the deployed programs:
+
+| Step | Operation | Description |
+|:----:|-----------|-------------|
+| 1 | `initialize` | Creates an SSS-1 stablecoin (SSSD, 6 decimals) |
+| 2 | `update_roles` | Assigns Minter role to the authority wallet |
+| 3 | `update_roles` | Assigns Burner role to the authority wallet |
+| 4 | `update_minter` | Sets minter quota to 10,000 tokens |
+| 5 | `mint` | Mints 100 SSSD to the authority's token account |
+| 6 | `burn` | Burns 25 SSSD, leaving 75 SSSD remaining |
+
+All six transactions are signed and submitted to devnet, with explorer links printed for each.
+
+> **Note:** Devnet currently runs Agave 3.0.x which has a known SIMD-0219 bug affecting Token-2022 metadata reallocation ([anza-xyz/agave#9799](https://github.com/anza-xyz/agave/issues/9799)). This feature is deactivated in the local test validator via `Anchor.toml`, but cannot be deactivated on devnet. If the script fails due to this issue, the programs themselves are still deployed and verifiable at the explorer links above.
 
 ## Installation
 
@@ -564,7 +587,7 @@ anchor test
 
 ### Test Breakdown
 
-**285 tests** across 14 test files covering all instructions, role checks, compliance flows, and edge cases. See [docs/TESTING.md](docs/TESTING.md) for the full breakdown.
+**347+ tests** across 15 test files covering all instructions, role checks, compliance flows, and edge cases. See [docs/TESTING.md](docs/TESTING.md) for the full breakdown.
 
 ### What Tests Verify
 
@@ -610,7 +633,7 @@ solana-stablecoin-standard/
         commands/              13 command modules
         helpers.ts             Wallet/connection utilities
         index.ts               Entry point
-  tests/                       285 tests across 14 files
+  tests/                       347+ tests across 15 files
   backend/                     Fastify REST API (port 3001)
   frontend/                    Next.js dashboard
   docs/                        Extended documentation (11 files)

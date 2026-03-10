@@ -6,6 +6,17 @@ use crate::errors::HookError;
 /// The sss-token program ID — used to verify config PDA derivation
 const SSS_TOKEN_PROGRAM_ID: Pubkey = pubkey!("tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz");
 
+/// Byte offset of `paused` field in StablecoinConfig (cross-program raw read)
+/// Layout: 8 discriminator + 32 authority + 32 pending_authority + 8 transfer_initiated_at + 32 mint + 32 hook_program_id + 1 decimals = 145
+const CONFIG_PAUSED_OFFSET: usize = 145;
+/// Byte offset of `paused_by_attestation` field in StablecoinConfig
+/// Layout: CONFIG_PAUSED_OFFSET + 1 paused + 1 enable_transfer_hook + 1 enable_permanent_delegate + 1 default_account_frozen + 1 bump + 32 treasury = 182
+const CONFIG_PAUSED_BY_ATTESTATION_OFFSET: usize = 182;
+/// Token-2022 PermanentDelegate extension type ID
+const PERMANENT_DELEGATE_EXTENSION_TYPE: u16 = 12;
+/// Offset where Token-2022 extensions begin in mint account data
+const MINT_EXTENSIONS_OFFSET: usize = 166;
+
 /// Transfer hook execute — called automatically by Token-2022 on every transfer.
 /// Checks if sender or receiver is blacklisted.
 /// Bypasses blacklist check if the transfer is initiated by the permanent delegate (seize).
@@ -93,17 +104,13 @@ pub fn handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
         &ctx.accounts.mint.key(),
     )?;
 
-    // Check pause state from config
-    // Layout: 8 discriminator + 32 authority + 32 pending + 8 transfer_initiated_at
-    //         + 32 mint + 32 hook_program_id + 1 decimals = offset 145 is paused
-    //         + 1 enable_transfer_hook + 1 enable_permanent_delegate + 1 default_account_frozen
-    //         + 1 bump + 32 treasury = offset 182 is paused_by_attestation
+    // Check pause state from config (named constants for byte offsets)
     let config_data = ctx.accounts.config.try_borrow_data()?;
-    if config_data.len() > 145 && config_data[145] == 1 {
+    if config_data.len() > CONFIG_PAUSED_OFFSET && config_data[CONFIG_PAUSED_OFFSET] == 1 {
         return Err(HookError::TokenPaused.into());
     }
     // Also check paused_by_attestation (undercollateralized reserves)
-    if config_data.len() > 182 && config_data[182] == 1 {
+    if config_data.len() > CONFIG_PAUSED_BY_ATTESTATION_OFFSET && config_data[CONFIG_PAUSED_BY_ATTESTATION_OFFSET] == 1 {
         return Err(HookError::TokenPaused.into());
     }
     drop(config_data);
@@ -161,12 +168,12 @@ pub fn fallback_execute<'info>(
     // Validate config account: owner + PDA derivation
     validate_config(config, &mint_info.key())?;
 
-    // Check pause state from config (byte 145 = paused, byte 182 = paused_by_attestation)
+    // Check pause state from config (named constants for byte offsets)
     let config_data = config.try_borrow_data()?;
-    if config_data.len() > 145 && config_data[145] == 1 {
+    if config_data.len() > CONFIG_PAUSED_OFFSET && config_data[CONFIG_PAUSED_OFFSET] == 1 {
         return Err(HookError::TokenPaused.into());
     }
-    if config_data.len() > 182 && config_data[182] == 1 {
+    if config_data.len() > CONFIG_PAUSED_BY_ATTESTATION_OFFSET && config_data[CONFIG_PAUSED_BY_ATTESTATION_OFFSET] == 1 {
         return Err(HookError::TokenPaused.into());
     }
     drop(config_data);
@@ -195,19 +202,19 @@ pub fn fallback_execute<'info>(
 /// Check if the owner/delegate matches the permanent delegate stored in the mint's extension data.
 pub fn check_permanent_delegate(mint_data: &[u8], owner_delegate: &Pubkey) -> bool {
     // Token-2022 mint: 82 bytes base + padding to 165 + 1 account type byte = 166
-    // Extensions follow at offset 166
+    // Extensions follow at MINT_EXTENSIONS_OFFSET
     // Each extension: 2 bytes type + 2 bytes length + data
-    // PermanentDelegate extension type = 12, data = 32 bytes (delegate pubkey)
-    if mint_data.len() < 166 {
+    // PermanentDelegate extension type = PERMANENT_DELEGATE_EXTENSION_TYPE, data = 32 bytes (delegate pubkey)
+    if mint_data.len() < MINT_EXTENSIONS_OFFSET {
         return false;
     }
 
-    let mut offset = 166;
+    let mut offset = MINT_EXTENSIONS_OFFSET;
     while offset + 4 <= mint_data.len() {
         let ext_type = u16::from_le_bytes([mint_data[offset], mint_data[offset + 1]]);
         let ext_len = u16::from_le_bytes([mint_data[offset + 2], mint_data[offset + 3]]) as usize;
 
-        if ext_type == 12 && ext_len >= 32 && offset + 4 + 32 <= mint_data.len() {
+        if ext_type == PERMANENT_DELEGATE_EXTENSION_TYPE && ext_len >= 32 && offset + 4 + 32 <= mint_data.len() {
             let delegate_bytes = &mint_data[offset + 4..offset + 4 + 32];
             return delegate_bytes == owner_delegate.as_ref();
         }

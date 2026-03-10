@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Testing
 
-- 285 tests across 14 test files
+- 347+ tests across 15 test files
 - 34 sss-token tests covering all instructions and error paths
 - 5 transfer-hook tests covering blacklist enforcement
 - 15 admin-extended tests for role management edge cases

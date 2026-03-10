@@ -4,7 +4,7 @@
 
 The test suite validates all SSS-1 and SSS-2 functionality through Anchor integration tests. Tests run against a local Solana validator with both programs deployed.
 
-**Total: 285 tests** across 14 test files covering all instructions, role checks, compliance flows, and edge cases.
+**Total: 347+ tests** across 15 test files covering all instructions, role checks, compliance flows, and edge cases.
 
 ## Running Tests
 

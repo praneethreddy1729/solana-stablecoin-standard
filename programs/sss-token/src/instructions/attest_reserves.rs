@@ -104,6 +104,7 @@ pub fn handler(
     attestation.attestation_uri = attestation_uri;
     attestation.is_valid = true;
     attestation.bump = ctx.bumps.attestation;
+    attestation._reserved = [0u8; 32];
 
     emit!(ReservesAttested {
         config: ctx.accounts.config.key(),

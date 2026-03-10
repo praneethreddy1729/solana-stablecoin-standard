@@ -20,4 +20,6 @@ pub struct ReserveAttestation {
     pub is_valid: bool,
     /// PDA bump
     pub bump: u8,
+    /// Reserved space for future upgrades
+    pub _reserved: [u8; 32],
 }

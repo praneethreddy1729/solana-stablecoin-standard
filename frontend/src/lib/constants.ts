@@ -12,6 +12,7 @@ export const CONFIG_SEED = Buffer.from("config");
 export const ROLE_SEED = Buffer.from("role");
 export const BLACKLIST_SEED = Buffer.from("blacklist");
 export const EXTRA_ACCOUNT_METAS_SEED = Buffer.from("extra-account-metas");
+export const ATTESTATION_SEED = Buffer.from("attestation");
 
 export const ROLE_NAMES: Record<number, string> = {
   0: "Minter",

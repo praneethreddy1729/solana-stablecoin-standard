@@ -240,6 +240,7 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
     registry.symbol = args.symbol.clone();
     registry.decimals = args.decimals;
     registry.bump = ctx.bumps.registry_entry;
+    registry._reserved = [0u8; 32];
 
     emit!(StablecoinInitialized {
         mint: mint_key,

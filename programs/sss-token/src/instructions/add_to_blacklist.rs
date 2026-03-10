@@ -37,7 +37,8 @@ pub struct AddToBlacklist<'info> {
     #[account(mut)]
     pub blacklist_entry: UncheckedAccount<'info>,
 
-    /// CHECK: The mint account
+    /// CHECK: Validated via constraint
+    #[account(constraint = mint.key() == config.mint @ SSSError::InvalidMint)]
     pub mint: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,

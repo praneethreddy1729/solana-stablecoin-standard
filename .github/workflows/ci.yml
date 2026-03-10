@@ -1,10 +1,107 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  SOLANA_VERSION: "2.2.3"
+  ANCHOR_VERSION: "0.32.1"
+  RUST_TOOLCHAIN: "stable"
+  NODE_VERSION: "20"
+  SSS_TOKEN_PROGRAM_ID: "tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz"
+  SSS_HOOK_PROGRAM_ID: "A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB"
+
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: coral-xyz/anchor-action@v0.32.1
-      - run: anchor build
-      - run: anchor test
+
+      # --- Rust ---
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
+
+      # --- Solana ---
+      - name: Cache Solana CLI
+        id: cache-solana
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/solana
+          key: solana-${{ runner.os }}-${{ env.SOLANA_VERSION }}
+
+      - name: Install Solana CLI
+        if: steps.cache-solana.outputs.cache-hit != 'true'
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v${{ env.SOLANA_VERSION }}/install)"
+
+      - name: Add Solana to PATH
+        run: echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Create Solana keypair
+        run: solana-keygen new --no-bip39-passphrase --silent
+
+      - name: Set Solana to localhost
+        run: solana config set --url localhost
+
+      # --- Anchor ---
+      - name: Cache Anchor CLI
+        id: cache-anchor
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/anchor
+          key: anchor-${{ runner.os }}-${{ env.ANCHOR_VERSION }}
+
+      - name: Install Anchor CLI
+        if: steps.cache-anchor.outputs.cache-hit != 'true'
+        run: cargo install --git https://github.com/coral-xyz/anchor --tag v${{ env.ANCHOR_VERSION }} anchor-cli
+
+      # --- Node.js ---
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install JS dependencies
+        run: yarn install --frozen-lockfile
+
+      # --- Build ---
+      - name: Build programs
+        run: anchor build
+
+      # --- Lint ---
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Run Clippy
+        run: cargo clippy -- -W clippy::all
+
+      # --- Test ---
+      - name: Start validator and run tests
+        run: |
+          solana-test-validator \
+            --reset \
+            --bind-address 127.0.0.1 \
+            --deactivate-feature CxeBn9PVeeXbmjbNwLv6U4C6svNxnC4JX6mfkvgeMocM \
+            --bpf-program ${{ env.SSS_TOKEN_PROGRAM_ID }} target/deploy/sss_token.so \
+            --bpf-program ${{ env.SSS_HOOK_PROGRAM_ID }} target/deploy/sss_transfer_hook.so \
+            &
+          sleep 10
+          solana airdrop 100
+          ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 \
+          ANCHOR_WALLET=~/.config/solana/id.json \
+          yarn run ts-mocha -p ./tsconfig.json -t 1000000 "tests/**/*.ts"

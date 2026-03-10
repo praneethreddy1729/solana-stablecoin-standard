@@ -12,6 +12,11 @@ import { seizeCommand } from "./commands/seize";
 import { mintersCommand } from "./commands/minters";
 import { holdersCommand } from "./commands/holders";
 import { auditLogCommand } from "./commands/audit-log";
+import { transferAuthorityCommand } from "./commands/transfer-authority";
+import { acceptAuthorityCommand } from "./commands/accept-authority";
+import { cancelAuthorityTransferCommand } from "./commands/cancel-authority-transfer";
+import { updateTreasuryCommand } from "./commands/update-treasury";
+import { attestReservesCommand } from "./commands/attest-reserves";
 
 const program = new Command();
 
@@ -34,5 +39,10 @@ program.addCommand(seizeCommand);
 program.addCommand(mintersCommand);
 program.addCommand(holdersCommand);
 program.addCommand(auditLogCommand);
+program.addCommand(transferAuthorityCommand);
+program.addCommand(acceptAuthorityCommand);
+program.addCommand(cancelAuthorityTransferCommand);
+program.addCommand(updateTreasuryCommand);
+program.addCommand(attestReservesCommand);
 
 program.parse();

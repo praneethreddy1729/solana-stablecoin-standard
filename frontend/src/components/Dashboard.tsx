@@ -203,6 +203,8 @@ export function Dashboard() {
                 connected={sc.connected}
                 totalSupply={sc.totalSupply}
                 decimals={sc.decimals}
+                attestReserves={sc.attestReserves}
+                getAttestation={sc.getAttestation}
               />
             )}
 

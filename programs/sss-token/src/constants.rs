@@ -46,7 +46,8 @@ pub const RESERVE_ATTESTATION_SIZE: usize = 8  // discriminator
     + 8   // expires_at
     + 4 + MAX_ATTESTATION_URI_LEN // attestation_uri (String = 4-byte len prefix + data)
     + 1   // is_valid
-    + 1;  // bump
+    + 1   // bump
+    + 32; // _reserved
 
 /// Registry PDA seed
 pub const REGISTRY_SEED: &[u8] = b"registry";
@@ -60,7 +61,8 @@ pub const REGISTRY_ENTRY_SIZE: usize = 8  // discriminator
     + 4 + 32  // name (String)
     + 4 + 10  // symbol (String)
     + 1   // decimals
-    + 1;  // bump
+    + 1   // bump
+    + 32; // _reserved
 
 /// Max name/symbol lengths for token metadata
 pub const MAX_NAME_LEN: usize = 32;

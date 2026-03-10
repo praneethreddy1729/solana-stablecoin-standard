@@ -12,6 +12,7 @@ import {
   CONFIG_SEED,
   ROLE_SEED,
   BLACKLIST_SEED,
+  ATTESTATION_SEED,
   ROLE_NAMES,
 } from "@/lib/constants";
 
@@ -34,6 +35,13 @@ function findBlacklistPda(mint: PublicKey, user: PublicKey, hookProgramId: Publi
   return PublicKey.findProgramAddressSync(
     [BLACKLIST_SEED, mint.toBuffer(), user.toBuffer()],
     hookProgramId
+  );
+}
+
+function findAttestationPda(config: PublicKey, programId: PublicKey = SSS_TOKEN_PROGRAM_ID): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [ATTESTATION_SEED, config.toBuffer()],
+    programId
   );
 }
 
@@ -491,6 +499,51 @@ export function useStablecoin() {
     return sig;
   }, [program, configPda, publicKey, refresh]);
 
+  // === ATTESTATION ===
+
+  const attestReserves = useCallback(
+    async (reserveAmount: BN, expiry: BN, uri: string): Promise<string> => {
+      if (!program || !configPda || !mintPk || !publicKey) throw new Error("Not connected");
+      const [attestorRole] = findRolePda(configPda, 6, publicKey);
+      const [attestationPda] = findAttestationPda(configPda);
+      // Component passes absolute expiry timestamp; on-chain expects relative seconds from now
+      const nowSec = Math.floor(Date.now() / 1000);
+      const expiresInSeconds = new BN(expiry.toNumber() - nowSec);
+      const sig = await program.methods
+        .attestReserves(reserveAmount, expiresInSeconds, uri)
+        .accountsStrict({
+          attestor: publicKey,
+          config: configPda,
+          attestorRole,
+          mint: mintPk,
+          attestation: attestationPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+      await refresh();
+      return sig;
+    },
+    [program, configPda, mintPk, publicKey, refresh]
+  );
+
+  const getAttestation = useCallback(async () => {
+    if (!program || !configPda) return null;
+    const [attestationPda] = findAttestationPda(configPda);
+    try {
+      const data = await (program.account as any).reserveAttestation.fetch(attestationPda);
+      return {
+        reserveAmount: data.reserveAmount as BN,
+        tokenSupply: data.tokenSupply as BN,
+        attestor: data.attestor as PublicKey,
+        expiry: data.expiresAt as BN,
+        uri: data.attestationUri as string,
+        timestamp: data.timestamp as BN,
+      };
+    } catch {
+      return null;
+    }
+  }, [program, configPda]);
+
   // Fetch role info for a specific address + role type
   const fetchRole = useCallback(
     async (roleType: number, assignee: PublicKey): Promise<RoleInfo | null> => {
@@ -550,5 +603,7 @@ export function useStablecoin() {
     acceptAuthority,
     cancelAuthorityTransfer,
     fetchRole,
+    attestReserves,
+    getAttestation,
   };
 }

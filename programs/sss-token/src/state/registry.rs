@@ -18,4 +18,6 @@ pub struct RegistryEntry {
     pub decimals: u8,
     /// PDA bump
     pub bump: u8,
+    /// Reserved space for future upgrades
+    pub _reserved: [u8; 32],
 }

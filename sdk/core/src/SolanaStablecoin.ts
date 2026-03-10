@@ -40,6 +40,37 @@ import sssTransferHookIdl from "./idl/sss_transfer_hook.json";
 import { SssToken } from "./types/sss_token";
 import { SssTransferHook } from "./types/sss_transfer_hook";
 
+/**
+ * @description Primary SDK class for interacting with the Solana Stablecoin Standard (SSS).
+ * Provides a high-level interface for creating, loading, and managing stablecoins
+ * built on Token-2022 with role-based access control, compliance features, and reserve attestation.
+ *
+ * Supports two presets:
+ * - **SSS-1**: Basic stablecoin with mint/burn/pause/freeze capabilities.
+ * - **SSS-2**: Full compliance stablecoin with transfer hook, blacklisting, permanent delegate, and seize.
+ *
+ * @example
+ * ```ts
+ * import { SolanaStablecoin } from "@stbr/sss-token";
+ * import { Connection, Keypair } from "@solana/web3.js";
+ *
+ * const connection = new Connection("https://api.devnet.solana.com");
+ * const authority = Keypair.generate();
+ *
+ * // Create a new stablecoin
+ * const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(connection, {
+ *   name: "USD Coin",
+ *   symbol: "USDC",
+ *   uri: "https://example.com/metadata.json",
+ *   decimals: 6,
+ *   authority,
+ *   preset: Preset.SSS_2,
+ * });
+ *
+ * // Load an existing stablecoin
+ * const loaded = await SolanaStablecoin.load(connection, wallet, mintKeypair.publicKey);
+ * ```
+ */
 export class SolanaStablecoin {
   readonly program: Program<SssToken>;
   readonly hookProgram: Program<SssTransferHook>;
@@ -50,10 +81,42 @@ export class SolanaStablecoin {
   readonly programId: PublicKey;
   readonly hookProgramId: PublicKey;
 
+  /**
+   * @description Compliance sub-object providing blacklist and seizure operations (SSS-2 only).
+   * These methods require appropriate roles (Blacklister or Seizer) and will fail on SSS-1 tokens.
+   */
   public compliance: {
+    /**
+     * @description Add an address to the blacklist, preventing it from sending or receiving tokens.
+     * @param address - The wallet address to blacklist.
+     * @param blacklister - The public key of the signer with the Blacklister role.
+     * @param reason - Optional reason string (max 64 bytes).
+     * @returns Transaction signature.
+     * @throws If the signer lacks the Blacklister role or the token is SSS-1.
+     */
     blacklistAdd: (address: PublicKey, blacklister: PublicKey, reason?: string) => Promise<TransactionSignature>;
+    /**
+     * @description Remove an address from the blacklist, restoring transfer capabilities.
+     * @param address - The wallet address to remove from the blacklist.
+     * @param blacklister - The public key of the signer with the Blacklister role.
+     * @returns Transaction signature.
+     * @throws If the signer lacks the Blacklister role or the address is not blacklisted.
+     */
     blacklistRemove: (address: PublicKey, blacklister: PublicKey) => Promise<TransactionSignature>;
+    /**
+     * @description Seize all tokens from a frozen account and transfer them to the treasury.
+     * Uses the permanent delegate extension to force-transfer without owner consent.
+     * @param frozenAccount - The frozen token account to seize from.
+     * @param treasury - The treasury token account to receive seized funds.
+     * @returns Transaction signature.
+     * @throws If the signer lacks the Seizer role or the account is not frozen.
+     */
     seize: (frozenAccount: PublicKey, treasury: PublicKey) => Promise<TransactionSignature>;
+    /**
+     * @description Check whether a wallet address is currently blacklisted.
+     * @param user - The wallet address to check.
+     * @returns `true` if the address has a BlacklistEntry PDA on-chain.
+     */
     isBlacklisted: (user: PublicKey) => Promise<boolean>;
   };
 
@@ -84,6 +147,14 @@ export class SolanaStablecoin {
     };
   }
 
+  /**
+   * @description Build Anchor Program instances for the SSS token and transfer hook programs.
+   * @param connection - Solana RPC connection.
+   * @param wallet - Anchor Wallet used as the fee payer and default signer.
+   * @param programId - SSS token program ID.
+   * @param hookProgramId - SSS transfer hook program ID.
+   * @returns An object containing the typed `program` and `hookProgram` instances.
+   */
   private static buildPrograms(
     connection: Connection,
     wallet: Wallet,
@@ -99,8 +170,31 @@ export class SolanaStablecoin {
   }
 
   /**
-   * Create a new stablecoin: sends the initialize transaction.
-   * Returns the SolanaStablecoin instance + mint keypair + tx signature.
+   * @description Create a new stablecoin by deploying a Token-2022 mint with SSS configuration.
+   * Sends the `initialize` instruction, creating the mint, config PDA, and registry entry in one transaction.
+   *
+   * @param connection - Solana RPC connection.
+   * @param params - Initialization parameters including name, symbol, decimals, authority, and optional preset/flags.
+   * @param programId - SSS token program ID. Defaults to the canonical deployed program.
+   * @param hookProgramId - SSS transfer hook program ID. Defaults to the canonical deployed program.
+   * @returns An object containing:
+   *   - `stablecoin` - The initialized SolanaStablecoin instance.
+   *   - `mintKeypair` - The generated mint Keypair (save the secret key if needed).
+   *   - `txSig` - The transaction signature.
+   * @throws If the transaction fails (e.g., insufficient SOL, invalid params).
+   *
+   * @example
+   * ```ts
+   * const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(connection, {
+   *   name: "My Stablecoin",
+   *   symbol: "MSC",
+   *   uri: "https://example.com/metadata.json",
+   *   decimals: 6,
+   *   authority: authorityKeypair,
+   *   preset: Preset.SSS_2,
+   * });
+   * console.log("Mint:", mintKeypair.publicKey.toBase58());
+   * ```
    */
   static async create(
     connection: Connection,
@@ -176,7 +270,25 @@ export class SolanaStablecoin {
   }
 
   /**
-   * Load an existing stablecoin by mint address.
+   * @description Load an existing stablecoin instance by its mint address.
+   * Does not verify the mint exists on-chain; call {@link getConfig} to validate.
+   *
+   * @param connection - Solana RPC connection.
+   * @param wallet - Anchor Wallet used as the fee payer and default signer for subsequent operations.
+   * @param mintAddress - The public key of the Token-2022 mint.
+   * @param programId - SSS token program ID. Defaults to the canonical deployed program.
+   * @param hookProgramId - SSS transfer hook program ID. Defaults to the canonical deployed program.
+   * @returns A SolanaStablecoin instance bound to the given mint.
+   *
+   * @example
+   * ```ts
+   * const stablecoin = await SolanaStablecoin.load(
+   *   connection,
+   *   wallet,
+   *   new PublicKey("tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz")
+   * );
+   * const config = await stablecoin.getConfig();
+   * ```
    */
   static async load(
     connection: Connection,
@@ -202,7 +314,11 @@ export class SolanaStablecoin {
     );
   }
 
-  /** Get the current total supply of the mint. */
+  /**
+   * @description Get the current total supply of the stablecoin mint from on-chain state.
+   * @returns The total supply as a `bigint` in base units (e.g., 1000000 = 1.0 USDC at 6 decimals).
+   * @throws If the mint account does not exist or cannot be fetched.
+   */
   async getTotalSupply(): Promise<bigint> {
     const mintInfo = await getMint(
       this.connection,
@@ -213,14 +329,37 @@ export class SolanaStablecoin {
     return mintInfo.supply;
   }
 
-  /** Fetch the on-chain StablecoinConfig. */
+  /**
+   * @description Fetch the on-chain StablecoinConfig account containing authority, pause state,
+   * enabled features, treasury, and other configuration fields.
+   * @returns The deserialized {@link StablecoinConfig} object.
+   * @throws If the config PDA does not exist (mint was not initialized via SSS).
+   */
   async getConfig(): Promise<StablecoinConfig> {
     return (await this.program.account.stablecoinConfig.fetch(
       this.configPda
     )) as unknown as StablecoinConfig;
   }
 
-  /** Mint tokens (requires Minter role). */
+  /**
+   * @description Mint new tokens to a destination token account. Requires the Minter role.
+   * The minter's quota is decremented by the minted amount; fails if quota is exceeded.
+   *
+   * @param to - The destination Token-2022 associated token account.
+   * @param amount - The number of tokens to mint (in base units, as BN).
+   * @param minter - The public key of the signer with the Minter role.
+   * @returns Transaction signature.
+   * @throws If the token is paused, the signer lacks the Minter role, or the minter's quota is exceeded.
+   *
+   * @example
+   * ```ts
+   * const txSig = await stablecoin.mint(
+   *   recipientAta,
+   *   new BN(1_000_000), // 1.0 tokens at 6 decimals
+   *   minterKeypair.publicKey
+   * );
+   * ```
+   */
   async mint(to: PublicKey, amount: BN, minter: PublicKey): Promise<TransactionSignature> {
     const [minterRole] = findRolePda(
       this.configPda,
@@ -242,7 +381,25 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  /** Burn tokens (requires Burner role). */
+  /**
+   * @description Burn tokens from a token account. Requires the Burner role.
+   *
+   * @param from - The Token-2022 token account to burn from.
+   * @param amount - The number of tokens to burn (in base units, as BN).
+   * @param burner - The public key of the signer with the Burner role.
+   * @param fromAuthority - The authority of the `from` token account. Defaults to `burner` if omitted.
+   * @returns Transaction signature.
+   * @throws If the token is paused or the signer lacks the Burner role.
+   *
+   * @example
+   * ```ts
+   * const txSig = await stablecoin.burn(
+   *   userAta,
+   *   new BN(500_000),
+   *   burnerKeypair.publicKey
+   * );
+   * ```
+   */
   async burn(from: PublicKey, amount: BN, burner: PublicKey, fromAuthority?: PublicKey): Promise<TransactionSignature> {
     const [burnerRole] = findRolePda(
       this.configPda,
@@ -265,7 +422,14 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  /** Freeze a token account (requires Freezer role). */
+  /**
+   * @description Freeze a token account, preventing all transfers to/from it.
+   * Requires the Freezer role. Cannot freeze the treasury account.
+   *
+   * @param params - {@link FreezeThawParams} containing the token account to freeze and the freezer's public key.
+   * @returns Transaction signature.
+   * @throws If the token is paused, the signer lacks the Freezer role, or the target is the treasury.
+   */
   async freeze(params: FreezeThawParams): Promise<TransactionSignature> {
     const [freezerRole] = findRolePda(
       this.configPda,
@@ -287,7 +451,14 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  /** Thaw a frozen token account (requires Freezer role). */
+  /**
+   * @description Thaw (unfreeze) a previously frozen token account, restoring transfer capabilities.
+   * Requires the Freezer role.
+   *
+   * @param params - {@link FreezeThawParams} containing the token account to thaw and the freezer's public key.
+   * @returns Transaction signature.
+   * @throws If the signer lacks the Freezer role or the account is not frozen.
+   */
   async thaw(params: FreezeThawParams): Promise<TransactionSignature> {
     const [freezerRole] = findRolePda(
       this.configPda,
@@ -309,7 +480,14 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  /** Pause the token (requires Pauser role). */
+  /**
+   * @description Pause all token operations (mint, burn, transfer). Requires the Pauser role.
+   * When paused, only `unpause`, `getConfig`, and read-only methods remain functional.
+   *
+   * @param params - {@link PauseParams} containing the pauser's public key.
+   * @returns Transaction signature.
+   * @throws If the signer lacks the Pauser role or the token is already paused.
+   */
   async pause(params: PauseParams): Promise<TransactionSignature> {
     const [pauserRole] = findRolePda(
       this.configPda,
@@ -328,7 +506,14 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  /** Unpause the token (requires Pauser role). */
+  /**
+   * @description Unpause the token, restoring all operations. Requires the Pauser role.
+   * Clears both manual pause and attestation-triggered pause flags.
+   *
+   * @param params - {@link PauseParams} containing the pauser's public key.
+   * @returns Transaction signature.
+   * @throws If the signer lacks the Pauser role or the token is not paused.
+   */
   async unpause(params: PauseParams): Promise<TransactionSignature> {
     const [pauserRole] = findRolePda(
       this.configPda,
@@ -347,7 +532,14 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  /** Create or update a role assignment (authority only). */
+  /**
+   * @description Create or update a role assignment. Authority-only operation.
+   * Roles control who can perform privileged actions (mint, burn, freeze, pause, blacklist, seize, attest).
+   *
+   * @param params - {@link UpdateRolesParams} containing the role type, assignee, and active status.
+   * @returns Transaction signature.
+   * @throws If the signer is not the stablecoin authority.
+   */
   async updateRoles(params: UpdateRolesParams): Promise<TransactionSignature> {
     const [rolePda] = findRolePda(
       this.configPda,
@@ -368,7 +560,13 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  /** Update minter quota (authority only). */
+  /**
+   * @description Update a minter's quota (maximum allowed mint amount). Authority-only operation.
+   *
+   * @param params - {@link UpdateMinterQuotaParams} containing the minter role PDA and the new quota.
+   * @returns Transaction signature.
+   * @throws If the signer is not the stablecoin authority or the role PDA is invalid.
+   */
   async updateMinterQuota(
     params: UpdateMinterQuotaParams
   ): Promise<TransactionSignature> {
@@ -384,7 +582,14 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  /** Initiate authority transfer (current authority only). */
+  /**
+   * @description Initiate a two-step authority transfer. The new authority must call
+   * {@link acceptAuthority} to complete the transfer. Current authority only.
+   *
+   * @param newAuthority - The public key of the proposed new authority.
+   * @returns Transaction signature.
+   * @throws If the signer is not the current authority.
+   */
   async transferAuthority(
     newAuthority: PublicKey
   ): Promise<TransactionSignature> {
@@ -399,7 +604,13 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  /** Accept authority transfer (pending authority only). */
+  /**
+   * @description Accept a pending authority transfer. Must be called by the pending authority
+   * that was set via {@link transferAuthority}.
+   *
+   * @returns Transaction signature.
+   * @throws If the signer is not the pending authority or no transfer is pending.
+   */
   async acceptAuthority(): Promise<TransactionSignature> {
     const provider = this.program.provider as AnchorProvider;
 
@@ -412,7 +623,12 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  /** Cancel pending authority transfer (current authority only). */
+  /**
+   * @description Cancel a pending authority transfer. Current authority only.
+   *
+   * @returns Transaction signature.
+   * @throws If the signer is not the current authority or no transfer is pending.
+   */
   async cancelAuthorityTransfer(): Promise<TransactionSignature> {
     const provider = this.program.provider as AnchorProvider;
 
@@ -425,7 +641,13 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  /** Update the treasury token account for seized funds (authority only). */
+  /**
+   * @description Update the treasury token account where seized funds are sent. Authority-only operation.
+   *
+   * @param newTreasury - The public key of the new treasury Token-2022 associated token account.
+   * @returns Transaction signature.
+   * @throws If the signer is not the stablecoin authority.
+   */
   async updateTreasury(newTreasury: PublicKey): Promise<TransactionSignature> {
     const provider = this.program.provider as AnchorProvider;
 
@@ -550,9 +772,29 @@ export class SolanaStablecoin {
   // --- Reserve Attestation ---
 
   /**
-   * Submit a reserve attestation proving the stablecoin is backed.
-   * Auto-pauses minting if reserves < token supply.
-   * Requires Attestor role (type 6).
+   * @description Submit a reserve attestation proving the stablecoin is backed by real reserves.
+   * If the attested reserve amount is less than the current token supply, minting is
+   * automatically paused via the `paused_by_attestation` flag (undercollateralized protection).
+   * Requires the Attestor role.
+   *
+   * @param params - {@link AttestReservesParams} containing:
+   *   - `reserveAmount` - The total reserve amount backing the stablecoin (BN, in base units).
+   *   - `expiresInSeconds` - How many seconds until this attestation expires (BN, must be positive).
+   *   - `attestationUri` - URI pointing to off-chain proof of reserves (max 256 bytes).
+   *   - `attestor` - The public key of the signer with the Attestor role.
+   * @returns Transaction signature.
+   * @throws If the signer lacks the Attestor role, the URI exceeds 256 bytes,
+   *         or the expiration is not positive.
+   *
+   * @example
+   * ```ts
+   * const txSig = await stablecoin.attestReserves({
+   *   reserveAmount: new BN(10_000_000_000),
+   *   expiresInSeconds: new BN(86400), // 24 hours
+   *   attestationUri: "https://example.com/proof-of-reserves.json",
+   *   attestor: attestorKeypair.publicKey,
+   * });
+   * ```
    */
   async attestReserves(params: AttestReservesParams): Promise<TransactionSignature> {
     const [attestorRole] = findRolePda(
@@ -577,7 +819,8 @@ export class SolanaStablecoin {
   }
 
   /**
-   * Fetch the current reserve attestation, or null if none exists.
+   * @description Fetch the current reserve attestation, or null if none has been submitted.
+   * @returns The deserialized {@link ReserveAttestation} or `null`.
    */
   async getAttestation(): Promise<ReserveAttestation | null> {
     const [attestationPda] = findAttestationPda(this.configPda, this.programId);
@@ -590,8 +833,9 @@ export class SolanaStablecoin {
   }
 
   /**
-   * Returns the collateralization ratio as a percentage (e.g. 100.0 = fully backed).
-   * Returns null if no attestation exists.
+   * @description Calculate the collateralization ratio based on the latest reserve attestation.
+   * @returns The ratio as a percentage (e.g., `100.0` = fully backed, `150.0` = 1.5x overcollateralized),
+   *          or `null` if no attestation exists.
    */
   async getCollateralizationRatio(): Promise<number | null> {
     const attestation = await this.getAttestation();
@@ -605,8 +849,23 @@ export class SolanaStablecoin {
   }
 
   /**
-   * List all SSS-registered stablecoins by fetching RegistryEntry accounts
-   * via getProgramAccounts with discriminator filter.
+   * @description List all SSS-registered stablecoins by fetching RegistryEntry accounts
+   * via `getProgramAccounts`. Useful for building explorers or dashboards that discover
+   * all stablecoins in the ecosystem.
+   *
+   * @param connection - Solana RPC connection.
+   * @param wallet - Anchor Wallet (needed for program instantiation).
+   * @param programId - SSS token program ID. Defaults to the canonical deployed program.
+   * @param hookProgramId - SSS transfer hook program ID. Defaults to the canonical deployed program.
+   * @returns An array of {@link RegistryEntry} objects, one per registered stablecoin.
+   *
+   * @example
+   * ```ts
+   * const allStablecoins = await SolanaStablecoin.listAll(connection, wallet);
+   * for (const entry of allStablecoins) {
+   *   console.log(`${entry.symbol}: ${entry.mint.toBase58()}`);
+   * }
+   * ```
    */
   static async listAll(
     connection: Connection,

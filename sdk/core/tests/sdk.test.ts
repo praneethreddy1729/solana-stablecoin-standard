@@ -74,13 +74,14 @@ describe("RoleType enum", () => {
   it("Freezer = 3", () => expect(RoleType.Freezer).to.equal(3));
   it("Blacklister = 4", () => expect(RoleType.Blacklister).to.equal(4));
   it("Seizer = 5", () => expect(RoleType.Seizer).to.equal(5));
+  it("Attestor = 6", () => expect(RoleType.Attestor).to.equal(6));
 
-  it("has exactly 6 members", () => {
+  it("has exactly 7 members", () => {
     // numeric enums produce both name->value and value->name mappings
     const values = Object.values(RoleType).filter(
       (v) => typeof v === "number"
     );
-    expect(values).to.have.lengthOf(6);
+    expect(values).to.have.lengthOf(7);
   });
 });
 
@@ -170,10 +171,11 @@ describe("PDA derivation", () => {
         RoleType.Freezer,
         RoleType.Blacklister,
         RoleType.Seizer,
+        RoleType.Attestor,
       ].map((rt) => findRolePda(configPda, rt, ASSIGNEE)[0].toBase58());
 
       // all unique
-      expect(new Set(pdas).size).to.equal(6);
+      expect(new Set(pdas).size).to.equal(7);
     });
 
     it("differs for different assignees", () => {
