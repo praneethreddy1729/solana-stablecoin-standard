@@ -69,6 +69,7 @@ export interface InitializeParams {
   enableTransferHook?: boolean;
   enablePermanentDelegate?: boolean;
   defaultAccountFrozen?: boolean;
+  treasury?: PublicKey;
 }
 
 export interface MintParams {

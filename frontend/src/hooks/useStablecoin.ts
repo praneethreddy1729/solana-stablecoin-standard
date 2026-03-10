@@ -2,62 +2,28 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useConnection, useWallet, useAnchorWallet } from "@solana/wallet-adapter-react";
-import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { TOKEN_2022_PROGRAM_ID, getMint, getAccount, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import BN from "bn.js";
 import {
   SSS_TOKEN_PROGRAM_ID,
   SSS_TRANSFER_HOOK_PROGRAM_ID,
-  CONFIG_SEED,
-  ROLE_SEED,
-  BLACKLIST_SEED,
-  ATTESTATION_SEED,
   ROLE_NAMES,
 } from "@/lib/constants";
+import {
+  findConfigPda,
+  findRolePda,
+  findBlacklistPda,
+  findAttestationPda,
+  findExtraAccountMetasPda,
+  type StablecoinConfig,
+} from "../../../sdk/core/src";
 
 import sssTokenIdl from "../../../target/idl/sss_token.json";
 import sssTransferHookIdl from "../../../target/idl/sss_transfer_hook.json";
 
-// PDA helpers (inline to avoid deep import issues)
-function findConfigPda(mint: PublicKey, programId: PublicKey = SSS_TOKEN_PROGRAM_ID): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync([CONFIG_SEED, mint.toBuffer()], programId);
-}
-
-function findRolePda(config: PublicKey, roleType: number, assignee: PublicKey, programId: PublicKey = SSS_TOKEN_PROGRAM_ID): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [ROLE_SEED, config.toBuffer(), Buffer.from([roleType]), assignee.toBuffer()],
-    programId
-  );
-}
-
-function findBlacklistPda(mint: PublicKey, user: PublicKey, hookProgramId: PublicKey = SSS_TRANSFER_HOOK_PROGRAM_ID): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [BLACKLIST_SEED, mint.toBuffer(), user.toBuffer()],
-    hookProgramId
-  );
-}
-
-function findAttestationPda(config: PublicKey, programId: PublicKey = SSS_TOKEN_PROGRAM_ID): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [ATTESTATION_SEED, config.toBuffer()],
-    programId
-  );
-}
-
-export interface StablecoinConfig {
-  authority: PublicKey;
-  pendingAuthority: PublicKey;
-  transferInitiatedAt: BN;
-  mint: PublicKey;
-  hookProgramId: PublicKey;
-  decimals: number;
-  paused: boolean;
-  enableTransferHook: boolean;
-  enablePermanentDelegate: boolean;
-  defaultAccountFrozen: boolean;
-  bump: number;
-}
+export type { StablecoinConfig };
 
 export interface RoleInfo {
   roleType: number;
@@ -414,11 +380,7 @@ export function useStablecoin() {
       if (!program || !configPda || !mintPk || !publicKey) throw new Error("Not connected");
       const [seizerRole] = findRolePda(configPda, 5, publicKey);
 
-      const extraAccountMetasSeed = Buffer.from("extra-account-metas");
-      const [extraAccountMetasPda] = PublicKey.findProgramAddressSync(
-        [extraAccountMetasSeed, mintPk.toBuffer()],
-        SSS_TRANSFER_HOOK_PROGRAM_ID
-      );
+      const [extraAccountMetasPda] = findExtraAccountMetasPda(mintPk);
 
       // Derive blacklist PDAs for from/to owners
       const fromOwnerInfo = await connection.getParsedAccountInfo(frozenAccount);

@@ -252,7 +252,8 @@ export class SolanaStablecoin {
         enableTransferHook,
         enablePermanentDelegate,
         defaultAccountFrozen,
-      })
+        treasury: params.treasury ?? PublicKey.default,
+      } as any)
       .accountsStrict(accounts as any)
       .signers([mintKeypair])
       .rpc();
@@ -747,8 +748,10 @@ export class SolanaStablecoin {
         mint: this.mintAddress,
         from: frozenAccount,
         to: treasury,
+        blacklistEntry: findBlacklistPda(this.mintAddress, fromOwnerKey, this.hookProgramId)[0],
+        fromOwner: fromOwnerKey,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
+      } as any)
       .remainingAccounts([
         { pubkey: this.hookProgramId, isSigner: false, isWritable: false },
         { pubkey: extraAccountMetasPda, isSigner: false, isWritable: false },
@@ -880,7 +883,7 @@ export class SolanaStablecoin {
       hookProgramId,
     );
 
-    const accounts = await program.account.registryEntry.all();
-    return accounts.map((a) => a.account as unknown as RegistryEntry);
+    const accounts = await (program.account as any).registryEntry.all();
+    return accounts.map((a: any) => a.account as RegistryEntry);
   }
 }
