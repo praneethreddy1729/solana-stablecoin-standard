@@ -183,6 +183,43 @@ initialize -> assign roles -> set quota -> mint -> burn -> freeze -> thaw -> pau
 Single end-to-end test covering the full SSS-2 lifecycle:
 initialize (with hook + delegate) -> setup ExtraAccountMetas -> assign roles -> mint -> transfer -> blacklist (with reason) -> verify transfer blocked -> seize (via Seizer role) -> verify seized
 
+## Fuzz Testing (Trident)
+
+Fuzz targets are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` using the [Trident](https://ackee.xyz/trident/docs/latest/) framework. Trident generates randomized inputs for each program instruction and verifies that on-chain invariants hold under adversarial conditions.
+
+### Running Fuzz Tests
+
+```bash
+# Install Trident CLI (requires Rust nightly)
+cargo install trident-cli
+
+# Run fuzz campaign
+trident fuzz run fuzz_sss_token
+```
+
+> **Note:** Full fuzz execution requires `trident-cli` and may be incompatible with some Anchor versions. The fuzz stubs compile-gate behind `#[cfg(feature = "fuzz")]` so they do not affect normal builds.
+
+### Fuzz Targets and Invariants
+
+| Target | Instruction(s) | Invariants Checked |
+|--------|----------------|-------------------|
+| `fuzz_initialize` | `initialize` | Config PDA derivation, decimals <= 18, name/symbol/URI bounds, extension flags |
+| `fuzz_mint` | `mint` | Quota enforcement (minted_amount + amount <= quota), checked_add overflow, supply tracking, pause rejection |
+| `fuzz_burn` | `burn` | Cannot burn > balance, supply decreases by exact amount, pause rejection |
+| `fuzz_roles` | `update_roles` | Authority-only access, role type range 0-6, deactivated role rejection |
+| `fuzz_blacklist` | `add_to_blacklist`, `remove_from_blacklist`, `seize` | Sender/receiver blacklist enforcement, seize bypass via permanent delegate, reason string <= 64 bytes |
+| `fuzz_attestation` | `attest_reserves` | u128 intermediate ratio calc no overflow, auto-pause when reserves < supply, auto-unpause when reserves >= supply, positive expiry |
+
+### Configuration
+
+Fuzz configuration lives in `Trident.toml` at the project root:
+
+```toml
+[fuzz.test.fuzz_sss_token]
+fuzz_iterations = 10000
+programs_owned = ["tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz"]
+```
+
 ## Test Setup Pattern
 
 ```typescript

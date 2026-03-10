@@ -8,6 +8,7 @@ export const holdersCommand = new Command("holders")
   .requiredOption("--mint <address>", "Mint address")
   .option("--min-balance <n>", "Minimum balance filter (raw token units)")
   .option("--rpc-url <url>", "RPC URL")
+  .option("--format <format>", "Output format: text or json", "text")
   .action(async (opts) => {
     const connection = getConnection(opts.rpcUrl);
     const mint = new PublicKey(opts.mint);
@@ -31,6 +32,22 @@ export const holdersCommand = new Command("holders")
       const amount = BigInt(parsed.tokenAmount?.amount ?? "0");
       return amount >= minBalance;
     });
+
+    if (opts.format === "json") {
+      console.log(JSON.stringify({
+        count: filtered.length,
+        holders: filtered.map(({ pubkey, account }) => {
+          const parsed = (account.data as any)?.parsed?.info;
+          return {
+            account: pubkey.toBase58(),
+            owner: parsed?.owner ?? null,
+            amount: parsed?.tokenAmount?.amount ?? "0",
+            state: parsed?.state ?? "unknown",
+          };
+        }),
+      }, null, 2));
+      return;
+    }
 
     if (filtered.length === 0) {
       console.log("No token holders found matching criteria.");

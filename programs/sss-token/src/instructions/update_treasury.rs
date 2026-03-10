@@ -27,6 +27,12 @@ pub fn handler(ctx: Context<UpdateTreasury>, new_treasury: Pubkey) -> Result<()>
         SSSError::InvalidTreasury
     );
 
+    // Note: We validate the treasury is not the zero address. Full ATA validation
+    // (checking it's an initialized Token-2022 account for this mint) would require
+    // passing the token account as an Account<TokenAccount> with has_one = mint.
+    // We accept the current design since only the authority can update the treasury,
+    // and an invalid treasury would only cause seize operations to fail (self-DOS).
+
     let config = &mut ctx.accounts.config;
     let old_treasury = config.treasury;
     config.treasury = new_treasury;

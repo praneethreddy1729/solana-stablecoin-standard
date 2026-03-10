@@ -17,6 +17,7 @@ mintersCommand
   .requiredOption("--mint <address>", "Mint address")
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
+  .option("--format <format>", "Output format: text or json", "text")
   .action(async (opts) => {
     const stablecoin = await loadStablecoin(opts.mint, opts);
 
@@ -32,6 +33,22 @@ mintersCommand
     const minters = accounts.filter(
       (a: any) => a.account.roleType === RoleType.Minter
     );
+
+    if (opts.format === "json") {
+      console.log(JSON.stringify({
+        count: minters.length,
+        minters: minters.map((m) => {
+          const acct = m.account as any;
+          return {
+            address: acct.assignee.toBase58(),
+            active: acct.isActive,
+            quota: acct.minterQuota.toString(),
+            minted: acct.mintedAmount.toString(),
+          };
+        }),
+      }, null, 2));
+      return;
+    }
 
     if (minters.length === 0) {
       console.log("No minters found.");

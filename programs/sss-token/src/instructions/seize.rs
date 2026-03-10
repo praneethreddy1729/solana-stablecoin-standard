@@ -63,6 +63,7 @@ pub struct Seize<'info> {
     )]
     pub to: InterfaceAccount<'info, TokenAccount>,
 
+    #[account(constraint = token_program.key() == anchor_spl::token_2022::ID @ SSSError::InvalidTokenProgram)]
     pub token_program: Interface<'info, TokenInterface>,
 }
 

@@ -40,6 +40,7 @@ pub struct BurnTokens<'info> {
     /// CHECK: The owner of the token account must sign or delegate
     pub from_authority: Signer<'info>,
 
+    #[account(constraint = token_program.key() == anchor_spl::token_2022::ID @ SSSError::InvalidTokenProgram)]
     pub token_program: Interface<'info, TokenInterface>,
 }
 

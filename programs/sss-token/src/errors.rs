@@ -70,4 +70,6 @@ pub enum SSSError {
     Undercollateralized, // 6032
     #[msg("Cannot freeze the treasury account")]
     CannotFreezeTreasury, // 6033
+    #[msg("Invalid token program: must be Token-2022")]
+    InvalidTokenProgram, // 6034
 }

@@ -135,6 +135,7 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
             .hook_program
             .as_ref()
             .ok_or(SSSError::InvalidHookProgram)?;
+        require!(hook_program.executable, SSSError::InvalidHookProgram);
 
         let ix = initialize_transfer_hook(
             &token_program_id,

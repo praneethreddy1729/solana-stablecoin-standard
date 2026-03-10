@@ -27,3 +27,16 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_RPC_URL=${NEXT_PUBLIC_RPC_URL:-http://localhost:8899}
+      - NEXT_PUBLIC_PROGRAM_ID=${NEXT_PUBLIC_PROGRAM_ID:-tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz}
+    restart: unless-stopped

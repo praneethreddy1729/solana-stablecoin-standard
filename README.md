@@ -32,10 +32,34 @@ SSS defines two composable specification levels. Choose the one that matches you
 
 ### Deployed on Devnet
 
-Both programs are deployed and verified on Solana Devnet:
+Both programs are deployed and verified on Solana Devnet (queried 2026-03-10):
 
 - **sss-token**: [`tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz`](https://explorer.solana.com/address/tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz?cluster=devnet)
 - **sss-transfer-hook**: [`A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB`](https://explorer.solana.com/address/A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB?cluster=devnet)
+
+#### On-Chain Program Verification
+
+```
+Program Id: tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz
+Owner: BPFLoaderUpgradeab1e11111111111111111111111
+ProgramData Address: Avc6XZRoSptcTWddE1B4UqDeSPoPYbGjiWa2q9g6qwMz
+Authority: 4HDC3Hh8jW6YTDGRtwUczEmXtGgiFAgCF49HSadCctH1
+Last Deployed In Slot: 447499381
+Data Length: 619248 (0x972f0) bytes
+Balance: 4.31117016 SOL
+```
+
+```
+Program Id: A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB
+Owner: BPFLoaderUpgradeab1e11111111111111111111111
+ProgramData Address: 2jK7NsuJYrZZhASv9pPCTUegUGDzm3SA6JrDwwLAxSUp
+Authority: 4HDC3Hh8jW6YTDGRtwUczEmXtGgiFAgCF49HSadCctH1
+Last Deployed In Slot: 447499353
+Data Length: 369176 (0x5a218) bytes
+Balance: 2.57066904 SOL
+```
+
+Both programs are owned by `BPFLoaderUpgradeab1e11111111111111111111111` and controlled by authority `4HDC3Hh8jW6YTDGRtwUczEmXtGgiFAgCF49HSadCctH1`.
 
 ### Devnet Proof Script
 
@@ -58,7 +82,7 @@ The script performs the following operations against the deployed programs:
 
 All six transactions are signed and submitted to devnet, with explorer links printed for each.
 
-> **Note:** Devnet currently runs Agave 3.0.x which has a known SIMD-0219 bug affecting Token-2022 metadata reallocation ([anza-xyz/agave#9799](https://github.com/anza-xyz/agave/issues/9799)). This feature is deactivated in the local test validator via `Anchor.toml`, but cannot be deactivated on devnet. If the script fails due to this issue, the programs themselves are still deployed and verifiable at the explorer links above.
+> **Note:** Devnet currently runs Agave 3.0.x which has a known SIMD-0219 bug affecting Token-2022 metadata reallocation ([anza-xyz/agave#9799](https://github.com/anza-xyz/agave/issues/9799)). The `initialize` instruction uses Token-2022's `token_metadata_initialize` which triggers a metadata realloc that fails under SIMD-0219. This feature is deactivated in the local test validator via `Anchor.toml`, but cannot be deactivated on devnet. The programs themselves are deployed and verified as shown above; 347+ tests pass on localnet with the feature deactivated.
 
 ## Installation
 
@@ -588,6 +612,15 @@ anchor test
 ### Test Breakdown
 
 **347+ tests** across 15 test files covering all instructions, role checks, compliance flows, and edge cases. See [docs/TESTING.md](docs/TESTING.md) for the full breakdown.
+
+### Fuzz Testing (Trident)
+
+Fuzz targets for all critical instructions are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` using the [Trident](https://ackee.xyz/trident/docs/latest/) framework. Six fuzz targets cover initialize, mint, burn, role management, blacklist/transfer-hook, and reserve attestation -- each validating arithmetic safety, access control, and state machine invariants under randomized inputs. See [docs/TESTING.md](docs/TESTING.md) for the full invariant table.
+
+```bash
+cargo install trident-cli
+trident fuzz run fuzz_sss_token
+```
 
 ### What Tests Verify
 
