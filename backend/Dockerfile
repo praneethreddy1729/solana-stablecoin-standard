@@ -15,7 +15,7 @@ WORKDIR /app/backend
 RUN npm ci --ignore-scripts 2>/dev/null || yarn install --frozen-lockfile
 
 # Copy backend source and compile
-COPY backend/tsconfig.json backend/src/ /app/backend/
+COPY backend/tsconfig.json /app/backend/
 COPY backend/src/ /app/backend/src/
 RUN npx tsc --outDir dist
 
