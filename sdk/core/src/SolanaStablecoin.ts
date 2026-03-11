@@ -39,6 +39,8 @@ import sssTokenIdl from "./idl/sss_token.json";
 import sssTransferHookIdl from "./idl/sss_transfer_hook.json";
 import { SssToken } from "./types/sss_token";
 import { SssTransferHook } from "./types/sss_transfer_hook";
+import { OraclePriceGuard, PYTH_FEED_IDS } from "./oracle";
+import type { PriceGuardConfig } from "./oracle";
 
 /**
  * @description Primary SDK class for interacting with the Solana Stablecoin Standard (SSS).
@@ -80,6 +82,13 @@ export class SolanaStablecoin {
   readonly configBump: number;
   readonly programId: PublicKey;
   readonly hookProgramId: PublicKey;
+
+  /**
+   * @description Oracle Price Guard instance, set via {@link attachOracleGuard}.
+   * Provides Pyth-based price deviation checks and circuit breaker protection.
+   * `null` until `attachOracleGuard` is called.
+   */
+  public oracle: OraclePriceGuard | null = null;
 
   /**
    * @description Compliance sub-object providing blacklist and seizure operations (SSS-2 only).
@@ -686,6 +695,45 @@ export class SolanaStablecoin {
         config: this.configPda,
       })
       .rpc();
+  }
+
+  /**
+   * @description Attach an Oracle Price Guard to this stablecoin instance.
+   * After calling this, `stable.oracle` is available for price checks and monitoring.
+   *
+   * Accepts a Pyth feed alias (e.g., `"USDC/USD"`) or a full hex feed ID.
+   * All other `PriceGuardConfig` fields are optional and have sensible defaults:
+   * - `circuitBreakerThreshold` defaults to 3
+   *
+   * @param config - Config object with required `pythFeed` and optional guard parameters.
+   *
+   * @example
+   * ```ts
+   * stable.attachOracleGuard({
+   *   pythFeed: "USDC/USD",
+   *   targetPrice: 1.0,
+   *   maxDeviationBps: 200,
+   *   maxStalenessSecs: 60,
+   * });
+   * const result = await stable.oracle!.checkPrice();
+   * ```
+   */
+  attachOracleGuard(
+    config: Partial<PriceGuardConfig> & { pythFeed: string }
+  ): void {
+    // Resolve feed alias to full hex ID if it matches a known alias
+    const resolvedFeed =
+      (PYTH_FEED_IDS as Record<string, string>)[config.pythFeed] ??
+      config.pythFeed;
+
+    this.oracle = new OraclePriceGuard({
+      targetPrice: 1.0,
+      maxDeviationBps: 200,
+      maxStalenessSecs: 60,
+      circuitBreakerThreshold: 3,
+      ...config,
+      pythFeed: resolvedFeed,
+    });
   }
 
   // --- Compliance sub-object methods (SSS-2) ---
