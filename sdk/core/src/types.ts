@@ -62,7 +62,7 @@ export interface BlacklistEntry {
 export interface InitializeParams {
   name: string;
   symbol: string;
-  uri: string;
+  uri?: string;
   decimals: number;
   authority: Keypair;
   preset?: Preset;
@@ -70,6 +70,11 @@ export interface InitializeParams {
   enablePermanentDelegate?: boolean;
   defaultAccountFrozen?: boolean;
   treasury?: PublicKey;
+  extensions?: {
+    permanentDelegate?: boolean;
+    transferHook?: boolean;
+    defaultAccountFrozen?: boolean;
+  };
 }
 
 export interface MintParams {

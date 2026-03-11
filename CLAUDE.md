@@ -31,7 +31,7 @@ ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 ANCHOR_WALLET=~/.config/solana/id.json
 - SDK package: `@stbr/sss-token` (not @sss/sdk)
 
 ## Architecture
-- **sss-token**: Main stablecoin program (15 instructions)
+- **sss-token**: Main stablecoin program (17 instructions)
   - Program ID: tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz
 - **sss-transfer-hook**: Transfer hook + blacklist PDAs
   - Program ID: A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB

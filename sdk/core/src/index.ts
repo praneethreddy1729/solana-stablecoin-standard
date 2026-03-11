@@ -44,3 +44,5 @@ export {
   parseSSSError,
   type SSSErrorInfo,
 } from "./errors";
+export { BN } from "@coral-xyz/anchor";
+export { PublicKey } from "@solana/web3.js";

@@ -2,21 +2,32 @@ import { Command } from "commander";
 import { PublicKey } from "@solana/web3.js";
 import { loadStablecoin } from "../helpers";
 
-export const seizeCommand = new Command("seize")
+export const seizeCommand = new Command("seize [address]")
   .description("Seize tokens from a blacklisted account")
   .requiredOption("--mint <address>", "Mint address")
-  .requiredOption("--from <address>", "Source token account (blacklisted)")
-  .requiredOption("--to <address>", "Destination token account (treasury)")
+  .option("--from <address>", "Source token account (blacklisted)")
+  .option("--to <address>", "Destination token account (treasury)")
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
-  .action(async (opts) => {
+  .action(async (address, opts) => {
+    const fromAccount = address || opts.from;
+
+    if (!fromAccount) {
+      console.error("Error: source account is required (positional arg or --from)");
+      process.exit(1);
+    }
+    if (!opts.to) {
+      console.error("Error: destination account is required (--to)");
+      process.exit(1);
+    }
+
     const stablecoin = await loadStablecoin(opts.mint, opts);
 
     const txSig = await stablecoin.compliance.seize(
-      new PublicKey(opts.from),
+      new PublicKey(fromAccount),
       new PublicKey(opts.to),
     );
 
-    console.log(`Seized tokens from ${opts.from} to ${opts.to}`);
+    console.log(`Seized tokens from ${fromAccount} to ${opts.to}`);
     console.log(`Tx: ${txSig}`);
   });

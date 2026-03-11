@@ -72,7 +72,7 @@ export async function burnRoutes(app: FastifyInstance): Promise<void> {
       });
 
       sendWebhook("burn", { signature, mint: mintAddress, from, amount }).catch(
-        (err: unknown) => app.log.warn('Webhook delivery failed:', err instanceof Error ? err.message : String(err))
+        (err: unknown) => app.log.warn(`Webhook delivery failed: ${err instanceof Error ? err.message : String(err)}`)
       );
 
       return reply.status(200).send({

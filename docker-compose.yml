@@ -8,7 +8,10 @@ services:
     ports:
       - "${PORT:-3001}:3001"
     env_file:
-      - .env
+      - path: .env
+        required: false
+      - path: .env.example
+        required: false
     environment:
       - PORT=3001
       - HOST=0.0.0.0
@@ -19,7 +22,8 @@ services:
       - ENABLE_SANCTIONS_SCREENING=${ENABLE_SANCTIONS_SCREENING:-false}
     volumes:
       # Mount keypair file (read-only) for local dev
-      - ${AUTHORITY_KEYPAIR_PATH:-~/.config/solana/id.json}:/run/secrets/authority_keypair:ro
+      # Copy .env.example to .env and set AUTHORITY_KEYPAIR_PATH to your keypair path
+      - ${AUTHORITY_KEYPAIR_PATH:-${HOME}/.config/solana/id.json}:/run/secrets/authority_keypair:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 30s
@@ -30,8 +34,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
     ports:
       - "3000:3000"
     depends_on:

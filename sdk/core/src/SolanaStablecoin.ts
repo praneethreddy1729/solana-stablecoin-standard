@@ -94,7 +94,7 @@ export class SolanaStablecoin {
      * @returns Transaction signature.
      * @throws If the signer lacks the Blacklister role or the token is SSS-1.
      */
-    blacklistAdd: (address: PublicKey, blacklister: PublicKey, reason?: string) => Promise<TransactionSignature>;
+    blacklistAdd: (address: PublicKey, reasonOrBlacklister?: string | PublicKey, reason?: string) => Promise<TransactionSignature>;
     /**
      * @description Remove an address from the blacklist, restoring transfer capabilities.
      * @param address - The wallet address to remove from the blacklist.
@@ -230,6 +230,13 @@ export class SolanaStablecoin {
       defaultAccountFrozen = false;
     }
 
+    // Allow explicit extensions to override preset defaults
+    if (params.extensions) {
+      if (params.extensions.permanentDelegate !== undefined) enablePermanentDelegate = params.extensions.permanentDelegate;
+      if (params.extensions.transferHook !== undefined) enableTransferHook = params.extensions.transferHook;
+      if (params.extensions.defaultAccountFrozen !== undefined) defaultAccountFrozen = params.extensions.defaultAccountFrozen;
+    }
+
     const [registryEntry] = findRegistryEntryPda(mintKeypair.publicKey, programId);
 
     const accounts = {
@@ -247,7 +254,7 @@ export class SolanaStablecoin {
       .initialize({
         name: params.name,
         symbol: params.symbol,
-        uri: params.uri,
+        uri: params.uri ?? "",
         decimals: params.decimals,
         enableTransferHook,
         enablePermanentDelegate,
@@ -361,18 +368,38 @@ export class SolanaStablecoin {
    * );
    * ```
    */
-  async mint(to: PublicKey, amount: BN, minter: PublicKey): Promise<TransactionSignature> {
+  async mint(params: { recipient: PublicKey; amount: BN | number; minter: PublicKey }): Promise<TransactionSignature>;
+  async mint(to: PublicKey, amount: BN, minter: PublicKey): Promise<TransactionSignature>;
+  async mint(
+    toOrParams: PublicKey | { recipient: PublicKey; amount: BN | number; minter: PublicKey },
+    amount?: BN,
+    minter?: PublicKey,
+  ): Promise<TransactionSignature> {
+    let to: PublicKey;
+    let mintAmount: BN;
+    let minterKey: PublicKey;
+
+    if (toOrParams instanceof PublicKey) {
+      to = toOrParams;
+      mintAmount = amount!;
+      minterKey = minter!;
+    } else {
+      to = toOrParams.recipient;
+      mintAmount = toOrParams.amount instanceof BN ? toOrParams.amount : new BN(toOrParams.amount);
+      minterKey = toOrParams.minter;
+    }
+
     const [minterRole] = findRolePda(
       this.configPda,
       RoleType.Minter,
-      minter,
+      minterKey,
       this.programId
     );
 
     return this.program.methods
-      .mint(amount)
+      .mint(mintAmount)
       .accountsStrict({
-        minter,
+        minter: minterKey,
         config: this.configPda,
         minterRole,
         mint: this.mintAddress,
@@ -665,13 +692,28 @@ export class SolanaStablecoin {
 
   private async _blacklistAdd(
     address: PublicKey,
-    blacklister: PublicKey,
+    reasonOrBlacklister?: string | PublicKey,
     reason?: string
   ): Promise<TransactionSignature> {
+    let blacklisterKey: PublicKey;
+    let reasonStr: string;
+
+    if (typeof reasonOrBlacklister === 'string') {
+      // 2-arg form: blacklistAdd(address, reason) — use wallet as blacklister
+      const provider = this.program.provider as AnchorProvider;
+      blacklisterKey = provider.wallet.publicKey;
+      reasonStr = reasonOrBlacklister;
+    } else {
+      // 3-arg form: blacklistAdd(address, blacklister, reason)
+      const provider = this.program.provider as AnchorProvider;
+      blacklisterKey = reasonOrBlacklister ?? provider.wallet.publicKey;
+      reasonStr = reason ?? "";
+    }
+
     const [blacklisterRole] = findRolePda(
       this.configPda,
       RoleType.Blacklister,
-      blacklister,
+      blacklisterKey,
       this.programId
     );
     const [blacklistEntry] = findBlacklistPda(
@@ -681,9 +723,9 @@ export class SolanaStablecoin {
     );
 
     return this.program.methods
-      .addToBlacklist(address, reason ?? "")
+      .addToBlacklist(address, reasonStr)
       .accountsStrict({
-        blacklister,
+        blacklister: blacklisterKey,
         config: this.configPda,
         blacklisterRole,
         hookProgram: this.hookProgramId,

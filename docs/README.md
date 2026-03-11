@@ -35,6 +35,21 @@ solana program deploy target/deploy/sss_token.so --program-id target/deploy/sss_
 solana program deploy target/deploy/sss_transfer_hook.so --program-id target/deploy/sss_transfer_hook-keypair.json
 ```
 
+### Docker
+
+Run the backend API and frontend dashboard without installing any Solana toolchain:
+
+```bash
+cp .env.example .env
+# Edit .env: set MINT_ADDRESS to your deployed mint, and SOLANA_RPC_URL to your RPC endpoint
+docker compose up
+```
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:3001
+
+The keypair at `~/.config/solana/id.json` is mounted read-only into the backend container. To use a different keypair, set `AUTHORITY_KEYPAIR_PATH` in `.env` before running `docker compose up`.
+
 ## Create an SSS-1 Stablecoin
 
 ```typescript

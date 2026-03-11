@@ -6,8 +6,8 @@ FROM node:20-slim AS builder
 WORKDIR /app
 
 # Copy SDK dependency (backend imports from ../../sdk/core/src at compile time)
+# IDL JSON files live in sdk/core/src/idl/ (committed); target/idl/ is gitignored
 COPY sdk/core/ /app/sdk/core/
-COPY target/idl/ /app/target/idl/
 
 # Install backend dependencies
 COPY backend/package.json backend/yarn.lock* /app/backend/
@@ -36,7 +36,6 @@ COPY --from=builder /app/backend/package.json /app/package.json
 
 # Copy SDK (needed at runtime for type references)
 COPY --from=builder /app/sdk/core/ /app/sdk/core/
-COPY --from=builder /app/target/idl/ /app/target/idl/
 
 # Install curl for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*

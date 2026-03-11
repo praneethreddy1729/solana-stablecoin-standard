@@ -3,15 +3,27 @@ import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { loadStablecoin, loadWallet } from "../helpers";
 
-export const mintCommand = new Command("mint")
+export const mintCommand = new Command("mint [recipient] [amount]")
   .description("Mint tokens")
   .requiredOption("--mint <address>", "Mint address")
-  .requiredOption("--to <address>", "Recipient token account")
-  .requiredOption("--amount <amount>", "Amount to mint (raw units)")
+  .option("--to <address>", "Recipient token account")
+  .option("--amount <amount>", "Amount to mint (raw units)")
   .option("--minter <address>", "Minter pubkey (defaults to wallet)")
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
-  .action(async (opts) => {
+  .action(async (recipient, amount, opts) => {
+    const recipientAddr = recipient || opts.to;
+    const mintAmount = amount || opts.amount;
+
+    if (!recipientAddr) {
+      console.error("Error: recipient address is required (positional arg or --to)");
+      process.exit(1);
+    }
+    if (!mintAmount) {
+      console.error("Error: amount is required (positional arg or --amount)");
+      process.exit(1);
+    }
+
     const wallet = loadWallet(opts.keypair);
     const stablecoin = await loadStablecoin(opts.mint, opts);
     const minter = opts.minter
@@ -19,11 +31,11 @@ export const mintCommand = new Command("mint")
       : wallet.publicKey;
 
     const txSig = await stablecoin.mint(
-      new PublicKey(opts.to),
-      new BN(opts.amount),
+      new PublicKey(recipientAddr),
+      new BN(mintAmount),
       minter,
     );
 
-    console.log(`Minted ${opts.amount} tokens to ${opts.to}`);
+    console.log(`Minted ${mintAmount} tokens to ${recipientAddr}`);
     console.log(`Tx: ${txSig}`);
   });

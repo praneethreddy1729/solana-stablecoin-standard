@@ -63,6 +63,15 @@ Balance: 2.57066904 SOL
 
 Both programs are owned by `BPFLoaderUpgradeab1e11111111111111111111111` and controlled by authority `4HDC3Hh8jW6YTDGRtwUczEmXtGgiFAgCF49HSadCctH1`.
 
+### Example Transactions (Devnet)
+
+| Transaction | Type | Explorer |
+|------------|------|----------|
+| `5CmfpQ...8uSk` | SSS Token Deploy | [View](https://explorer.solana.com/tx/5CmfpQs1nT74yZ2BYY6DzSt82MvpStcefbe9qtozTgZ3gsD3H9G5HStonp8jjC22L9fAjGxLzBHb2kwUUaAx8uSk?cluster=devnet) |
+| `3xtKQU...Y9Yj` | SSS Token Deploy | [View](https://explorer.solana.com/tx/3xtKQUeHzEhLStrRMhChjirDdN1DDSCQQj3aArLfajq9nwrTc3gG8MR2Gr7SswjVLxbgsDpavENYfUTnRsyPY9Yj?cluster=devnet) |
+| `vuoWMr...8qf` | Transfer Hook Deploy | [View](https://explorer.solana.com/tx/vuoWMrv1PX2a6Hd2B4fyfX6nfWnVfjgz1qLjga9zeNmioZ6RLem5jqs9m93MQfxaZ7oYU9zsBjro5LXHzQZi8qf?cluster=devnet) |
+| `3U2PC1...2kd` | Transfer Hook Deploy | [View](https://explorer.solana.com/tx/3U2PC1mgEasmfknKJV1HDJBpgQCrvyjrYMZGWqn74a43po5PiYfQir2pUJiUoz4yXCDw6XhcP9pN7au7yNF4s2kd?cluster=devnet) |
+
 ### Devnet Proof Script
 
 A self-contained script demonstrates the full SSS-1 lifecycle on devnet:
@@ -545,6 +554,7 @@ try {
 | 6031 | `InvalidExpiration` | Invalid expiration: must be positive |
 | 6032 | `Undercollateralized` | Undercollateralized: reserves are below token supply |
 | 6033 | `CannotFreezeTreasury` | Cannot freeze the treasury account |
+| 6034 | `InvalidTokenProgram` | Invalid token program: must be Token-2022 |
 
 ### sss-transfer-hook Program Errors
 
@@ -645,7 +655,7 @@ solana-stablecoin-standard/
       src/
         instructions/          17 instruction handlers
         state/                 StablecoinConfig, RoleAssignment
-        errors.rs              34 error variants (6000-6033)
+        errors.rs              35 error variants (6000-6034)
         events.rs              17 event structs
         constants.rs           PDA seeds, account sizes, CPI discriminators
         utils/                 Validation, PDA, Token-2022 helpers
@@ -689,6 +699,9 @@ solana-stablecoin-standard/
 | [docs/SECURITY.md](docs/SECURITY.md) | Security model and threat analysis |
 | [docs/TESTING.md](docs/TESTING.md) | Test suite documentation |
 | [docs/PRIVACY.md](docs/PRIVACY.md) | ConfidentialTransfer incompatibility analysis |
+| [docs/CLI.md](docs/CLI.md) | Full CLI command reference (18 commands) |
+| [docs/ERRORS.md](docs/ERRORS.md) | All error codes from both programs |
+| [docs/EVENTS.md](docs/EVENTS.md) | All events emitted by sss-token |
 
 ## License
 
