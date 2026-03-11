@@ -148,6 +148,8 @@ await program.methods
 | Pauser | 2 | Risk/security team |
 | Freezer | 3 | Compliance team |
 | Blacklister | 4 | Compliance team (SSS-2 only) |
+| Seizer | 5 | Compliance/legal team (SSS-2 only) |
+| Attestor | 6 | Reserve auditor / oracle |
 
 ### Deactivating Roles
 
@@ -234,6 +236,21 @@ await stablecoin.thaw({ tokenAccount: targetAta, freezer: freezerPubkey });
 ```
 
 ## Authority Transfer
+
+### Authority Transfer State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> Active: initialize()
+    Active --> Pending: transfer_authority(new)
+    Pending --> Active: cancel_authority_transfer()
+    Pending --> Transferred: accept_authority()
+    Transferred --> [*]
+
+    Active: Current Authority controls config
+    Pending: pending_authority set\ntransfer_initiated_at recorded
+    Transferred: New Authority controls config\npending_authority cleared
+```
 
 ### Standard Transfer Flow
 

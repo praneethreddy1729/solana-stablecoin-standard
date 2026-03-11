@@ -49,15 +49,26 @@ export const initCommand = new Command("init")
       enablePermanentDelegate = config.enablePermanentDelegate ?? false;
       defaultAccountFrozen = config.defaultAccountFrozen ?? false;
     } else {
-      if (!opts.name || !opts.symbol) {
-        console.error("Error: --name and --symbol are required (or use --custom <config-file>)");
+      const resolvedPreset = PRESET_MAP[opts.preset?.toUpperCase()] ?? Preset.SSS_1;
+      const isCustomPreset = resolvedPreset === Preset.Custom;
+
+      if (isCustomPreset && (!opts.name || !opts.symbol)) {
+        console.error("Error: --name and --symbol are required for CUSTOM preset (or use --custom <config-file>)");
         process.exit(1);
       }
-      name = opts.name;
-      symbol = opts.symbol;
+
+      // Apply sensible defaults for named presets when name/symbol not provided
+      const presetDefaults: Record<number, { name: string; symbol: string }> = {
+        [Preset.SSS_1 as number]: { name: "SSS-1 Stablecoin", symbol: "SSS1" },
+        [Preset.SSS_2 as number]: { name: "SSS-2 Stablecoin", symbol: "SSS2" },
+      };
+      const defaults = presetDefaults[resolvedPreset as number] ?? { name: "", symbol: "" };
+
+      name = opts.name ?? defaults.name;
+      symbol = opts.symbol ?? defaults.symbol;
       uri = opts.uri;
       decimals = parseInt(opts.decimals, 10);
-      preset = PRESET_MAP[opts.preset.toUpperCase()] ?? Preset.SSS_1;
+      preset = resolvedPreset;
       enableTransferHook = opts.transferHook ?? false;
       enablePermanentDelegate = opts.permanentDelegate ?? false;
       defaultAccountFrozen = opts.defaultFrozen ?? false;

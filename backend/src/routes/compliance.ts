@@ -2,13 +2,24 @@ import { FastifyInstance } from "fastify";
 import { PublicKey } from "@solana/web3.js";
 import {
   screenAddress,
+  addAuditEntry,
   getAuditLog,
   getAuditLogCount,
   getActionAuditLog,
   getActionAuditLogCount,
 } from "../services/compliance";
+import { sendWebhook } from "../services/webhook";
 
 interface ScreenBody {
+  address: string;
+}
+
+interface BlacklistAddBody {
+  address: string;
+  reason?: string;
+}
+
+interface BlacklistRemoveBody {
   address: string;
 }
 
@@ -50,6 +61,90 @@ export async function complianceRoutes(app: FastifyInstance): Promise<void> {
       });
     } catch (err: unknown) {
       return reply.status(400).send({ error: err instanceof Error ? err.message : String(err) });
+    }
+  });
+
+  app.post<{ Body: BlacklistAddBody }>("/compliance/blacklist/add", async (req, reply) => {
+    const { address, reason } = req.body;
+
+    if (!address) {
+      return reply.status(400).send({ error: "Missing required field: address" });
+    }
+
+    let pubkey: PublicKey;
+    try {
+      pubkey = new PublicKey(address);
+    } catch {
+      return reply.status(400).send({ error: "Invalid address" });
+    }
+
+    if (process.env.ENABLE_SANCTIONS_SCREENING === "true") {
+      try {
+        const result = await screenAddress(address);
+        if (result.sanctioned) {
+          return reply.status(403).send({ error: "Address is sanctioned", screening: result });
+        }
+      } catch (err: unknown) {
+        app.log.error(err, "Sanctions screening failed");
+        return reply.status(503).send({ error: "Sanctions screening unavailable" });
+      }
+    }
+
+    try {
+      const signature = await app.sdk.compliance.blacklistAdd(pubkey, reason);
+
+      addAuditEntry({
+        timestamp: new Date().toISOString(),
+        action: "blacklist_add",
+        actor: app.authority.publicKey.toBase58(),
+        txSignature: signature,
+        details: { address, ...(reason ? { reason } : {}) },
+      });
+
+      sendWebhook("blacklist_add", { signature, address, reason }).catch(
+        (err: unknown) => app.log.warn(`Webhook delivery failed: ${err instanceof Error ? err.message : String(err)}`)
+      );
+
+      return reply.status(200).send({ signature, address, reason: reason || null });
+    } catch (err: unknown) {
+      app.log.error(err, "Blacklist add failed");
+      return reply.status(500).send({ error: "Transaction failed" });
+    }
+  });
+
+  app.post<{ Body: BlacklistRemoveBody }>("/compliance/blacklist/remove", async (req, reply) => {
+    const { address } = req.body;
+
+    if (!address) {
+      return reply.status(400).send({ error: "Missing required field: address" });
+    }
+
+    let pubkey: PublicKey;
+    try {
+      pubkey = new PublicKey(address);
+    } catch {
+      return reply.status(400).send({ error: "Invalid address" });
+    }
+
+    try {
+      const signature = await app.sdk.compliance.blacklistRemove(pubkey, app.authority.publicKey);
+
+      addAuditEntry({
+        timestamp: new Date().toISOString(),
+        action: "blacklist_remove",
+        actor: app.authority.publicKey.toBase58(),
+        txSignature: signature,
+        details: { address },
+      });
+
+      sendWebhook("blacklist_remove", { signature, address }).catch(
+        (err: unknown) => app.log.warn(`Webhook delivery failed: ${err instanceof Error ? err.message : String(err)}`)
+      );
+
+      return reply.status(200).send({ signature, address });
+    } catch (err: unknown) {
+      app.log.error(err, "Blacklist remove failed");
+      return reply.status(500).send({ error: "Transaction failed" });
     }
   });
 

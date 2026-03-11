@@ -6,6 +6,7 @@ import {
 } from "@solana/web3.js";
 import * as fs from "fs";
 import * as path from "path";
+import { sendWebhook } from "./webhook";
 
 export interface ProgramEvent {
   signature: string;
@@ -137,13 +138,19 @@ export class EventPoller {
           // skip log fetch on error
         }
 
-        this.events.push({
+        const event: ProgramEvent = {
           signature: sigInfo.signature,
           slot: sigInfo.slot,
           blockTime: sigInfo.blockTime ?? null,
           logs,
           err: sigInfo.err,
-        });
+        };
+
+        this.events.push(event);
+
+        sendWebhook("event", event).catch((e) =>
+          this.log.error("EventPoller: webhook delivery failed:", e)
+        );
       }
 
       if (this.events.length > this.maxEvents) {

@@ -188,37 +188,43 @@ const isBlacklisted = await stablecoin.compliance.isBlacklisted(someWallet);
 
 ## Architecture
 
-```
-+-----------------------------------------------------------------------+
-|                         TypeScript SDK / CLI                          |
-|  SolanaStablecoin class  |  PDA helpers  |  CLI commands (18 cmds)   |
-+----------------------------------+------------------------------------+
-                                   |
-              Anchor RPC / CPI     |
-                                   v
-+----------------------------------+------------------------------------+
-|          sss-token program          |    sss-transfer-hook program    |
-|          (17 instructions)          |    (5 instructions + fallback)  |
-|                                     |                                 |
-|  Initialize   Mint      Burn       |  InitializeExtraAccountMetas    |
-|  Freeze       Thaw      Pause      |  UpdateExtraAccountMetas        |
-|  Unpause      UpdateRoles          |  Execute (blacklist + pause)    |
-|  UpdateMinterQuota                 |  AddToBlacklist                 |
-|  TransferAuthority                 |  RemoveFromBlacklist            |
-|  AcceptAuthority                   |  Fallback (SPL hook disc)       |
-|  CancelAuthorityTransfer           |                                 |
-|  AddToBlacklist (CPI ->)           |                                 |
-|  RemoveFromBlacklist (CPI ->)      |                                 |
-|  Seize (permanent delegate)        |                                 |
-|  UpdateTreasury (authority)        |                                 |
-|  AttestReserves (attestor)         |                                 |
-+----------------------------------+------------------------------------+
-                                   |
-                                   v
-+-----------------------------------------------------------------------+
-|                    Token-2022 (SPL Token Extensions)                  |
-|  MetadataPointer | TransferHook | PermanentDelegate | DefaultAcctSt  |
-+-----------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph SDK["TypeScript SDK / CLI"]
+        A1["SolanaStablecoin class"]
+        A2["PDA helpers"]
+        A3["CLI — 18 commands"]
+    end
+
+    subgraph Programs["On-Chain Programs"]
+        subgraph Main["sss-token — 17 instructions"]
+            B1["initialize / mint / burn"]
+            B2["freeze / thaw / pause / unpause"]
+            B3["update_roles / update_minter"]
+            B4["transfer / accept / cancel authority"]
+            B5["add/remove blacklist via CPI"]
+            B6["seize / update_treasury / attest_reserves"]
+        end
+        subgraph Hook["sss-transfer-hook — 5 + fallback"]
+            C1["init / update ExtraAccountMetas"]
+            C2["execute — blacklist + pause check"]
+            C3["add / remove_from_blacklist"]
+            C4["fallback — SPL hook discriminator"]
+        end
+    end
+
+    subgraph Token2022["Token-2022 Extensions"]
+        D1["MetadataPointer"]
+        D2["TransferHook"]
+        D3["PermanentDelegate"]
+        D4["DefaultAccountState"]
+    end
+
+    SDK -->|"Anchor RPC"| Programs
+    B5 -->|"CPI"| C3
+    C4 -->|"routes to"| C2
+    Programs -->|"invoke_signed"| Token2022
+    Token2022 -->|"auto-invokes on transfer"| Hook
 ```
 
 The **Config PDA** serves as mint authority, freeze authority, and permanent delegate, ensuring all privileged operations go through the program's role-based access control layer.

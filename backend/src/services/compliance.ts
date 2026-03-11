@@ -1,7 +1,44 @@
 import { PublicKey } from "@solana/web3.js";
 import pino from "pino";
+import * as fs from "fs";
+import * as path from "path";
 
 const logger = pino({ name: "compliance-service" });
+
+const DATA_DIR = path.resolve(process.cwd(), "data");
+const SCREENINGS_FILE = path.join(DATA_DIR, "audit-screenings.json");
+const ACTIONS_FILE = path.join(DATA_DIR, "audit-actions.json");
+
+function ensureDataDir(): void {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+}
+
+function loadJsonArray<T>(filePath: string): T[] {
+  try {
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        logger.info(`Loaded ${parsed.length} entries from ${path.basename(filePath)}`);
+        return parsed as T[];
+      }
+    }
+  } catch (err) {
+    logger.error({ err }, `Failed to load ${path.basename(filePath)}`);
+  }
+  return [];
+}
+
+function saveJsonArray(filePath: string, data: unknown[]): void {
+  try {
+    ensureDataDir();
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+  } catch (err) {
+    logger.error({ err }, `Failed to save ${path.basename(filePath)}`);
+  }
+}
 
 export interface ScreeningResult {
   address: string;
@@ -10,7 +47,7 @@ export interface ScreeningResult {
   source: string;
 }
 
-const auditLog: ScreeningResult[] = [];
+const auditLog: ScreeningResult[] = loadJsonArray<ScreeningResult>(SCREENINGS_FILE);
 
 // Mock OFAC sanctions list for demo purposes
 const MOCK_SANCTIONED_ADDRESSES = new Set([
@@ -53,6 +90,7 @@ export async function screenAddress(address: string): Promise<ScreeningResult> {
   };
 
   auditLog.push(result);
+  saveJsonArray(SCREENINGS_FILE, auditLog);
   return result;
 }
 
@@ -76,11 +114,12 @@ export interface AuditEntry {
   details: Record<string, string>;
 }
 
-const actionAuditLog: AuditEntry[] = [];
+const actionAuditLog: AuditEntry[] = loadJsonArray<AuditEntry>(ACTIONS_FILE);
 
 export function addAuditEntry(entry: AuditEntry): void {
   actionAuditLog.push(entry);
   if (actionAuditLog.length > 10000) actionAuditLog.shift();
+  saveJsonArray(ACTIONS_FILE, actionAuditLog);
 }
 
 export function getActionAuditLog(limit = 100, offset = 0): AuditEntry[] {

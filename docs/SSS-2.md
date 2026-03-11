@@ -128,6 +128,31 @@ Blacklists are **per-mint**: an address blacklisted for one stablecoin is not au
 
 ## Seizure (Permanent Delegate)
 
+### Seize Flow
+
+```mermaid
+sequenceDiagram
+    participant Seizer
+    participant SSSToken as sss-token program
+    participant Config as Config PDA<br/>(permanent delegate)
+    participant Token2022 as Token-2022
+    participant Hook as sss-transfer-hook
+    participant BL as BlacklistEntry PDA
+
+    Seizer->>SSSToken: seize()
+    SSSToken->>SSSToken: Verify Seizer role active
+    SSSToken->>SSSToken: Verify permanent delegate enabled
+    SSSToken->>SSSToken: Verify from.amount > 0
+    SSSToken->>Token2022: invoke_transfer_checked<br/>(signed by Config PDA)
+    Token2022->>Hook: Execute (transfer hook)
+    Hook->>Hook: Parse mint extensions
+    Hook->>Hook: owner_delegate == permanent delegate?
+    Hook-->>Token2022: OK (bypass blacklist + pause)
+    Token2022->>Token2022: Move all tokens to treasury
+    Token2022-->>SSSToken: Transfer complete
+    SSSToken->>SSSToken: Emit TokensSeized event
+```
+
 ### Seize Instruction
 
 **Instruction**: `seize()`

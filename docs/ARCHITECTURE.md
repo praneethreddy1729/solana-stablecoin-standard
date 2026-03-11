@@ -27,6 +27,68 @@ sss-token (main program)              sss-transfer-hook (hook program)
 
 The Config PDA serves as mint authority, freeze authority, and permanent delegate -- ensuring all privileged operations go through the program's access control layer.
 
+### System Overview Diagram
+
+```mermaid
+flowchart TD
+    subgraph sss_token["sss-token program"]
+        Config["StablecoinConfig PDA\n(mint authority, freeze authority,\npermanent delegate)"]
+        Role["RoleAssignment PDAs\n(per config × role × assignee)"]
+        Attest["ReserveAttestation PDA"]
+    end
+
+    subgraph sss_hook["sss-transfer-hook program"]
+        BL["BlacklistEntry PDAs\n(per mint × user)"]
+        Extra["ExtraAccountMetas PDA\n(per mint)"]
+    end
+
+    subgraph token2022["Token-2022"]
+        Mint["Mint Account\n+ MetadataPointer\n+ TransferHook\n+ PermanentDelegate\n+ DefaultAccountState"]
+    end
+
+    Config -->|"mint/freeze authority"| Mint
+    Config -->|"permanent delegate"| Mint
+    sss_token -->|"CPI: add/remove blacklist"| sss_hook
+    token2022 -->|"auto-invoke on transfer"| sss_hook
+    Extra -->|"resolved accounts"| BL
+    Extra -->|"resolved accounts"| Config
+    Role -->|"gates access to"| Config
+```
+
+### Transfer Hook Execution Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Token2022 as Token-2022
+    participant Hook as sss-transfer-hook
+    participant BL as BlacklistEntry PDAs
+    participant Cfg as StablecoinConfig PDA
+
+    User->>Token2022: transfer_checked(amount)
+    Token2022->>Token2022: Detect TransferHook extension
+    Token2022->>Hook: Execute (SPL hook discriminator)
+    Hook->>Hook: fallback() routes to execute()
+    Hook->>Cfg: Read mint extension data
+    alt owner_delegate == permanent delegate
+        Hook-->>Token2022: OK (bypass all checks)
+    else normal transfer
+        Hook->>Cfg: Check paused flag (byte 145)
+        alt paused == true
+            Hook-->>Token2022: ERROR TokenPaused
+        end
+        Hook->>BL: Check sender BlacklistEntry
+        alt sender blacklisted
+            Hook-->>Token2022: ERROR SenderBlacklisted
+        end
+        Hook->>BL: Check receiver BlacklistEntry
+        alt receiver blacklisted
+            Hook-->>Token2022: ERROR ReceiverBlacklisted
+        end
+        Hook-->>Token2022: OK (transfer proceeds)
+    end
+```
+
 ## Two-Program Architecture
 
 ### sss-token (Main Program)

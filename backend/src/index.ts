@@ -32,7 +32,7 @@ async function main() {
     process.env.AUTHORITY_KEYPAIR?.replace("~", process.env.HOME || "~") ||
     path.join(process.env.HOME || "", ".config/solana/id.json");
 
-  const app = Fastify({ logger: true });
+  const app = Fastify({ logger: { level: process.env.LOG_LEVEL || "info" } });
 
   let authority: Keypair;
   try {

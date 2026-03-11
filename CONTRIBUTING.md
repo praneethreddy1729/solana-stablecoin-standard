@@ -74,7 +74,7 @@ frontend/                 # Next.js management dashboard
 backend/                  # Fastify REST API
 tests/                    # Integration tests (15 files, 395 tests)
 docs/                     # Specifications and guides (11 files)
-trident-tests/            # Fuzz and invariant tests
+trident-tests/            # Fuzz test scaffolds (not yet implemented)
 scripts/                  # Utility and deployment scripts
 examples/                 # Usage examples
 migrations/               # Anchor migration scripts
