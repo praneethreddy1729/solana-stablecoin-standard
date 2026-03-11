@@ -25,7 +25,7 @@ describe("sss-token", () => {
   const hookProgram = anchor.workspace
     .SssTransferHook as Program<SssTransferHook>;
 
-  const authority = provider.wallet.payer;
+  const authority = provider.wallet.payer!;
   const mint = Keypair.generate();
 
   // Role holders

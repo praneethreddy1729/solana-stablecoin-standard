@@ -189,7 +189,9 @@ export class SolanaStablecoin {
    * @returns An object containing:
    *   - `stablecoin` - The initialized SolanaStablecoin instance.
    *   - `mintKeypair` - The generated mint Keypair (save the secret key if needed).
-   *   - `txSig` - The transaction signature.
+   *   - `txSig` - The transaction signature for the initialize instruction.
+   *   - `hookTxSig` - The transaction signature for the hook's `initializeExtraAccountMetas`
+   *     instruction (SSS-2 only; `null` for SSS-1 or when transfer hook is disabled).
    * @throws If the transaction fails (e.g., insufficient SOL, invalid params).
    *
    * @example
@@ -210,7 +212,12 @@ export class SolanaStablecoin {
     params: InitializeParams,
     programId: PublicKey = SSS_TOKEN_PROGRAM_ID,
     hookProgramId: PublicKey = SSS_TRANSFER_HOOK_PROGRAM_ID
-  ): Promise<{ stablecoin: SolanaStablecoin; mintKeypair: Keypair; txSig: TransactionSignature }> {
+  ): Promise<{
+    stablecoin: SolanaStablecoin;
+    mintKeypair: Keypair;
+    txSig: TransactionSignature;
+    hookTxSig: TransactionSignature | null;
+  }> {
     const wallet = params.authority instanceof Keypair
       ? new Wallet(params.authority)
       : params.authority;
@@ -274,6 +281,28 @@ export class SolanaStablecoin {
       .signers([mintKeypair])
       .rpc();
 
+    // For SSS-2 tokens with transfer hook enabled, automatically initialize
+    // the ExtraAccountMetas PDA on the hook program. Without this, transfers
+    // will fail because the hook's extra account metas aren't set up.
+    let hookTxSig: TransactionSignature | null = null;
+    if (enableTransferHook) {
+      const [extraAccountMetasPda] = findExtraAccountMetasPda(
+        mintKeypair.publicKey,
+        hookProgramId
+      );
+
+      hookTxSig = await hookProgram.methods
+        .initializeExtraAccountMetas()
+        .accountsStrict({
+          payer: wallet.publicKey,
+          extraAccountMetas: extraAccountMetasPda,
+          mint: mintKeypair.publicKey,
+          config: configPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+    }
+
     const stablecoin = new SolanaStablecoin(
       connection,
       mintKeypair.publicKey,
@@ -283,7 +312,7 @@ export class SolanaStablecoin {
       hookProgram
     );
 
-    return { stablecoin, mintKeypair, txSig };
+    return { stablecoin, mintKeypair, txSig, hookTxSig };
   }
 
   /**
@@ -329,6 +358,34 @@ export class SolanaStablecoin {
       program,
       hookProgram
     );
+  }
+
+  /**
+   * @description Manually initialize the ExtraAccountMetas PDA for the transfer hook program.
+   * This is only needed when loading an existing SSS-2 token whose hook metas were not initialized.
+   * The {@link create} method automatically calls this for SSS-2 tokens.
+   *
+   * @returns Transaction signature.
+   * @throws If the ExtraAccountMetas PDA already exists or the signer is not the authority.
+   */
+  async initializeHookExtraAccountMetas(): Promise<TransactionSignature> {
+    const [extraAccountMetasPda] = findExtraAccountMetasPda(
+      this.mintAddress,
+      this.hookProgramId
+    );
+
+    const provider = this.hookProgram.provider as AnchorProvider;
+
+    return this.hookProgram.methods
+      .initializeExtraAccountMetas()
+      .accountsStrict({
+        payer: provider.wallet.publicKey,
+        extraAccountMetas: extraAccountMetasPda,
+        mint: this.mintAddress,
+        config: this.configPda,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
   }
 
   /**

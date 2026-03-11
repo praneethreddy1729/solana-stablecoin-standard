@@ -17,11 +17,11 @@ import {
   findBlacklistPda,
   findAttestationPda,
   findExtraAccountMetasPda,
-  type StablecoinConfig,
-} from "../../../sdk/core/src";
+} from "@/lib/pda";
+import type { StablecoinConfig } from "@/lib/types";
 
-import sssTokenIdl from "../../../target/idl/sss_token.json";
-import sssTransferHookIdl from "../../../target/idl/sss_transfer_hook.json";
+import sssTokenIdl from "@/lib/idl/sss_token.json";
+import sssTransferHookIdl from "@/lib/idl/sss_transfer_hook.json";
 
 export type { StablecoinConfig };
 
@@ -287,9 +287,8 @@ export function useStablecoin() {
     async (roleType: number, assignee: PublicKey, isActive: boolean): Promise<string> => {
       if (!program || !configPda || !publicKey) throw new Error("Not connected");
       const [rolePda] = findRolePda(configPda, roleType, assignee);
-      const roleTypeArg = { [Object.keys(ROLE_NAMES)[roleType].toLowerCase()]: {} };
       const sig = await program.methods
-        .updateRoles(roleTypeArg, assignee, isActive)
+        .updateRoles(roleType, assignee, isActive)
         .accountsStrict({
           authority: publicKey,
           config: configPda,
@@ -394,6 +393,8 @@ export function useStablecoin() {
       const [senderBlacklist] = findBlacklistPda(mintPk, fromOwnerKey);
       const [receiverBlacklist] = findBlacklistPda(mintPk, toOwnerKey);
 
+      const [blacklistEntry] = findBlacklistPda(mintPk, fromOwnerKey);
+
       const sig = await program.methods
         .seize()
         .accountsStrict({
@@ -403,8 +404,10 @@ export function useStablecoin() {
           mint: mintPk,
           from: frozenAccount,
           to: treasury,
+          blacklistEntry,
+          fromOwner: fromOwnerKey,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
-        })
+        } as any)
         .remainingAccounts([
           { pubkey: SSS_TRANSFER_HOOK_PROGRAM_ID, isSigner: false, isWritable: false },
           { pubkey: extraAccountMetasPda, isSigner: false, isWritable: false },

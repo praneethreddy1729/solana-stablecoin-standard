@@ -26,7 +26,7 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
   const hookProgram = anchor.workspace
     .SssTransferHook as Program<SssTransferHook>;
 
-  const authority = provider.wallet.payer;
+  const authority = provider.wallet.payer!;
   const mint = Keypair.generate();
   const minter = Keypair.generate();
   const blacklister = Keypair.generate();
@@ -39,6 +39,7 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
   let ataA: PublicKey;
   let ataB: PublicKey;
   let authorityAta: PublicKey;
+  let treasuryAta: PublicKey;
 
   function rolePda(roleType: number, assignee: PublicKey): PublicKey {
     const [pda] = PublicKey.findProgramAddressSync(
@@ -80,8 +81,33 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
     return ata;
   }
 
-  it("completes full SSS-2 lifecycle with hook, blacklist, and seize", async () => {
-    // ----- Airdrop -----
+  async function thawIfFrozen(ata: PublicKey): Promise<void> {
+    const info = await getAccount(
+      provider.connection,
+      ata,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+    if (info.isFrozen) {
+      const freezerRole = rolePda(3, freezer.publicKey);
+      const sig = await program.methods
+        .thawAccount()
+        .accountsStrict({
+          freezer: freezer.publicKey,
+          config: configPda,
+          freezerRole,
+          mint: mint.publicKey,
+          tokenAccount: ata,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([freezer])
+        .rpc();
+      await provider.connection.confirmTransaction(sig, "confirmed");
+    }
+  }
+
+  before(async () => {
+    // Fund all keypairs
     for (const s of [minter, blacklister, freezer, userA, userB]) {
       const sig = await provider.connection.requestAirdrop(
         s.publicKey,
@@ -90,7 +116,7 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       await provider.connection.confirmTransaction(sig);
     }
 
-    // ----- Derive PDAs -----
+    // Derive PDAs
     [configPda] = PublicKey.findProgramAddressSync(
       [Buffer.from("config"), mint.publicKey.toBuffer()],
       program.programId
@@ -100,10 +126,20 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       hookProgram.programId
     );
 
-    // Derive treasury ATA (authority's ATA for this mint)
-    const treasuryAta = getAssociatedTokenAddressSync(mint.publicKey, authority.publicKey, false, TOKEN_2022_PROGRAM_ID);
+    // Derive treasury ATA
+    treasuryAta = getAssociatedTokenAddressSync(
+      mint.publicKey,
+      authority.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+  });
 
-    // ===== Step 1: Create SSS-2 Mint (hook + permanent delegate + default frozen) =====
+  // ============================================================
+  // Step 1: Initialize SSS-2 Token (with hook + permanent delegate)
+  // ============================================================
+
+  it("initialize SSS-2 token with hook and permanent delegate", async () => {
     await program.methods
       .initialize({
         name: "E2E-SSS2",
@@ -119,7 +155,10 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
         authority: authority.publicKey,
         config: configPda,
         mint: mint.publicKey,
-        registryEntry: PublicKey.findProgramAddressSync([Buffer.from("registry"), mint.publicKey.toBuffer()], program.programId)[0],
+        registryEntry: PublicKey.findProgramAddressSync(
+          [Buffer.from("registry"), mint.publicKey.toBuffer()],
+          program.programId
+        )[0],
         hookProgram: hookProgram.programId,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
@@ -128,12 +167,18 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       .signers([mint])
       .rpc();
 
-    let config = await program.account.stablecoinConfig.fetch(configPda);
+    const config = await program.account.stablecoinConfig.fetch(configPda);
     expect(config.enableTransferHook).to.equal(true);
     expect(config.enablePermanentDelegate).to.equal(true);
     expect(config.defaultAccountFrozen).to.equal(true);
+    expect(config.decimals).to.equal(6);
+  });
 
-    // ===== Step 2: Setup Hook ExtraAccountMetas =====
+  // ============================================================
+  // Step 2: Initialize ExtraAccountMetas
+  // ============================================================
+
+  it("initialize extra account metas for transfer hook", async () => {
     await hookProgram.methods
       .initializeExtraAccountMetas()
       .accountsStrict({
@@ -145,13 +190,26 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       })
       .rpc();
 
-    // ===== Step 3: Assign roles =====
-    for (const [roleType, signer] of [
-      [0, minter],
-      [3, freezer],
-      [4, blacklister],
-      [4, authority],
-    ] as [number, Keypair][]) {
+    const info = await provider.connection.getAccountInfo(
+      extraAccountMetasPda
+    );
+    expect(info).to.not.be.null;
+    expect(info!.owner.toString()).to.equal(hookProgram.programId.toString());
+  });
+
+  // ============================================================
+  // Step 3: Assign Roles (Minter, Blacklister, Seizer, Freezer)
+  // ============================================================
+
+  it("assign minter, blacklister, seizer, and freezer roles", async () => {
+    const roleAssignments: [number, Keypair][] = [
+      [0, minter],       // Minter
+      [3, freezer],      // Freezer
+      [4, blacklister],  // Blacklister
+      [4, authority],    // Authority also gets Blacklister for convenience
+    ];
+
+    for (const [roleType, signer] of roleAssignments) {
       await program.methods
         .updateRoles(roleType, signer.publicKey, true)
         .accountsStrict({
@@ -173,18 +231,42 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       })
       .rpc();
 
-    // ===== Step 4: Create ATAs (will be frozen by default) =====
+    // Assign Seizer role to authority
+    const seizerRole = rolePda(5, authority.publicKey);
+    await program.methods
+      .updateRoles(5, authority.publicKey, true)
+      .accountsStrict({
+        authority: authority.publicKey,
+        config: configPda,
+        role: seizerRole,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    // Verify minter role
+    const minterData = await program.account.roleAssignment.fetch(
+      rolePda(0, minter.publicKey)
+    );
+    expect(minterData.isActive).to.equal(true);
+    expect(minterData.roleType).to.equal(0);
+  });
+
+  // ============================================================
+  // Step 4: Mint Tokens to userA
+  // ============================================================
+
+  it("create ATAs and mint tokens to userA", async () => {
     ataA = await createAta(userA.publicKey);
     ataB = await createAta(userB.publicKey);
     authorityAta = await createAta(authority.publicKey);
 
-    // ===== Step 5: Mint tokens to userA (auto-thaws frozen account) =====
+    const minterRole = rolePda(0, minter.publicKey);
     const mintSig = await program.methods
       .mint(new anchor.BN(50_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
-        minterRole: rolePda(0, minter.publicKey),
+        minterRole,
         mint: mint.publicKey,
         to: ataA,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -193,39 +275,26 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       .rpc();
     await provider.connection.confirmTransaction(mintSig, "confirmed");
 
-    let accountA = await getAccount(
+    const accountA = await getAccount(
       provider.connection,
       ataA,
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
     expect(Number(accountA.amount)).to.equal(50_000_000);
+  });
 
-    // ===== Step 6: Thaw accounts for transfer =====
-    const freezerRole = rolePda(3, freezer.publicKey);
+  // ============================================================
+  // Step 5: Transfer Tokens Between Users (Hook Allows Clean Transfer)
+  // ============================================================
 
-    // Thaw each account if frozen
-    for (const ata of [ataA, ataB, authorityAta]) {
-      const info = await getAccount(provider.connection, ata, "confirmed", TOKEN_2022_PROGRAM_ID);
-      if (info.isFrozen) {
-        const sig = await program.methods
-          .thawAccount()
-          .accountsStrict({
-            freezer: freezer.publicKey,
-            config: configPda,
-            freezerRole,
-            mint: mint.publicKey,
-            tokenAccount: ata,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
-          })
-          .signers([freezer])
-          .rpc();
-        await provider.connection.confirmTransaction(sig, "confirmed");
-      }
-    }
+  it("transfer tokens between non-blacklisted users via hook", async () => {
+    // Thaw accounts if frozen (DefaultAccountState=Frozen)
+    await thawIfFrozen(ataA);
+    await thawIfFrozen(ataB);
+    await thawIfFrozen(authorityAta);
 
-    // ===== Step 7: Transfer succeeds (no blacklist) =====
-    let ix = await createTransferCheckedWithTransferHookInstruction(
+    const ix = await createTransferCheckedWithTransferHookInstruction(
       provider.connection,
       ataA,
       mint.publicKey,
@@ -237,18 +306,26 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
-    const txSig = await provider.sendAndConfirm(new Transaction().add(ix), [userA]);
+    const txSig = await provider.sendAndConfirm(
+      new Transaction().add(ix),
+      [userA]
+    );
     await provider.connection.confirmTransaction(txSig, "confirmed");
 
-    let accountB = await getAccount(
+    const accountB = await getAccount(
       provider.connection,
       ataB,
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
     expect(Number(accountB.amount)).to.equal(5_000_000);
+  });
 
-    // ===== Step 8: Blacklist userA =====
+  // ============================================================
+  // Step 6: Blacklist userA
+  // ============================================================
+
+  it("blacklist userA with reason", async () => {
     const blacklisterRole = rolePda(4, authority.publicKey);
     const blEntryA = blacklistPda(userA.publicKey);
 
@@ -267,9 +344,19 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       .rpc();
     await provider.connection.confirmTransaction(blSig, "confirmed");
 
-    // ===== Step 9: Transfer fails (sender blacklisted) =====
+    // Verify blacklist entry exists on-chain
+    const blInfo = await provider.connection.getAccountInfo(blEntryA);
+    expect(blInfo).to.not.be.null;
+    expect(blInfo!.owner.toString()).to.equal(hookProgram.programId.toString());
+  });
+
+  // ============================================================
+  // Step 7: Verify Transfer FROM Blacklisted User Fails
+  // ============================================================
+
+  it("reject transfer from blacklisted sender", async () => {
     try {
-      ix = await createTransferCheckedWithTransferHookInstruction(
+      const ix = await createTransferCheckedWithTransferHookInstruction(
         provider.connection,
         ataA,
         mint.publicKey,
@@ -286,12 +373,50 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
     } catch (e: any) {
       const errStr = e.toString();
       expect(
-        errStr.includes("failed") || errStr.includes("Blacklisted") || errStr.includes("Error")
+        errStr.includes("failed") ||
+          errStr.includes("Blacklisted") ||
+          errStr.includes("Error")
       ).to.equal(true);
     }
+  });
 
-    // ===== Step 10: Seize tokens from blacklisted userA =====
-    accountA = await getAccount(
+  // ============================================================
+  // Step 8: Verify Transfer TO Blacklisted User Fails
+  // ============================================================
+
+  it("reject transfer to blacklisted receiver", async () => {
+    // userB has 5M tokens, try to send to blacklisted userA
+    try {
+      const ix = await createTransferCheckedWithTransferHookInstruction(
+        provider.connection,
+        ataB,
+        mint.publicKey,
+        ataA,
+        userB.publicKey,
+        BigInt(100),
+        6,
+        undefined,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+      await provider.sendAndConfirm(new Transaction().add(ix), [userB]);
+      expect.fail("Should have thrown — receiver is blacklisted");
+    } catch (e: any) {
+      const errStr = e.toString();
+      expect(
+        errStr.includes("failed") ||
+          errStr.includes("Blacklisted") ||
+          errStr.includes("Error")
+      ).to.equal(true);
+    }
+  });
+
+  // ============================================================
+  // Step 9: Seize Tokens from Blacklisted userA
+  // ============================================================
+
+  it("seize tokens from blacklisted user to treasury", async () => {
+    const accountA = await getAccount(
       provider.connection,
       ataA,
       "confirmed",
@@ -300,19 +425,7 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
     const seizeAmount = Number(accountA.amount);
     expect(seizeAmount).to.be.greaterThan(0);
 
-    // Assign Seizer role (type 5) to authority
     const seizerRole = rolePda(5, authority.publicKey);
-    await program.methods
-      .updateRoles(5, authority.publicKey, true)
-      .accountsStrict({
-        authority: authority.publicKey,
-        config: configPda,
-        role: seizerRole,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc();
-
-    // Derive extra accounts needed by the transfer hook
     const senderBlPda = blacklistPda(userA.publicKey);
     const receiverBlPda = blacklistPda(authority.publicKey);
 
@@ -331,7 +444,11 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       })
       .remainingAccounts([
         { pubkey: hookProgram.programId, isSigner: false, isWritable: false },
-        { pubkey: extraAccountMetasPda, isSigner: false, isWritable: false },
+        {
+          pubkey: extraAccountMetasPda,
+          isSigner: false,
+          isWritable: false,
+        },
         { pubkey: senderBlPda, isSigner: false, isWritable: false },
         { pubkey: receiverBlPda, isSigner: false, isWritable: false },
         { pubkey: configPda, isSigner: false, isWritable: false },
@@ -339,23 +456,39 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       .rpc();
     await provider.connection.confirmTransaction(seizeSig, "confirmed");
 
-    accountA = await getAccount(
+    // Verify userA balance is 0
+    const afterA = await getAccount(
       provider.connection,
       ataA,
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
-    expect(Number(accountA.amount)).to.equal(0);
+    expect(Number(afterA.amount)).to.equal(0);
+  });
 
+  // ============================================================
+  // Step 10: Verify Seized Tokens Went to Treasury
+  // ============================================================
+
+  it("verify seized tokens arrived at authority ATA", async () => {
     const authorityAccount = await getAccount(
       provider.connection,
       authorityAta,
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
-    expect(Number(authorityAccount.amount)).to.equal(seizeAmount);
+    // userA had 50M - 5M = 45M tokens before seize
+    expect(Number(authorityAccount.amount)).to.equal(45_000_000);
+  });
 
-    // ===== Step 11: Unblacklist userA =====
+  // ============================================================
+  // Step 11: Remove from Blacklist
+  // ============================================================
+
+  it("remove userA from blacklist", async () => {
+    const blacklisterRole = rolePda(4, authority.publicKey);
+    const blEntryA = blacklistPda(userA.publicKey);
+
     const rmSig = await program.methods
       .removeFromBlacklist(userA.publicKey)
       .accountsStrict({
@@ -370,14 +503,24 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       .rpc();
     await provider.connection.confirmTransaction(rmSig, "confirmed");
 
-    // ===== Step 12: Transfer succeeds after unblacklist =====
-    // Mint fresh tokens to userA for this test
+    // Verify blacklist entry is closed
+    const blInfo = await provider.connection.getAccountInfo(blEntryA);
+    expect(blInfo).to.be.null;
+  });
+
+  // ============================================================
+  // Step 12: Verify Transfer Works Again After Unblacklist
+  // ============================================================
+
+  it("transfer succeeds after removing from blacklist", async () => {
+    // Mint fresh tokens to userA
+    const minterRole = rolePda(0, minter.publicKey);
     const mint2Sig = await program.methods
       .mint(new anchor.BN(2_000_000))
       .accountsStrict({
         minter: minter.publicKey,
         config: configPda,
-        minterRole: rolePda(0, minter.publicKey),
+        minterRole,
         mint: mint.publicKey,
         to: ataA,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -386,30 +529,11 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       .rpc();
     await provider.connection.confirmTransaction(mint2Sig, "confirmed");
 
-    // ataA was auto-thawed by mint if it was frozen, but let's check
-    accountA = await getAccount(
-      provider.connection,
-      ataA,
-      "confirmed",
-      TOKEN_2022_PROGRAM_ID
-    );
-    if (accountA.isFrozen) {
-      const thawSig2 = await program.methods
-        .thawAccount()
-        .accountsStrict({
-          freezer: freezer.publicKey,
-          config: configPda,
-          freezerRole,
-          mint: mint.publicKey,
-          tokenAccount: ataA,
-          tokenProgram: TOKEN_2022_PROGRAM_ID,
-        })
-        .signers([freezer])
-        .rpc();
-      await provider.connection.confirmTransaction(thawSig2, "confirmed");
-    }
+    // Ensure ataA is thawed (mint may auto-thaw)
+    await thawIfFrozen(ataA);
 
-    ix = await createTransferCheckedWithTransferHookInstruction(
+    // Transfer from userA to userB
+    const ix = await createTransferCheckedWithTransferHookInstruction(
       provider.connection,
       ataA,
       mint.publicKey,
@@ -421,10 +545,43 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
-    const txSig2 = await provider.sendAndConfirm(new Transaction().add(ix), [userA]);
-    await provider.connection.confirmTransaction(txSig2, "confirmed");
+    const txSig = await provider.sendAndConfirm(
+      new Transaction().add(ix),
+      [userA]
+    );
+    await provider.connection.confirmTransaction(txSig, "confirmed");
 
-    accountB = await getAccount(
+    const accountB = await getAccount(
+      provider.connection,
+      ataB,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+    // userB had 5M from step 5, now +1M
+    expect(Number(accountB.amount)).to.equal(6_000_000);
+  });
+
+  // ============================================================
+  // Final State Verification
+  // ============================================================
+
+  it("verify final state integrity", async () => {
+    const config = await program.account.stablecoinConfig.fetch(configPda);
+    expect(config.enableTransferHook).to.equal(true);
+    expect(config.enablePermanentDelegate).to.equal(true);
+    expect(config.paused).to.equal(false);
+
+    // userA: 2M minted - 1M transferred = 1M
+    const accountA = await getAccount(
+      provider.connection,
+      ataA,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+    expect(Number(accountA.amount)).to.equal(1_000_000);
+
+    // userB: 5M + 1M = 6M
+    const accountB = await getAccount(
       provider.connection,
       ataB,
       "confirmed",
@@ -432,10 +589,13 @@ describe("e2e-sss2: full SSS-2 lifecycle", () => {
     );
     expect(Number(accountB.amount)).to.equal(6_000_000);
 
-    // ===== Final verification =====
-    config = await program.account.stablecoinConfig.fetch(configPda);
-    expect(config.enableTransferHook).to.equal(true);
-    expect(config.enablePermanentDelegate).to.equal(true);
-    expect(config.paused).to.equal(false);
+    // authority: 45M from seize
+    const authorityAccount = await getAccount(
+      provider.connection,
+      authorityAta,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+    expect(Number(authorityAccount.amount)).to.equal(45_000_000);
   });
 });

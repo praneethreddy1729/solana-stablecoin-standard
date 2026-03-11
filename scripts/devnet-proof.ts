@@ -212,10 +212,11 @@ async function main() {
     console.error("\n=== Transaction failed ===");
     console.error(err instanceof Error ? err.message : String(err));
 
+    const errAny = err as any;
     if (
-      err.message?.includes("realloc") ||
-      err.message?.includes("0x7d6000010") ||
-      err.logs?.some((l: string) => l.includes("realloc"))
+      errAny.message?.includes("realloc") ||
+      errAny.message?.includes("0x7d6000010") ||
+      errAny.logs?.some((l: string) => l.includes("realloc"))
     ) {
       console.error(
         "\nNOTE: This failure is likely caused by the Agave 3.0.x SIMD-0219 bug"

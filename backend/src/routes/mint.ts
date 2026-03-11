@@ -1,10 +1,11 @@
 import { FastifyInstance } from "fastify";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import {
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_2022_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { screenAddress, addAuditEntry } from "../services/compliance";
 import { sendWebhook } from "../services/webhook";
@@ -55,8 +56,21 @@ export async function mintRoutes(app: FastifyInstance): Promise<void> {
         sdk.mintAddress,
         toPubkey,
         true,
-        TOKEN_2022_PROGRAM_ID
+        TOKEN_2022_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID,
       );
+
+      // Ensure the recipient's ATA exists (idempotent — no-op if it already exists)
+      const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+        app.authority.publicKey, // payer
+        toAta,                  // ATA address
+        toPubkey,               // wallet owner
+        sdk.mintAddress,        // mint
+        TOKEN_2022_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+      );
+      const tx = new Transaction().add(createAtaIx);
+      await sendAndConfirmTransaction(app.connection, tx, [app.authority]);
 
       const signature = await sdk.mint(
         toAta,

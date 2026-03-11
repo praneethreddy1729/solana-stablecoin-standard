@@ -20,7 +20,7 @@ describe("registry-entry", () => {
   const program = anchor.workspace.SssToken as Program<SssToken>;
   const hookProgram = anchor.workspace.SssTransferHook as Program<any>;
 
-  const authority = provider.wallet.payer;
+  const authority = provider.wallet.payer!;
 
   // ---------- SSS-1 token (no hook, no delegate) ----------
   const mintSss1 = Keypair.generate();

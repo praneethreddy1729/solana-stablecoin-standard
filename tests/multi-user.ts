@@ -25,7 +25,7 @@ describe("multi-user", () => {
   const hookProgram = anchor.workspace
     .SssTransferHook as Program<SssTransferHook>;
 
-  const authority = provider.wallet.payer;
+  const authority = provider.wallet.payer!;
   const mint = Keypair.generate();
 
   // Multiple minters

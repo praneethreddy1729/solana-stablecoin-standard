@@ -24,7 +24,7 @@ describe("reserve-attestation", () => {
   const program = anchor.workspace.SssToken as Program<SssToken>;
   const hookProgram = anchor.workspace
     .SssTransferHook as Program<SssTransferHook>;
-  const authority = provider.wallet.payer;
+  const authority = provider.wallet.payer!;
 
   // SSS-1 mint (for update_treasury tests)
   const sss1Mint = Keypair.generate();

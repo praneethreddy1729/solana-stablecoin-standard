@@ -34,7 +34,7 @@ describe("role-matrix", () => {
   anchor.setProvider(provider);
 
   const program = anchor.workspace.SssToken as Program<SssToken>;
-  const authority = provider.wallet.payer;
+  const authority = provider.wallet.payer!;
   const mint = Keypair.generate();
 
   // ---- Role holders (one dedicated keypair per role type) ----

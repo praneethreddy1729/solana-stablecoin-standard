@@ -26,16 +26,20 @@ describe("sss-transfer-hook", () => {
   const hookProgram = anchor.workspace
     .SssTransferHook as Program<SssTransferHook>;
 
-  const authority = provider.wallet.payer;
+  const authority = provider.wallet.payer!;
   const mint = Keypair.generate();
   const minter = Keypair.generate();
   const blacklister = Keypair.generate();
   const freezer = Keypair.generate();
   const userA = Keypair.generate();
   const userB = Keypair.generate();
+  const userC = Keypair.generate();
 
   let configPda: PublicKey;
   let extraAccountMetasPda: PublicKey;
+  let ataA: PublicKey;
+  let ataB: PublicKey;
+  let ataC: PublicKey;
 
   function rolePda(
     configKey: PublicKey,
@@ -99,9 +103,71 @@ describe("sss-transfer-hook", () => {
     await provider.connection.confirmTransaction(sig, "confirmed");
   }
 
+  async function thawIfFrozen(ata: PublicKey): Promise<void> {
+    const info = await getAccount(
+      provider.connection,
+      ata,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+    if (info.isFrozen) {
+      const freezerRole = rolePda(configPda, 3, freezer.publicKey);
+      const sig = await program.methods
+        .thawAccount()
+        .accountsStrict({
+          freezer: freezer.publicKey,
+          config: configPda,
+          freezerRole,
+          mint: mint.publicKey,
+          tokenAccount: ata,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([freezer])
+        .rpc();
+      await provider.connection.confirmTransaction(sig, "confirmed");
+    }
+  }
+
+  async function addBlacklist(user: PublicKey, reason: string): Promise<void> {
+    const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
+    const blEntry = blacklistPda(user);
+    const blSig = await program.methods
+      .addToBlacklist(user, reason)
+      .accountsStrict({
+        blacklister: authority.publicKey,
+        config: configPda,
+        blacklisterRole,
+        hookProgram: hookProgram.programId,
+        blacklistEntry: blEntry,
+        mint: mint.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([])
+      .rpc();
+    await provider.connection.confirmTransaction(blSig, "confirmed");
+  }
+
+  async function removeBlacklist(user: PublicKey): Promise<void> {
+    const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
+    const blEntry = blacklistPda(user);
+    const rmSig = await program.methods
+      .removeFromBlacklist(user)
+      .accountsStrict({
+        blacklister: authority.publicKey,
+        config: configPda,
+        blacklisterRole,
+        hookProgram: hookProgram.programId,
+        blacklistEntry: blEntry,
+        mint: mint.publicKey,
+      })
+      .signers([])
+      .rpc();
+    await provider.connection.confirmTransaction(rmSig, "confirmed");
+  }
+
   before(async () => {
     // Airdrop
-    const signers = [minter, blacklister, freezer, userA, userB];
+    const signers = [minter, blacklister, freezer, userA, userB, userC];
     for (const s of signers) {
       const sig = await provider.connection.requestAirdrop(
         s.publicKey,
@@ -121,7 +187,12 @@ describe("sss-transfer-hook", () => {
     );
 
     // Derive treasury ATA (authority's ATA for this mint)
-    const treasuryAta = getAssociatedTokenAddressSync(mint.publicKey, authority.publicKey, false, TOKEN_2022_PROGRAM_ID);
+    const treasuryAta = getAssociatedTokenAddressSync(
+      mint.publicKey,
+      authority.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
 
     // Initialize SSS-2 token (with hook + permanent delegate + default frozen)
     await program.methods
@@ -139,7 +210,10 @@ describe("sss-transfer-hook", () => {
         authority: authority.publicKey,
         config: configPda,
         mint: mint.publicKey,
-        registryEntry: PublicKey.findProgramAddressSync([Buffer.from("registry"), mint.publicKey.toBuffer()], program.programId)[0],
+        registryEntry: PublicKey.findProgramAddressSync(
+          [Buffer.from("registry"), mint.publicKey.toBuffer()],
+          program.programId
+        )[0],
         hookProgram: hookProgram.programId,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
@@ -161,7 +235,7 @@ describe("sss-transfer-hook", () => {
       .rpc();
 
     // Assign roles: minter, blacklister, freezer
-    // Authority also gets blacklister role for convenience (any Blacklister role holder can blacklist)
+    // Authority also gets blacklister role for convenience
     for (const [roleType, signer] of [
       [0, minter],
       [3, freezer],
@@ -190,6 +264,21 @@ describe("sss-transfer-hook", () => {
         minterRole,
       })
       .rpc();
+
+    // Create ATAs
+    ataA = await createAta(userA.publicKey);
+    ataB = await createAta(userB.publicKey);
+    ataC = await createAta(userC.publicKey);
+
+    // Mint tokens to all users
+    await mintTo(ataA, 10_000_000);
+    await mintTo(ataB, 10_000_000);
+    await mintTo(ataC, 10_000_000);
+
+    // Thaw all accounts for transfers
+    await thawIfFrozen(ataA);
+    await thawIfFrozen(ataB);
+    await thawIfFrozen(ataC);
   });
 
   // ============================================================
@@ -197,70 +286,168 @@ describe("sss-transfer-hook", () => {
   // ============================================================
 
   describe("initialize_extra_account_metas", () => {
-    it("ExtraAccountMetas account was created", async () => {
+    it("verify ExtraAccountMetas account was created", async () => {
       const info = await provider.connection.getAccountInfo(
         extraAccountMetasPda
       );
       expect(info).to.not.be.null;
-      expect(info!.owner.toString()).to.equal(hookProgram.programId.toString());
+      expect(info!.owner.toString()).to.equal(
+        hookProgram.programId.toString()
+      );
     });
   });
 
   // ============================================================
-  // 2. Transfer succeeds for clean accounts
+  // 2. Blacklist Entry CRUD
+  // ============================================================
+
+  describe("blacklist entry management", () => {
+    it("create blacklist entry with reason", async () => {
+      await addBlacklist(userC.publicKey, "OFAC match");
+
+      const blEntry = blacklistPda(userC.publicKey);
+      const blInfo = await provider.connection.getAccountInfo(blEntry);
+      expect(blInfo).to.not.be.null;
+      expect(blInfo!.owner.toString()).to.equal(
+        hookProgram.programId.toString()
+      );
+
+      // Fetch and verify the entry data
+      const entryData =
+        await hookProgram.account.blacklistEntry.fetch(blEntry);
+      expect(entryData.user.toString()).to.equal(
+        userC.publicKey.toString()
+      );
+      expect(entryData.mint.toString()).to.equal(
+        mint.publicKey.toString()
+      );
+      expect(entryData.reason).to.equal("OFAC match");
+
+      // Cleanup
+      await removeBlacklist(userC.publicKey);
+    });
+
+    it("create blacklist entry with max-length reason (64 bytes)", async () => {
+      const maxReason = "A".repeat(64);
+      await addBlacklist(userC.publicKey, maxReason);
+
+      const blEntry = blacklistPda(userC.publicKey);
+      const entryData =
+        await hookProgram.account.blacklistEntry.fetch(blEntry);
+      expect(entryData.reason).to.equal(maxReason);
+      expect(entryData.reason.length).to.equal(64);
+
+      // Cleanup
+      await removeBlacklist(userC.publicKey);
+    });
+
+    it("reject blacklist entry with reason too long (>64 bytes)", async () => {
+      const tooLongReason = "B".repeat(65);
+      const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
+      const blEntry = blacklistPda(userC.publicKey);
+
+      try {
+        await program.methods
+          .addToBlacklist(userC.publicKey, tooLongReason)
+          .accountsStrict({
+            blacklister: authority.publicKey,
+            config: configPda,
+            blacklisterRole,
+            hookProgram: hookProgram.programId,
+            blacklistEntry: blEntry,
+            mint: mint.publicKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .signers([])
+          .rpc();
+        expect.fail("Should have thrown — reason exceeds 64 bytes");
+      } catch (e: any) {
+        expect(e.error.errorCode.code).to.equal("ReasonTooLong");
+      }
+    });
+
+    it("reject double-blacklisting same user (account already exists)", async () => {
+      // First blacklist
+      await addBlacklist(userC.publicKey, "first offense");
+
+      // Second attempt should fail (Anchor init constraint: account already in use)
+      const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
+      const blEntry = blacklistPda(userC.publicKey);
+      try {
+        await program.methods
+          .addToBlacklist(userC.publicKey, "duplicate attempt")
+          .accountsStrict({
+            blacklister: authority.publicKey,
+            config: configPda,
+            blacklisterRole,
+            hookProgram: hookProgram.programId,
+            blacklistEntry: blEntry,
+            mint: mint.publicKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .signers([])
+          .rpc();
+        expect.fail("Should have thrown — user already blacklisted");
+      } catch (e: any) {
+        // Anchor init will fail because the PDA already exists
+        const errStr = e.toString();
+        expect(
+          errStr.includes("already in use") ||
+            errStr.includes("Error") ||
+            errStr.includes("failed")
+        ).to.equal(true);
+      }
+
+      // Cleanup
+      await removeBlacklist(userC.publicKey);
+    });
+
+    it("reject removing non-existent blacklist entry", async () => {
+      // userC is NOT blacklisted at this point
+      const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
+      const blEntry = blacklistPda(userC.publicKey);
+
+      try {
+        await program.methods
+          .removeFromBlacklist(userC.publicKey)
+          .accountsStrict({
+            blacklister: authority.publicKey,
+            config: configPda,
+            blacklisterRole,
+            hookProgram: hookProgram.programId,
+            blacklistEntry: blEntry,
+            mint: mint.publicKey,
+          })
+          .signers([])
+          .rpc();
+        expect.fail("Should have thrown — blacklist entry does not exist");
+      } catch (e: any) {
+        // The CPI will fail because the account doesn't exist
+        const errStr = e.toString();
+        expect(
+          errStr.includes("Error") ||
+            errStr.includes("failed") ||
+            errStr.includes("not found") ||
+            errStr.includes("AccountNotInitialized")
+        ).to.equal(true);
+      }
+    });
+  });
+
+  // ============================================================
+  // 3. Transfer Tests
   // ============================================================
 
   describe("transfers", () => {
-    let ataA: PublicKey;
-    let ataB: PublicKey;
-
-    before(async () => {
-      ataA = await createAta(userA.publicKey);
-      ataB = await createAta(userB.publicKey);
-      await mintTo(ataA, 10_000_000);
-    });
-
     it("transfer succeeds for non-blacklisted accounts", async () => {
-      // Thaw accounts if frozen (DefaultAccountState=Frozen, but mint auto-thaws)
-      const freezerRole = rolePda(configPda, 3, freezer.publicKey);
+      const beforeB = await getAccount(
+        provider.connection,
+        ataB,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+      const beforeAmount = Number(beforeB.amount);
 
-      // Check and thaw source (userA) — may already be thawed by mint
-      const ataAInfo = await getAccount(provider.connection, ataA, "confirmed", TOKEN_2022_PROGRAM_ID);
-      if (ataAInfo.isFrozen) {
-        const sig = await program.methods
-          .thawAccount()
-          .accountsStrict({
-            freezer: freezer.publicKey,
-            config: configPda,
-            freezerRole,
-            mint: mint.publicKey,
-            tokenAccount: ataA,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
-          })
-          .signers([freezer])
-          .rpc();
-        await provider.connection.confirmTransaction(sig, "confirmed");
-      }
-
-      // Check and thaw dest (userB)
-      const ataBInfo = await getAccount(provider.connection, ataB, "confirmed", TOKEN_2022_PROGRAM_ID);
-      if (ataBInfo.isFrozen) {
-        const sig = await program.methods
-          .thawAccount()
-          .accountsStrict({
-            freezer: freezer.publicKey,
-            config: configPda,
-            freezerRole,
-            mint: mint.publicKey,
-            tokenAccount: ataB,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
-          })
-          .signers([freezer])
-          .rpc();
-        await provider.connection.confirmTransaction(sig, "confirmed");
-      }
-
-      // Build transfer with hook instruction
       const ix = await createTransferCheckedWithTransferHookInstruction(
         provider.connection,
         ataA,
@@ -278,38 +465,17 @@ describe("sss-transfer-hook", () => {
       const txSig = await provider.sendAndConfirm(tx, [userA]);
       await provider.connection.confirmTransaction(txSig, "confirmed");
 
-      const accountB = await getAccount(
+      const afterB = await getAccount(
         provider.connection,
         ataB,
         "confirmed",
         TOKEN_2022_PROGRAM_ID
       );
-      expect(Number(accountB.amount)).to.equal(1_000_000);
+      expect(Number(afterB.amount)).to.equal(beforeAmount + 1_000_000);
     });
 
-    // ============================================================
-    // 3. Transfer fails for blacklisted sender
-    // ============================================================
-
     it("transfer fails for blacklisted sender", async () => {
-      const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
-      const blEntry = blacklistPda(userA.publicKey);
-
-      // Blacklist userA
-      const blSig = await program.methods
-        .addToBlacklist(userA.publicKey, "OFAC match")
-        .accountsStrict({
-          blacklister: authority.publicKey,
-          config: configPda,
-          blacklisterRole,
-          hookProgram: hookProgram.programId,
-          blacklistEntry: blEntry,
-          mint: mint.publicKey,
-          systemProgram: SystemProgram.programId,
-        })
-        .signers([])
-        .rpc();
-      await provider.connection.confirmTransaction(blSig, "confirmed");
+      await addBlacklist(userA.publicKey, "OFAC match");
 
       try {
         const ix = await createTransferCheckedWithTransferHookInstruction(
@@ -326,54 +492,22 @@ describe("sss-transfer-hook", () => {
         );
         const tx = new Transaction().add(ix);
         await provider.sendAndConfirm(tx, [userA]);
-        expect.fail("Should have thrown");
+        expect.fail("Should have thrown — sender is blacklisted");
       } catch (e: any) {
-        // Transfer hook rejects — error may be SenderBlacklisted or a simulation failure
         const errStr = e.toString();
         expect(
-          errStr.includes("failed") || errStr.includes("Blacklisted") || errStr.includes("Error")
+          errStr.includes("failed") ||
+            errStr.includes("Blacklisted") ||
+            errStr.includes("Error")
         ).to.equal(true);
       }
 
       // Remove blacklist for next tests
-      const rmSig = await program.methods
-        .removeFromBlacklist(userA.publicKey)
-        .accountsStrict({
-          blacklister: authority.publicKey,
-          config: configPda,
-          blacklisterRole,
-          hookProgram: hookProgram.programId,
-          blacklistEntry: blEntry,
-          mint: mint.publicKey,
-        })
-        .signers([])
-        .rpc();
-      await provider.connection.confirmTransaction(rmSig, "confirmed");
+      await removeBlacklist(userA.publicKey);
     });
 
-    // ============================================================
-    // 4. Transfer fails for blacklisted receiver
-    // ============================================================
-
     it("transfer fails for blacklisted receiver", async () => {
-      const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
-      const blEntry = blacklistPda(userB.publicKey);
-
-      // Blacklist userB (receiver)
-      const blSig = await program.methods
-        .addToBlacklist(userB.publicKey, "sanctioned entity")
-        .accountsStrict({
-          blacklister: authority.publicKey,
-          config: configPda,
-          blacklisterRole,
-          hookProgram: hookProgram.programId,
-          blacklistEntry: blEntry,
-          mint: mint.publicKey,
-          systemProgram: SystemProgram.programId,
-        })
-        .signers([])
-        .rpc();
-      await provider.connection.confirmTransaction(blSig, "confirmed");
+      await addBlacklist(userB.publicKey, "sanctioned entity");
 
       try {
         const ix = await createTransferCheckedWithTransferHookInstruction(
@@ -390,59 +524,67 @@ describe("sss-transfer-hook", () => {
         );
         const tx = new Transaction().add(ix);
         await provider.sendAndConfirm(tx, [userA]);
-        expect.fail("Should have thrown");
+        expect.fail("Should have thrown — receiver is blacklisted");
       } catch (e: any) {
         const errStr = e.toString();
         expect(
-          errStr.includes("failed") || errStr.includes("Blacklisted") || errStr.includes("Error")
+          errStr.includes("failed") ||
+            errStr.includes("Blacklisted") ||
+            errStr.includes("Error")
         ).to.equal(true);
       }
 
       // Remove blacklist
-      const rmSig = await program.methods
-        .removeFromBlacklist(userB.publicKey)
-        .accountsStrict({
-          blacklister: authority.publicKey,
-          config: configPda,
-          blacklisterRole,
-          hookProgram: hookProgram.programId,
-          blacklistEntry: blEntry,
-          mint: mint.publicKey,
-        })
-        .signers([])
-        .rpc();
-      await provider.connection.confirmTransaction(rmSig, "confirmed");
+      await removeBlacklist(userB.publicKey);
     });
 
-    // ============================================================
-    // 5. Seize bypasses blacklist (permanent delegate)
-    // ============================================================
+    it("verify hook allows transfer when neither party blacklisted", async () => {
+      // After removing both blacklists, transfer should work
+      const beforeC = await getAccount(
+        provider.connection,
+        ataC,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+      const beforeAmount = Number(beforeC.amount);
 
+      const ix = await createTransferCheckedWithTransferHookInstruction(
+        provider.connection,
+        ataA,
+        mint.publicKey,
+        ataC,
+        userA.publicKey,
+        BigInt(500_000),
+        6,
+        undefined,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      const tx = new Transaction().add(ix);
+      const txSig = await provider.sendAndConfirm(tx, [userA]);
+      await provider.connection.confirmTransaction(txSig, "confirmed");
+
+      const afterC = await getAccount(
+        provider.connection,
+        ataC,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+      expect(Number(afterC.amount)).to.equal(beforeAmount + 500_000);
+    });
+  });
+
+  // ============================================================
+  // 4. Seize (permanent delegate bypass)
+  // ============================================================
+
+  describe("seize via permanent delegate", () => {
     it("seize bypasses blacklist via permanent delegate", async () => {
-      const blacklisterRole = rolePda(configPda, 4, authority.publicKey);
-      const blEntry = blacklistPda(userA.publicKey);
+      // Blacklist userA
+      await addBlacklist(userA.publicKey, "OFAC match");
 
-      // Check if userA is already blacklisted (from prior test failure cleanup)
-      const blInfo = await provider.connection.getAccountInfo(blEntry);
-      if (!blInfo) {
-        // Blacklist userA
-        const blSig = await program.methods
-          .addToBlacklist(userA.publicKey, "OFAC match")
-          .accountsStrict({
-            blacklister: authority.publicKey,
-            config: configPda,
-            blacklisterRole,
-            hookProgram: hookProgram.programId,
-            blacklistEntry: blEntry,
-            mint: mint.publicKey,
-            systemProgram: SystemProgram.programId,
-          })
-          .signers([])
-          .rpc();
-        await provider.connection.confirmTransaction(blSig, "confirmed");
-      }
-
-      // Create authority ATA
+      // Create authority ATA if needed
       let authorityAta: PublicKey;
       try {
         authorityAta = await createAta(authority.publicKey);
@@ -455,29 +597,8 @@ describe("sss-transfer-hook", () => {
         );
       }
 
-      // Thaw authority ATA if frozen (DefaultAccountState=Frozen)
-      const freezerRole = rolePda(configPda, 3, freezer.publicKey);
-      const authAtaInfo = await getAccount(
-        provider.connection,
-        authorityAta,
-        "confirmed",
-        TOKEN_2022_PROGRAM_ID
-      );
-      if (authAtaInfo.isFrozen) {
-        const thawSig = await program.methods
-          .thawAccount()
-          .accountsStrict({
-            freezer: freezer.publicKey,
-            config: configPda,
-            freezerRole,
-            mint: mint.publicKey,
-            tokenAccount: authorityAta,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
-          })
-          .signers([freezer])
-          .rpc();
-        await provider.connection.confirmTransaction(thawSig, "confirmed");
-      }
+      // Thaw authority ATA if frozen
+      await thawIfFrozen(authorityAta);
 
       const beforeSeize = await getAccount(
         provider.connection,
@@ -488,12 +609,11 @@ describe("sss-transfer-hook", () => {
       const seizeAmount = Number(beforeSeize.amount);
       expect(seizeAmount).to.be.greaterThan(0);
 
-      // Derive extra accounts needed by the transfer hook
+      // Derive extra accounts
       const senderBlPda = blacklistPda(userA.publicKey);
-      // Receiver is authority — derive their blacklist PDA too
       const receiverBlPda = blacklistPda(authority.publicKey);
 
-      // Assign Seizer role (type 5) to authority
+      // Assign Seizer role to authority
       const seizerRole = rolePda(configPda, 5, authority.publicKey);
       await program.methods
         .updateRoles(5, authority.publicKey, true)
@@ -505,7 +625,7 @@ describe("sss-transfer-hook", () => {
         })
         .rpc();
 
-      // Seize all tokens from blacklisted userA
+      // Seize all tokens
       const seizeSig = await program.methods
         .seize()
         .accountsStrict({
@@ -520,8 +640,16 @@ describe("sss-transfer-hook", () => {
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .remainingAccounts([
-          { pubkey: hookProgram.programId, isSigner: false, isWritable: false },
-          { pubkey: extraAccountMetasPda, isSigner: false, isWritable: false },
+          {
+            pubkey: hookProgram.programId,
+            isSigner: false,
+            isWritable: false,
+          },
+          {
+            pubkey: extraAccountMetasPda,
+            isSigner: false,
+            isWritable: false,
+          },
           { pubkey: senderBlPda, isSigner: false, isWritable: false },
           { pubkey: receiverBlPda, isSigner: false, isWritable: false },
           { pubkey: configPda, isSigner: false, isWritable: false },
@@ -537,20 +665,8 @@ describe("sss-transfer-hook", () => {
       );
       expect(Number(afterSeize.amount)).to.equal(0);
 
-      // Cleanup: remove blacklist
-      const rmSig = await program.methods
-        .removeFromBlacklist(userA.publicKey)
-        .accountsStrict({
-          blacklister: authority.publicKey,
-          config: configPda,
-          blacklisterRole,
-          hookProgram: hookProgram.programId,
-          blacklistEntry: blEntry,
-          mint: mint.publicKey,
-        })
-        .signers([])
-        .rpc();
-      await provider.connection.confirmTransaction(rmSig, "confirmed");
+      // Cleanup
+      await removeBlacklist(userA.publicKey);
     });
   });
 });

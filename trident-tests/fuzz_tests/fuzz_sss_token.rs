@@ -1241,7 +1241,8 @@ mod fuzz_blacklist {
             let is_add = rng.next_bool();
 
             if is_add {
-                let reason = rng.next_ascii_string(rng.next_u64_range(0, MAX_REASON_LEN as u64) as usize);
+                let reason_len = rng.next_u64_range(0, MAX_REASON_LEN as u64) as usize;
+                let reason = rng.next_ascii_string(reason_len);
                 state.add(user, &reason).unwrap();
                 if !expected.contains(&user) {
                     expected.push(user);

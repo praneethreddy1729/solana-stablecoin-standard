@@ -445,21 +445,8 @@ describe("sdk-integration", () => {
       sss2 = result.stablecoin;
       sss2MintKeypair = result.mintKeypair;
 
-      // Initialize extra account metas for the transfer hook
-      const [extraMetasPda] = findExtraAccountMetasPda(
-        sss2MintKeypair.publicKey
-      );
-      const hookSig = await hookProgram.methods
-        .initializeExtraAccountMetas()
-        .accountsStrict({
-          payer: authority.publicKey,
-          extraAccountMetas: extraMetasPda,
-          mint: sss2MintKeypair.publicKey,
-          config: sss2.configPda,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
-      await confirm(hookSig);
+      // Extra account metas are now automatically initialized by create()
+      // for SSS-2 tokens (enableTransferHook = true).
 
       // Assign Blacklister role to authority
       const roleSig = await sss2.updateRoles({

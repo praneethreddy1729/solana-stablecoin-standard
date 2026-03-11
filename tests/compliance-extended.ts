@@ -24,7 +24,7 @@ describe("compliance-extended", () => {
 
   const program = anchor.workspace.SssToken as Program<SssToken>;
   const hookProgram = anchor.workspace.SssTransferHook as Program<SssTransferHook>;
-  const authority = provider.wallet.payer;
+  const authority = provider.wallet.payer!;
 
   // SSS-2 mint (with hook + permanent delegate)
   const mint = Keypair.generate();

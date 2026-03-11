@@ -36,7 +36,7 @@ describe("token-ops-extended", () => {
   anchor.setProvider(provider);
 
   const program = anchor.workspace.SssToken as Program<SssToken>;
-  const authority = provider.wallet.payer;
+  const authority = provider.wallet.payer!;
   const mint = Keypair.generate();
 
   // Role holders

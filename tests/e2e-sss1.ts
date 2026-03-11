@@ -21,7 +21,7 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
 
   const program = anchor.workspace.SssToken as Program<SssToken>;
 
-  const authority = provider.wallet.payer;
+  const authority = provider.wallet.payer!;
   const mint = Keypair.generate();
   const minter = Keypair.generate();
   const burner = Keypair.generate();
@@ -46,8 +46,8 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
     return pda;
   }
 
-  it("completes full SSS-1 lifecycle", async () => {
-    // ----- Airdrop -----
+  before(async () => {
+    // Fund all keypairs
     const signers = [
       minter,
       burner,
@@ -64,13 +64,18 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
       await provider.connection.confirmTransaction(sig);
     }
 
-    // ----- Derive config PDA -----
+    // Derive config PDA
     [configPda] = PublicKey.findProgramAddressSync(
       [Buffer.from("config"), mint.publicKey.toBuffer()],
       program.programId
     );
+  });
 
-    // ----- Step 1: Create SSS-1 Mint -----
+  // ============================================================
+  // Step 1: Initialize SSS-1 Token
+  // ============================================================
+
+  it("initialize SSS-1 token with correct config", async () => {
     await program.methods
       .initialize({
         name: "E2E-USD",
@@ -86,7 +91,10 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
         authority: authority.publicKey,
         config: configPda,
         mint: mint.publicKey,
-        registryEntry: PublicKey.findProgramAddressSync([Buffer.from("registry"), mint.publicKey.toBuffer()], program.programId)[0],
+        registryEntry: PublicKey.findProgramAddressSync(
+          [Buffer.from("registry"), mint.publicKey.toBuffer()],
+          program.programId
+        )[0],
         hookProgram: null,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
@@ -95,32 +103,47 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
       .signers([mint])
       .rpc();
 
-    let config = await program.account.stablecoinConfig.fetch(configPda);
+    const config = await program.account.stablecoinConfig.fetch(configPda);
     expect(config.decimals).to.equal(6);
     expect(config.paused).to.equal(false);
+    expect(config.enableTransferHook).to.equal(false);
+    expect(config.enablePermanentDelegate).to.equal(false);
+    expect(config.authority.toString()).to.equal(
+      authority.publicKey.toString()
+    );
+    expect(config.mint.toString()).to.equal(mint.publicKey.toString());
+  });
 
-    // ----- Step 2: Assign all roles -----
-    const roles: [number, Keypair][] = [
-      [0, minter],
-      [1, burner],
-      [2, pauser],
-      [3, freezer],
-    ];
-    for (const [roleType, signer] of roles) {
-      const role = rolePda(roleType, signer.publicKey);
-      await program.methods
-        .updateRoles(roleType, signer.publicKey, true)
-        .accountsStrict({
-          authority: authority.publicKey,
-          config: configPda,
-          role,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
-    }
+  // ============================================================
+  // Step 2: Assign Minter Role
+  // ============================================================
 
-    // ----- Step 3: Set minter quota -----
+  it("assign minter role to designated minter", async () => {
+    const role = rolePda(0, minter.publicKey);
+    await program.methods
+      .updateRoles(0, minter.publicKey, true)
+      .accountsStrict({
+        authority: authority.publicKey,
+        config: configPda,
+        role,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    const data = await program.account.roleAssignment.fetch(role);
+    expect(data.isActive).to.equal(true);
+    expect(data.roleType).to.equal(0);
+    expect(data.assignee.toString()).to.equal(minter.publicKey.toString());
+  });
+
+  // ============================================================
+  // Step 3: Set Minter Quota and Mint Tokens
+  // ============================================================
+
+  it("set minter quota and mint tokens to recipient", async () => {
     const minterRole = rolePda(0, minter.publicKey);
+
+    // Set minter quota
     await program.methods
       .updateMinter(new anchor.BN(50_000_000))
       .accountsStrict({
@@ -130,7 +153,7 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
       })
       .rpc();
 
-    // ----- Step 4: Create recipient ATA -----
+    // Create recipient ATA
     recipientAta = getAssociatedTokenAddressSync(
       mint.publicKey,
       recipient.publicKey,
@@ -148,7 +171,7 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
       new anchor.web3.Transaction().add(createAtaIx)
     );
 
-    // ----- Step 5: Mint tokens -----
+    // Mint 10M tokens
     const mintSig = await program.methods
       .mint(new anchor.BN(10_000_000))
       .accountsStrict({
@@ -162,16 +185,48 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
       .signers([minter])
       .rpc();
     await provider.connection.confirmTransaction(mintSig, "confirmed");
+  });
 
-    let account = await getAccount(
+  // ============================================================
+  // Step 4: Verify Balance
+  // ============================================================
+
+  it("verify recipient balance equals minted amount", async () => {
+    const account = await getAccount(
       provider.connection,
       recipientAta,
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
     expect(Number(account.amount)).to.equal(10_000_000);
+  });
 
-    // ----- Step 6: Burn tokens -----
+  // ============================================================
+  // Step 5: Assign Burner Role
+  // ============================================================
+
+  it("assign burner role to designated burner", async () => {
+    const role = rolePda(1, burner.publicKey);
+    await program.methods
+      .updateRoles(1, burner.publicKey, true)
+      .accountsStrict({
+        authority: authority.publicKey,
+        config: configPda,
+        role,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    const data = await program.account.roleAssignment.fetch(role);
+    expect(data.isActive).to.equal(true);
+    expect(data.roleType).to.equal(1);
+  });
+
+  // ============================================================
+  // Step 6: Burn Tokens
+  // ============================================================
+
+  it("burn tokens from recipient account", async () => {
     const burnerRole = rolePda(1, burner.publicKey);
     const burnSig = await program.methods
       .burn(new anchor.BN(1_000_000))
@@ -187,23 +242,45 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
       .signers([burner, recipient])
       .rpc();
     await provider.connection.confirmTransaction(burnSig, "confirmed");
+  });
 
-    account = await getAccount(
+  // ============================================================
+  // Step 7: Verify Reduced Balance
+  // ============================================================
+
+  it("verify balance reduced after burn", async () => {
+    const account = await getAccount(
       provider.connection,
       recipientAta,
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
     expect(Number(account.amount)).to.equal(9_000_000);
+  });
 
-    // ----- Step 7: Freeze -----
-    const freezerRole = rolePda(3, freezer.publicKey);
+  // ============================================================
+  // Step 8: Freeze Account
+  // ============================================================
+
+  it("freeze recipient account", async () => {
+    // Assign freezer role first
+    const freezerRolePda = rolePda(3, freezer.publicKey);
+    await program.methods
+      .updateRoles(3, freezer.publicKey, true)
+      .accountsStrict({
+        authority: authority.publicKey,
+        config: configPda,
+        role: freezerRolePda,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
     const freezeSig = await program.methods
       .freezeAccount()
       .accountsStrict({
         freezer: freezer.publicKey,
         config: configPda,
-        freezerRole,
+        freezerRole: freezerRolePda,
         mint: mint.publicKey,
         tokenAccount: recipientAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -212,21 +289,59 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
       .rpc();
     await provider.connection.confirmTransaction(freezeSig, "confirmed");
 
-    account = await getAccount(
+    const account = await getAccount(
       provider.connection,
       recipientAta,
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
     expect(account.isFrozen).to.equal(true);
+  });
 
-    // ----- Step 8: Thaw -----
+  // ============================================================
+  // Step 9: Verify Mint to Frozen Account Fails
+  // ============================================================
+
+  it("reject mint to frozen account", async () => {
+    const minterRole = rolePda(0, minter.publicKey);
+    try {
+      await program.methods
+        .mint(new anchor.BN(1_000))
+        .accountsStrict({
+          minter: minter.publicKey,
+          config: configPda,
+          minterRole,
+          mint: mint.publicKey,
+          to: recipientAta,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([minter])
+        .rpc();
+      expect.fail("Should have thrown — account is frozen");
+    } catch (e: any) {
+      // Token-2022 rejects minting to a frozen account
+      const errStr = e.toString();
+      expect(
+        errStr.includes("frozen") ||
+          errStr.includes("Frozen") ||
+          errStr.includes("failed") ||
+          errStr.includes("Error")
+      ).to.equal(true);
+    }
+  });
+
+  // ============================================================
+  // Step 10: Thaw Account
+  // ============================================================
+
+  it("thaw frozen recipient account", async () => {
+    const freezerRolePda = rolePda(3, freezer.publicKey);
     const thawSig = await program.methods
       .thawAccount()
       .accountsStrict({
         freezer: freezer.publicKey,
         config: configPda,
-        freezerRole,
+        freezerRole: freezerRolePda,
         mint: mint.publicKey,
         tokenAccount: recipientAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -235,44 +350,96 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
       .rpc();
     await provider.connection.confirmTransaction(thawSig, "confirmed");
 
-    account = await getAccount(
+    const account = await getAccount(
       provider.connection,
       recipientAta,
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
     expect(account.isFrozen).to.equal(false);
+  });
 
-    // ----- Step 9: Pause -----
-    const pauserRole = rolePda(2, pauser.publicKey);
+  // ============================================================
+  // Step 11: Pause Token
+  // ============================================================
+
+  it("pause token globally", async () => {
+    // Assign pauser role
+    const pauserRolePda = rolePda(2, pauser.publicKey);
+    await program.methods
+      .updateRoles(2, pauser.publicKey, true)
+      .accountsStrict({
+        authority: authority.publicKey,
+        config: configPda,
+        role: pauserRolePda,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
     await program.methods
       .pause()
       .accountsStrict({
         pauser: pauser.publicKey,
         config: configPda,
-        pauserRole,
+        pauserRole: pauserRolePda,
       })
       .signers([pauser])
       .rpc();
 
-    config = await program.account.stablecoinConfig.fetch(configPda);
+    const config = await program.account.stablecoinConfig.fetch(configPda);
     expect(config.paused).to.equal(true);
+  });
 
-    // ----- Step 10: Unpause -----
+  // ============================================================
+  // Step 12: Verify Mint Fails While Paused
+  // ============================================================
+
+  it("reject mint while token is paused", async () => {
+    const minterRole = rolePda(0, minter.publicKey);
+    try {
+      await program.methods
+        .mint(new anchor.BN(1_000))
+        .accountsStrict({
+          minter: minter.publicKey,
+          config: configPda,
+          minterRole,
+          mint: mint.publicKey,
+          to: recipientAta,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([minter])
+        .rpc();
+      expect.fail("Should have thrown — token is paused");
+    } catch (e: any) {
+      expect(e.error.errorCode.code).to.equal("TokenPaused");
+    }
+  });
+
+  // ============================================================
+  // Step 13: Unpause
+  // ============================================================
+
+  it("unpause token successfully", async () => {
+    const pauserRolePda = rolePda(2, pauser.publicKey);
     await program.methods
       .unpause()
       .accountsStrict({
         pauser: pauser.publicKey,
         config: configPda,
-        pauserRole,
+        pauserRole: pauserRolePda,
       })
       .signers([pauser])
       .rpc();
 
-    config = await program.account.stablecoinConfig.fetch(configPda);
+    const config = await program.account.stablecoinConfig.fetch(configPda);
     expect(config.paused).to.equal(false);
+  });
 
-    // ----- Step 11: Transfer authority -----
+  // ============================================================
+  // Step 14: Transfer Authority to New Keypair
+  // ============================================================
+
+  it("initiate authority transfer to new keypair", async () => {
     await program.methods
       .transferAuthority(newAuthority.publicKey)
       .accountsStrict({
@@ -281,12 +448,17 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
       })
       .rpc();
 
-    config = await program.account.stablecoinConfig.fetch(configPda);
+    const config = await program.account.stablecoinConfig.fetch(configPda);
     expect(config.pendingAuthority.toString()).to.equal(
       newAuthority.publicKey.toString()
     );
+  });
 
-    // ----- Step 12: Accept authority -----
+  // ============================================================
+  // Step 15: Accept Authority
+  // ============================================================
+
+  it("accept authority transfer as new keypair", async () => {
     await program.methods
       .acceptAuthority()
       .accountsStrict({
@@ -296,16 +468,51 @@ describe("e2e-sss1: full SSS-1 lifecycle", () => {
       .signers([newAuthority])
       .rpc();
 
-    config = await program.account.stablecoinConfig.fetch(configPda);
+    const config = await program.account.stablecoinConfig.fetch(configPda);
     expect(config.authority.toString()).to.equal(
       newAuthority.publicKey.toString()
     );
     expect(config.pendingAuthority.toString()).to.equal(
       PublicKey.default.toString()
     );
+  });
 
-    // ----- Verify final state -----
-    account = await getAccount(
+  // ============================================================
+  // Step 16: Verify Old Authority Can't Mint (role update)
+  // ============================================================
+
+  it("reject role update from old authority after transfer", async () => {
+    const randomKeypair = Keypair.generate();
+    const role = rolePda(0, randomKeypair.publicKey);
+    try {
+      await program.methods
+        .updateRoles(0, randomKeypair.publicKey, true)
+        .accountsStrict({
+          authority: authority.publicKey,
+          config: configPda,
+          role,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+      expect.fail("Should have thrown — old authority is no longer authorized");
+    } catch (e: any) {
+      expect(e.error.errorCode.code).to.equal("Unauthorized");
+    }
+  });
+
+  // ============================================================
+  // Verify Final State Integrity
+  // ============================================================
+
+  it("verify final state is consistent", async () => {
+    const config = await program.account.stablecoinConfig.fetch(configPda);
+    expect(config.authority.toString()).to.equal(
+      newAuthority.publicKey.toString()
+    );
+    expect(config.paused).to.equal(false);
+    expect(config.decimals).to.equal(6);
+
+    const account = await getAccount(
       provider.connection,
       recipientAta,
       "confirmed",
