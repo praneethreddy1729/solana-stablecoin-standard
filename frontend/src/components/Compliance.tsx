@@ -7,6 +7,7 @@ import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Badge } from "./ui/Badge";
 import { useToast } from "./Toast";
+import { useTransactionHistory } from "./TransactionHistory";
 
 interface ComplianceProps {
   checkBlacklist: (address: PublicKey) => Promise<boolean>;
@@ -30,6 +31,7 @@ export function Compliance({
   hasTransferHook,
 }: ComplianceProps) {
   const toast = useToast();
+  const { addTransaction } = useTransactionHistory();
 
   // Blacklist check
   const [checkAddr, setCheckAddr] = useState("");
@@ -76,6 +78,7 @@ export function Compliance({
       const addr = new PublicKey(blAddr);
       const sig = await blacklistAdd(addr, blReason);
       toast.success("Address added to blacklist", sig);
+      addTransaction({ type: "blacklist_add", description: "Blacklisted address", signature: sig });
       setBlAddr("");
       setBlReason("");
       setBlAddConfirm(false);
@@ -94,6 +97,7 @@ export function Compliance({
       const addr = new PublicKey(blAddr);
       const sig = await blacklistRemove(addr);
       toast.success("Address removed from blacklist", sig);
+      addTransaction({ type: "blacklist_remove", description: "Unblacklisted address", signature: sig });
       setBlAddr("");
       setBlRemoveConfirm(false);
     } catch (err: unknown) {
@@ -110,6 +114,7 @@ export function Compliance({
       const addr = new PublicKey(freezeAddr);
       const sig = await freezeAccount(addr);
       toast.success("Account frozen", sig);
+      addTransaction({ type: "freeze", description: "Account frozen", signature: sig });
       setFreezeAddr("");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : String(err));
@@ -124,6 +129,7 @@ export function Compliance({
       const addr = new PublicKey(freezeAddr);
       const sig = await thawAccount(addr);
       toast.success("Account thawed", sig);
+      addTransaction({ type: "thaw", description: "Account thawed", signature: sig });
       setFreezeAddr("");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : String(err));
@@ -140,6 +146,7 @@ export function Compliance({
       const to = new PublicKey(seizeTo);
       const sig = await seize(from, to);
       toast.success("Tokens seized", sig);
+      addTransaction({ type: "seize", description: "Tokens seized from frozen account", signature: sig });
       setSeizeFrom("");
       setSeizeTo("");
       setSeizeConfirm(false);

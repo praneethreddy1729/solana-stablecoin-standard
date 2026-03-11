@@ -19,9 +19,9 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
       const slot = await app.connection.getSlot("confirmed");
       health.rpc.connected = true;
       health.rpc.slot = slot;
-    } catch (err: any) {
+    } catch (err: unknown) {
       health.status = "degraded";
-      health.rpc.error = err.message;
+      health.rpc.error = err instanceof Error ? err.message : String(err);
     }
 
     const sdk = app.sdk;
@@ -37,11 +37,11 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
         exists: true,
         supply: mint.supply.toString(),
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       health.mint = {
         address: sdk.mintAddress.toBase58(),
         exists: false,
-        error: err.message,
+        error: err instanceof Error ? err.message : String(err),
       };
     }
 

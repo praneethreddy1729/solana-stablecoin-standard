@@ -12,12 +12,6 @@ pub fn require_not_paused(config: &StablecoinConfig) -> Result<()> {
     Ok(())
 }
 
-/// Require that the token IS paused (for unpause)
-pub fn require_paused(config: &StablecoinConfig) -> Result<()> {
-    require!(config.paused, SSSError::TokenNotPaused);
-    Ok(())
-}
-
 /// Require that the signer is the authority
 pub fn require_authority(config: &StablecoinConfig, signer: &Pubkey) -> Result<()> {
     require!(config.authority == *signer, SSSError::Unauthorized);
@@ -31,12 +25,6 @@ pub fn require_role_active(role: &RoleAssignment, expected: RoleType) -> Result<
     Ok(())
 }
 
-/// Require that compliance (transfer hook) is enabled
-pub fn require_compliance_enabled(config: &StablecoinConfig) -> Result<()> {
-    require!(config.enable_transfer_hook, SSSError::ComplianceNotEnabled);
-    Ok(())
-}
-
 /// Require that permanent delegate is enabled
 pub fn require_permanent_delegate_enabled(config: &StablecoinConfig) -> Result<()> {
     require!(
@@ -46,8 +34,3 @@ pub fn require_permanent_delegate_enabled(config: &StablecoinConfig) -> Result<(
     Ok(())
 }
 
-/// Validate that the mint matches the config
-pub fn require_mint_matches(config: &StablecoinConfig, mint: &Pubkey) -> Result<()> {
-    require!(config.mint == *mint, SSSError::InvalidMint);
-    Ok(())
-}

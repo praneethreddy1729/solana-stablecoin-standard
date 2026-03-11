@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### CLI (`sdk/cli`)
 
-- 13 commands: init, mint, burn, freeze, thaw, pause, unpause, blacklist, seize, status, supply, minters, holders, audit-log
+- 18 commands: init, mint, burn, freeze, thaw, pause, unpause, blacklist (add/remove/check), seize, status, supply, minters, holders, audit-log, transfer-authority, accept-authority, cancel-authority-transfer, attest-reserves, update-treasury
 - Configurable RPC URL and keypair path
 
 #### Backend
@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Testing
 
-- 347+ tests across 15 test files
+- 395 integration and unit tests across 16 files
 - 34 sss-token tests covering all instructions and error paths
 - 5 transfer-hook tests covering blacklist enforcement
 - 15 admin-extended tests for role management edge cases
@@ -74,6 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 47 role-matrix tests (comprehensive role permission coverage)
 - 40 token-ops-extended tests
 - 26 SDK integration tests
+- 11 reserve-attestation tests
 - 2 end-to-end lifecycle tests (SSS-1 and SSS-2)
 
 #### Documentation
@@ -81,4 +82,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 11 documentation files covering architecture, specifications, SDK, compliance, operations, API, security, testing, and privacy analysis
 - Comprehensive README with architecture diagrams, API tables, and usage examples
 
-[0.1.0]: https://github.com/praneethg/solana-stablecoin-standard/releases/tag/v0.1.0
+[0.1.0]: https://github.com/solanabr/solana-stablecoin-standard/releases/tag/v0.1.0

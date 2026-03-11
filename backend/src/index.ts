@@ -38,8 +38,8 @@ async function main() {
   try {
     const secretKey = JSON.parse(fs.readFileSync(keypairPath, "utf-8"));
     authority = Keypair.fromSecretKey(Uint8Array.from(secretKey));
-  } catch (err: any) {
-    app.log.error(`Failed to load keypair from ${keypairPath}: ${err.message}`);
+  } catch (err: unknown) {
+    app.log.error(`Failed to load keypair from ${keypairPath}: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
   }
 

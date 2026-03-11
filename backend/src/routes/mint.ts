@@ -43,7 +43,7 @@ export async function mintRoutes(app: FastifyInstance): Promise<void> {
         if (result.sanctioned) {
           return reply.status(403).send({ error: "Address is sanctioned", screening: result });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         app.log.error(err, "Sanctions screening failed");
         return reply.status(503).send({ error: "Sanctions screening unavailable" });
       }
@@ -75,7 +75,7 @@ export async function mintRoutes(app: FastifyInstance): Promise<void> {
       });
 
       sendWebhook("mint", { signature, mint: mintAddress, to, amount }).catch(
-        () => {}
+        (err: unknown) => console.warn('Webhook delivery failed:', err instanceof Error ? err.message : String(err))
       );
 
       return reply.status(200).send({
@@ -84,7 +84,7 @@ export async function mintRoutes(app: FastifyInstance): Promise<void> {
         to,
         amount,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       app.log.error(err, "Mint transaction failed");
       return reply.status(500).send({
         error: "Transaction failed",

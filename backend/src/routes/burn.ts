@@ -45,7 +45,7 @@ export async function burnRoutes(app: FastifyInstance): Promise<void> {
         if (result.sanctioned) {
           return reply.status(403).send({ error: "Address is sanctioned", screening: result });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         app.log.error(err, "Sanctions screening failed");
         return reply.status(503).send({ error: "Sanctions screening unavailable" });
       }
@@ -72,7 +72,7 @@ export async function burnRoutes(app: FastifyInstance): Promise<void> {
       });
 
       sendWebhook("burn", { signature, mint: mintAddress, from, amount }).catch(
-        () => {}
+        (err: unknown) => app.log.warn('Webhook delivery failed:', err instanceof Error ? err.message : String(err))
       );
 
       return reply.status(200).send({
@@ -81,7 +81,7 @@ export async function burnRoutes(app: FastifyInstance): Promise<void> {
         from,
         amount,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       app.log.error(err, "Burn transaction failed");
       return reply.status(500).send({
         error: "Transaction failed",

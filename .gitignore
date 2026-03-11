@@ -5,10 +5,31 @@ target
 node_modules
 test-ledger
 .yarn
-.env
 *.log
 dist/
 devnet-deployer.json
 *-keypair.json
 *.pem
 frontend/.next/
+
+# Build artifacts
+*.so
+*.tsbuildinfo
+
+# Env variants
+.env*
+!.env.example
+
+# Lock files (yarn monorepo - root yarn.lock stays)
+package-lock.json
+frontend/yarn.lock
+backend/yarn.lock
+
+# Editor/temp files
+*.swp
+*.bak
+*.tmp
+*~
+
+# Vercel
+.vercel/

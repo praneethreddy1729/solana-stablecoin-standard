@@ -20,25 +20,6 @@ pub fn mint_tokens<'info>(
     token_2022::mint_to(cpi_ctx, amount)
 }
 
-/// Burn tokens
-pub fn burn_tokens<'info>(
-    token_program: &AccountInfo<'info>,
-    mint: &AccountInfo<'info>,
-    from: &AccountInfo<'info>,
-    authority: &AccountInfo<'info>,
-    amount: u64,
-    signer_seeds: &[&[&[u8]]],
-) -> Result<()> {
-    let cpi_accounts = token_2022::Burn {
-        mint: mint.to_account_info(),
-        from: from.to_account_info(),
-        authority: authority.to_account_info(),
-    };
-    let cpi_ctx =
-        CpiContext::new_with_signer(token_program.to_account_info(), cpi_accounts, signer_seeds);
-    token_2022::burn(cpi_ctx, amount)
-}
-
 /// Freeze a token account using config PDA as freeze authority
 pub fn freeze_token_account<'info>(
     token_program: &AccountInfo<'info>,
@@ -75,24 +56,3 @@ pub fn thaw_token_account<'info>(
     token_2022::thaw_account(cpi_ctx)
 }
 
-/// Transfer tokens using config PDA (permanent delegate) as authority
-pub fn transfer_tokens<'info>(
-    token_program: &AccountInfo<'info>,
-    from: &AccountInfo<'info>,
-    mint: &AccountInfo<'info>,
-    to: &AccountInfo<'info>,
-    authority: &AccountInfo<'info>,
-    amount: u64,
-    decimals: u8,
-    signer_seeds: &[&[&[u8]]],
-) -> Result<()> {
-    let cpi_accounts = token_2022::TransferChecked {
-        from: from.to_account_info(),
-        mint: mint.to_account_info(),
-        to: to.to_account_info(),
-        authority: authority.to_account_info(),
-    };
-    let cpi_ctx =
-        CpiContext::new_with_signer(token_program.to_account_info(), cpi_accounts, signer_seeds);
-    token_2022::transfer_checked(cpi_ctx, amount, decimals)
-}

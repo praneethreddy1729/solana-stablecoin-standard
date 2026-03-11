@@ -1,18 +1,12 @@
-import { PublicKey } from "@solana/web3.js";
-
-export const SSS_TOKEN_PROGRAM_ID = new PublicKey(
-  "tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz"
-);
-
-export const SSS_TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  "A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB"
-);
-
-export const CONFIG_SEED = Buffer.from("config");
-export const ROLE_SEED = Buffer.from("role");
-export const BLACKLIST_SEED = Buffer.from("blacklist");
-export const EXTRA_ACCOUNT_METAS_SEED = Buffer.from("extra-account-metas");
-export const ATTESTATION_SEED = Buffer.from("attestation");
+export {
+  SSS_TOKEN_PROGRAM_ID,
+  SSS_TRANSFER_HOOK_PROGRAM_ID,
+  CONFIG_SEED,
+  ROLE_SEED,
+  BLACKLIST_SEED,
+  EXTRA_ACCOUNT_METAS_SEED,
+  ATTESTATION_SEED,
+} from "../../../sdk/core/src/constants";
 
 export const ROLE_NAMES: Record<number, string> = {
   0: "Minter",

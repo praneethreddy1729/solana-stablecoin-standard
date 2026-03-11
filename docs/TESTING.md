@@ -4,7 +4,7 @@
 
 The test suite validates all SSS-1 and SSS-2 functionality through Anchor integration tests. Tests run against a local Solana validator with both programs deployed.
 
-**Total: 347+ tests** across 15 test files covering all instructions, role checks, compliance flows, and edge cases.
+**Total: 395 integration and unit tests** across 16 files covering all instructions, role checks, compliance flows, and edge cases.
 
 ## Running Tests
 
@@ -58,6 +58,7 @@ tests/
   role-matrix.ts            -- Role permission matrix (47 tests)
   token-ops-extended.ts     -- Extended token operations (40 tests)
   sdk-integration.ts        -- SDK integration tests (26 tests)
+  reserve-attestation.ts    -- Reserve attestation tests (11 tests)
   e2e-sss1.ts               -- End-to-end SSS-1 lifecycle (1 test)
   e2e-sss2.ts               -- End-to-end SSS-2 lifecycle (1 test)
 ```
@@ -173,6 +174,21 @@ Extended token operation tests covering mint quota boundaries, burn edge cases, 
 
 SDK integration tests verifying the TypeScript SDK correctly wraps all on-chain instructions and handles errors.
 
+### reserve-attestation.ts (11 tests)
+
+Tests for the reserve attestation and auto-pause mechanism:
+- Attestor role assignment and validation
+- Reserve attestation submission with valid proof
+- Auto-pause when reserves drop below token supply (undercollateralized)
+- Auto-unpause when reserves meet or exceed token supply
+- Attestation URI validation (max 256 bytes)
+- Expiration validation (must be positive)
+- Unauthorized attestation rejection (non-attestor signer)
+- Collateralization ratio calculation accuracy
+- Multiple sequential attestations
+- Attestation interaction with manual pause/unpause
+- Edge cases for reserve amounts at boundary values
+
 ### e2e-sss1.ts (1 test)
 
 Single end-to-end test that exercises the complete SSS-1 lifecycle:
@@ -183,25 +199,13 @@ initialize -> assign roles -> set quota -> mint -> burn -> freeze -> thaw -> pau
 Single end-to-end test covering the full SSS-2 lifecycle:
 initialize (with hook + delegate) -> setup ExtraAccountMetas -> assign roles -> mint -> transfer -> blacklist (with reason) -> verify transfer blocked -> seize (via Seizer role) -> verify seized
 
-## Fuzz Testing (Trident)
+## Fuzz Testing (Planned/Stub)
 
-Fuzz targets are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` using the [Trident](https://ackee.xyz/trident/docs/latest/) framework. Trident generates randomized inputs for each program instruction and verifies that on-chain invariants hold under adversarial conditions.
+Fuzz target stubs for six instruction categories are scaffolded in `trident-tests/fuzz_tests/fuzz_sss_token.rs` using the [Trident](https://ackee.xyz/trident/docs/latest/) framework. **These are currently empty module stubs** -- the invariants are documented below but the fuzz logic is not yet implemented. They compile-gate behind `#[cfg(feature = "fuzz")]` so they do not affect normal builds.
 
-### Running Fuzz Tests
+### Planned Fuzz Targets and Invariants
 
-```bash
-# Install Trident CLI (requires Rust nightly)
-cargo install trident-cli
-
-# Run fuzz campaign
-trident fuzz run fuzz_sss_token
-```
-
-> **Note:** Full fuzz execution requires `trident-cli` and may be incompatible with some Anchor versions. The fuzz stubs compile-gate behind `#[cfg(feature = "fuzz")]` so they do not affect normal builds.
-
-### Fuzz Targets and Invariants
-
-| Target | Instruction(s) | Invariants Checked |
+| Target | Instruction(s) | Planned Invariants |
 |--------|----------------|-------------------|
 | `fuzz_initialize` | `initialize` | Config PDA derivation, decimals <= 18, name/symbol/URI bounds, extension flags |
 | `fuzz_mint` | `mint` | Quota enforcement (minted_amount + amount <= quota), checked_add overflow, supply tracking, pause rejection |
@@ -209,16 +213,6 @@ trident fuzz run fuzz_sss_token
 | `fuzz_roles` | `update_roles` | Authority-only access, role type range 0-6, deactivated role rejection |
 | `fuzz_blacklist` | `add_to_blacklist`, `remove_from_blacklist`, `seize` | Sender/receiver blacklist enforcement, seize bypass via permanent delegate, reason string <= 64 bytes |
 | `fuzz_attestation` | `attest_reserves` | u128 intermediate ratio calc no overflow, auto-pause when reserves < supply, auto-unpause when reserves >= supply, positive expiry |
-
-### Configuration
-
-Fuzz configuration lives in `Trident.toml` at the project root:
-
-```toml
-[fuzz.test.fuzz_sss_token]
-fuzz_iterations = 10000
-programs_owned = ["tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz"]
-```
 
 ## Test Setup Pattern
 

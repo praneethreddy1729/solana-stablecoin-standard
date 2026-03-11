@@ -8,6 +8,7 @@ import { Button } from "./ui/Button";
 import { Input, Select } from "./ui/Input";
 import { Badge } from "./ui/Badge";
 import { useToast } from "./Toast";
+import { useTransactionHistory } from "./TransactionHistory";
 import { ROLE_NAMES, ROLE_DESCRIPTIONS, shortenAddress, explorerUrl } from "@/lib/constants";
 import type { RoleInfo } from "@/hooks/useStablecoin";
 
@@ -27,6 +28,7 @@ export function RoleManager({
   isAuthority,
 }: RoleManagerProps) {
   const toast = useToast();
+  const { addTransaction } = useTransactionHistory();
 
   // Assign role form
   const [roleType, setRoleType] = useState("0");
@@ -65,6 +67,7 @@ export function RoleManager({
         `${isActive ? "Assigned" : "Revoked"} ${ROLE_NAMES[parseInt(roleType)]} role`,
         sig
       );
+      addTransaction({ type: isActive ? "role_assign" : "role_revoke", description: `${isActive ? "Assigned" : "Revoked"} ${ROLE_NAMES[parseInt(roleType)]} role`, signature: sig });
       setAssignee("");
       setAssignConfirm(false);
     } catch (err: unknown) {
@@ -101,6 +104,7 @@ export function RoleManager({
       const quota = new BN(newQuota);
       const sig = await updateMinterQuota(pdaPk, quota);
       toast.success("Minter quota updated", sig);
+      addTransaction({ type: "role_assign", description: "Updated minter quota", signature: sig });
       setNewQuota("");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : String(err));

@@ -8,6 +8,7 @@ import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Badge } from "./ui/Badge";
 import { useToast } from "./Toast";
+import { useTransactionHistory } from "./TransactionHistory";
 import { formatNumber } from "@/lib/constants";
 
 interface AttestationData {
@@ -49,6 +50,7 @@ export function Attestation({
   getAttestation,
 }: AttestationProps) {
   const toast = useToast();
+  const { addTransaction } = useTransactionHistory();
   const [attestation, setAttestation] = useState<AttestationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
@@ -92,6 +94,7 @@ export function Attestation({
       const expiryTs = new BN(Math.floor(Date.now() / 1000) + parseInt(expiryHours) * 3600);
       const sig = await attestReserves(rawAmount, expiryTs, uri);
       toast.success("Reserve attestation submitted", sig);
+      addTransaction({ type: "attestation", description: "Reserve attestation submitted", signature: sig });
       setReserveAmount("");
       setUri("");
       setSubmitConfirm(false);

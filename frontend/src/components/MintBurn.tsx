@@ -8,6 +8,7 @@ import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { useToast } from "./Toast";
+import { useTransactionHistory } from "./TransactionHistory";
 
 interface MintBurnProps {
   mint: (to: PublicKey, amount: BN) => Promise<string>;
@@ -31,6 +32,7 @@ export function MintBurn({
   connected,
 }: MintBurnProps) {
   const toast = useToast();
+  const { addTransaction } = useTransactionHistory();
 
   // Mint form
   const [mintTo, setMintTo] = useState("");
@@ -71,6 +73,7 @@ export function MintBurn({
       const amount = toRawAmount(mintAmount);
       const sig = await mint(ata, amount);
       toast.success(`Minted ${mintAmount} tokens`, sig);
+      addTransaction({ type: "mint", description: `Minted ${mintAmount} tokens`, amount: mintAmount, signature: sig });
       setMintTo("");
       setMintAmount("");
       setMintConfirm(false);
@@ -93,6 +96,7 @@ export function MintBurn({
       const amount = toRawAmount(burnAmount);
       const sig = await burn(fromPk, amount);
       toast.success(`Burned ${burnAmount} tokens`, sig);
+      addTransaction({ type: "burn", description: `Burned ${burnAmount} tokens`, amount: burnAmount, signature: sig });
       setBurnFrom("");
       setBurnAmount("");
       setBurnConfirm(false);
@@ -109,6 +113,7 @@ export function MintBurn({
     try {
       const sig = paused ? await unpause() : await pause();
       toast.success(paused ? "Token unpaused" : "Token paused", sig);
+      addTransaction({ type: paused ? "unpause" : "pause", description: paused ? "Token unpaused" : "Token paused", signature: sig });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : String(err));
     } finally {

@@ -208,9 +208,9 @@ async function main() {
     }
 
     console.log("\n=== All transactions completed successfully! ===");
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("\n=== Transaction failed ===");
-    console.error(err.message || err);
+    console.error(err instanceof Error ? err.message : String(err));
 
     if (
       err.message?.includes("realloc") ||

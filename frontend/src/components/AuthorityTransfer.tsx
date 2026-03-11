@@ -7,6 +7,7 @@ import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Badge } from "./ui/Badge";
 import { useToast } from "./Toast";
+import { useTransactionHistory } from "./TransactionHistory";
 import { shortenAddress, explorerUrl } from "@/lib/constants";
 
 interface AuthorityTransferProps {
@@ -29,6 +30,7 @@ export function AuthorityTransfer({
   publicKey,
 }: AuthorityTransferProps) {
   const toast = useToast();
+  const { addTransaction } = useTransactionHistory();
 
   const [newAuth, setNewAuth] = useState("");
   const [transferLoading, setTransferLoading] = useState(false);
@@ -55,6 +57,7 @@ export function AuthorityTransfer({
       const newAuthPk = new PublicKey(newAuth);
       const sig = await transferAuthority(newAuthPk);
       toast.success("Authority transfer initiated", sig);
+      addTransaction({ type: "authority_transfer", description: "Authority transfer initiated", signature: sig });
       setNewAuth("");
       setTransferConfirm(false);
     } catch (err: unknown) {
@@ -70,6 +73,7 @@ export function AuthorityTransfer({
     try {
       const sig = await acceptAuthority();
       toast.success("Authority transfer accepted", sig);
+      addTransaction({ type: "authority_transfer", description: "Authority transfer accepted", signature: sig });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : String(err));
     } finally {
@@ -82,6 +86,7 @@ export function AuthorityTransfer({
     try {
       const sig = await cancelAuthorityTransfer();
       toast.success("Authority transfer cancelled", sig);
+      addTransaction({ type: "authority_transfer", description: "Authority transfer cancelled", signature: sig });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : String(err));
     } finally {

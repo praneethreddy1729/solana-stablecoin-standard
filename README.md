@@ -30,12 +30,14 @@ SSS defines two composable specification levels. Choose the one that matches you
 | `sss-token` | `tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz` | `tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz` |
 | `sss-transfer-hook` | `A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB` | `A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB` |
 
-### Deployed on Devnet
+### Devnet Deployment
 
-Both programs are deployed and verified on Solana Devnet (queried 2026-03-10):
+Both programs are deployed and verified on Solana devnet:
 
-- **sss-token**: [`tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz`](https://explorer.solana.com/address/tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz?cluster=devnet)
-- **sss-transfer-hook**: [`A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB`](https://explorer.solana.com/address/A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB?cluster=devnet)
+| Program | Address | Explorer |
+|---------|---------|----------|
+| SSS Token | `tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz` | [View](https://explorer.solana.com/address/tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz?cluster=devnet) |
+| Transfer Hook | `A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB` | [View](https://explorer.solana.com/address/A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB?cluster=devnet) |
 
 #### On-Chain Program Verification
 
@@ -82,7 +84,7 @@ The script performs the following operations against the deployed programs:
 
 All six transactions are signed and submitted to devnet, with explorer links printed for each.
 
-> **Note:** Devnet currently runs Agave 3.0.x which has a known SIMD-0219 bug affecting Token-2022 metadata reallocation ([anza-xyz/agave#9799](https://github.com/anza-xyz/agave/issues/9799)). The `initialize` instruction uses Token-2022's `token_metadata_initialize` which triggers a metadata realloc that fails under SIMD-0219. This feature is deactivated in the local test validator via `Anchor.toml`, but cannot be deactivated on devnet. The programs themselves are deployed and verified as shown above; 347+ tests pass on localnet with the feature deactivated.
+> **Note:** Devnet currently runs Agave 3.0.x which has a known SIMD-0219 bug affecting Token-2022 metadata reallocation ([anza-xyz/agave#9799](https://github.com/anza-xyz/agave/issues/9799)). The `initialize` instruction uses Token-2022's `token_metadata_initialize` which triggers a metadata realloc that fails under SIMD-0219. This feature is deactivated in the local test validator via `Anchor.toml`, but cannot be deactivated on devnet. The programs themselves are deployed and verified as shown above; 395 integration and unit tests across 16 files pass on localnet with the feature deactivated.
 
 ## Installation
 
@@ -97,7 +99,7 @@ All six transactions are signed and submitted to devnet, with explorer links pri
 ### Clone and Build
 
 ```bash
-git clone https://github.com/praneethg/solana-stablecoin-standard.git
+git clone https://github.com/solanabr/solana-stablecoin-standard.git
 cd solana-stablecoin-standard
 yarn install
 anchor build
@@ -180,7 +182,7 @@ const isBlacklisted = await stablecoin.compliance.isBlacklisted(someWallet);
 ```
 +-----------------------------------------------------------------------+
 |                         TypeScript SDK / CLI                          |
-|  SolanaStablecoin class  |  PDA helpers  |  CLI commands (13 cmds)   |
+|  SolanaStablecoin class  |  PDA helpers  |  CLI commands (18 cmds)   |
 +----------------------------------+------------------------------------+
                                    |
               Anchor RPC / CPI     |
@@ -379,7 +381,7 @@ When the Seizer seizes tokens, the permanent delegate transfers directly via Tok
 
 ## CLI
 
-The `sss-token` CLI provides 13 commands for managing stablecoins from the terminal.
+The `sss-token` CLI provides 18 commands for managing stablecoins from the terminal.
 
 ### Usage
 
@@ -407,6 +409,11 @@ npx ts-node src/index.ts <command> [options]
 | `supply` | Show current token supply | `--mint` |
 | `minters` | List minters and their quotas | `--mint` |
 | `holders` | List all token holders | `--mint` |
+| `transfer-authority` | Initiate authority transfer | `--mint`, `--new-authority` |
+| `accept-authority` | Accept pending authority transfer | `--mint` |
+| `cancel-authority-transfer` | Cancel pending authority transfer | `--mint` |
+| `attest-reserves` | Submit reserve attestation | `--mint`, `--reserve-amount`, `--uri` |
+| `update-treasury` | Set treasury account | `--mint`, `--treasury` |
 | `audit-log` | View on-chain event history | `--mint` |
 
 All commands accept `--rpc-url` and `--keypair` options.
@@ -611,16 +618,11 @@ anchor test
 
 ### Test Breakdown
 
-**347+ tests** across 15 test files covering all instructions, role checks, compliance flows, and edge cases. See [docs/TESTING.md](docs/TESTING.md) for the full breakdown.
+**395 integration and unit tests** across 16 files covering all instructions, role checks, compliance flows, and edge cases. See [docs/TESTING.md](docs/TESTING.md) for the full breakdown.
 
-### Fuzz Testing (Trident)
+### Fuzz Testing (Planned)
 
-Fuzz targets for all critical instructions are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` using the [Trident](https://ackee.xyz/trident/docs/latest/) framework. Six fuzz targets cover initialize, mint, burn, role management, blacklist/transfer-hook, and reserve attestation -- each validating arithmetic safety, access control, and state machine invariants under randomized inputs. See [docs/TESTING.md](docs/TESTING.md) for the full invariant table.
-
-```bash
-cargo install trident-cli
-trident fuzz run fuzz_sss_token
-```
+Fuzz target stubs for six instruction categories are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` using the [Trident](https://ackee.xyz/trident/docs/latest/) framework. These are scaffolded but not yet implemented -- the module bodies are empty. See [docs/TESTING.md](docs/TESTING.md) for planned invariants.
 
 ### What Tests Verify
 
@@ -663,10 +665,10 @@ solana-stablecoin-standard/
         index.ts               Re-exports
     cli/                       CLI tool (commander.js)
       src/
-        commands/              13 command modules
+        commands/              18 command modules
         helpers.ts             Wallet/connection utilities
         index.ts               Entry point
-  tests/                       347+ tests across 15 files
+  tests/                       395 tests across 16 files
   backend/                     Fastify REST API (port 3001)
   frontend/                    Next.js dashboard
   docs/                        Extended documentation (11 files)
@@ -691,3 +693,5 @@ solana-stablecoin-standard/
 ## License
 
 MIT
+
+Built for the Superteam Brasil builder community.

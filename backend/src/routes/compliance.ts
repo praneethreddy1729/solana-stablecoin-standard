@@ -48,8 +48,8 @@ export async function complianceRoutes(app: FastifyInstance): Promise<void> {
         ...result,
         onChainBlacklisted,
       });
-    } catch (err: any) {
-      return reply.status(400).send({ error: err.message });
+    } catch (err: unknown) {
+      return reply.status(400).send({ error: err instanceof Error ? err.message : String(err) });
     }
   });
 

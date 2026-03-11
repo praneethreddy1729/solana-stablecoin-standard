@@ -289,7 +289,7 @@ Required: a deployed stablecoin with the authority keypair available at the conf
 
 ## CLI Command Reference
 
-The `sss-token` CLI provides 13 commands for managing stablecoins from the terminal.
+The `sss-token` CLI provides 18 commands for managing stablecoins from the terminal.
 
 ### Usage
 

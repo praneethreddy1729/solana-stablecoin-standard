@@ -33,10 +33,10 @@ export async function statusRoutes(app: FastifyInstance): Promise<void> {
           decimals: config.decimals,
         },
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       return reply.status(500).send({
         error: "Failed to fetch status",
-        details: err.message,
+        details: err instanceof Error ? err.message : String(err),
       });
     }
   });
