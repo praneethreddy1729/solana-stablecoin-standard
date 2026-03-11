@@ -68,13 +68,13 @@ describe("Constants", () => {
 // ---------------------------------------------------------------------------
 
 describe("RoleType enum", () => {
-  it("Minter = 0", () => expect(RoleType.Minter).to.equal(0));
-  it("Burner = 1", () => expect(RoleType.Burner).to.equal(1));
-  it("Pauser = 2", () => expect(RoleType.Pauser).to.equal(2));
-  it("Freezer = 3", () => expect(RoleType.Freezer).to.equal(3));
-  it("Blacklister = 4", () => expect(RoleType.Blacklister).to.equal(4));
-  it("Seizer = 5", () => expect(RoleType.Seizer).to.equal(5));
-  it("Attestor = 6", () => expect(RoleType.Attestor).to.equal(6));
+  it("Minter = 0", () => { expect(RoleType.Minter).to.equal(0); });
+  it("Burner = 1", () => { expect(RoleType.Burner).to.equal(1); });
+  it("Pauser = 2", () => { expect(RoleType.Pauser).to.equal(2); });
+  it("Freezer = 3", () => { expect(RoleType.Freezer).to.equal(3); });
+  it("Blacklister = 4", () => { expect(RoleType.Blacklister).to.equal(4); });
+  it("Seizer = 5", () => { expect(RoleType.Seizer).to.equal(5); });
+  it("Attestor = 6", () => { expect(RoleType.Attestor).to.equal(6); });
 
   it("has exactly 7 members", () => {
     // numeric enums produce both name->value and value->name mappings
@@ -86,9 +86,9 @@ describe("RoleType enum", () => {
 });
 
 describe("Preset enum", () => {
-  it("SSS_1 = 'SSS_1'", () => expect(Preset.SSS_1).to.equal("SSS_1"));
-  it("SSS_2 = 'SSS_2'", () => expect(Preset.SSS_2).to.equal("SSS_2"));
-  it("Custom = 'Custom'", () => expect(Preset.Custom).to.equal("Custom"));
+  it("SSS_1 = 'SSS_1'", () => { expect(Preset.SSS_1).to.equal("SSS_1"); });
+  it("SSS_2 = 'SSS_2'", () => { expect(Preset.SSS_2).to.equal("SSS_2"); });
+  it("Custom = 'Custom'", () => { expect(Preset.Custom).to.equal("Custom"); });
 });
 
 // ---------------------------------------------------------------------------
@@ -143,7 +143,7 @@ describe("PDA derivation", () => {
   describe("findRolePda", () => {
     let configPda: PublicKey;
 
-    before(() => {
+    beforeAll(() => {
       [configPda] = findConfigPda(MINT);
     });
 
