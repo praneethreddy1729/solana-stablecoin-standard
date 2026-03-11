@@ -65,12 +65,54 @@ Both programs are owned by `BPFLoaderUpgradeab1e11111111111111111111111` and con
 
 ### Example Transactions (Devnet)
 
-| Transaction | Type | Explorer |
-|------------|------|----------|
-| `5CmfpQ...8uSk` | SSS Token Deploy | [View](https://explorer.solana.com/tx/5CmfpQs1nT74yZ2BYY6DzSt82MvpStcefbe9qtozTgZ3gsD3H9G5HStonp8jjC22L9fAjGxLzBHb2kwUUaAx8uSk?cluster=devnet) |
-| `3xtKQU...Y9Yj` | SSS Token Deploy | [View](https://explorer.solana.com/tx/3xtKQUeHzEhLStrRMhChjirDdN1DDSCQQj3aArLfajq9nwrTc3gG8MR2Gr7SswjVLxbgsDpavENYfUTnRsyPY9Yj?cluster=devnet) |
-| `vuoWMr...8qf` | Transfer Hook Deploy | [View](https://explorer.solana.com/tx/vuoWMrv1PX2a6Hd2B4fyfX6nfWnVfjgz1qLjga9zeNmioZ6RLem5jqs9m93MQfxaZ7oYU9zsBjro5LXHzQZi8qf?cluster=devnet) |
-| `3U2PC1...2kd` | Transfer Hook Deploy | [View](https://explorer.solana.com/tx/3U2PC1mgEasmfknKJV1HDJBpgQCrvyjrYMZGWqn74a43po5PiYfQir2pUJiUoz4yXCDw6XhcP9pN7au7yNF4s2kd?cluster=devnet) |
+#### sss-token Program Transactions
+
+| Transaction | Explorer |
+|------------|----------|
+| `5CmfpQs1nT74yZ2BYY6DzSt82MvpStcefbe9qtozTgZ3gsD3H9G5HStonp8jjC22L9fAjGxLzBHb2kwUUaAx8uSk` | [View](https://explorer.solana.com/tx/5CmfpQs1nT74yZ2BYY6DzSt82MvpStcefbe9qtozTgZ3gsD3H9G5HStonp8jjC22L9fAjGxLzBHb2kwUUaAx8uSk?cluster=devnet) |
+| `3xtKQUeHzEhLStrRMhChjirDdN1DDSCQQj3aArLfajq9nwrTc3gG8MR2Gr7SswjVLxbgsDpavENYfUTnRsyPY9Yj` | [View](https://explorer.solana.com/tx/3xtKQUeHzEhLStrRMhChjirDdN1DDSCQQj3aArLfajq9nwrTc3gG8MR2Gr7SswjVLxbgsDpavENYfUTnRsyPY9Yj?cluster=devnet) |
+| `5XZFiVGMX1kHWPfxBv1tukNPmam6C3SYGtxZpMW7SV9tSXT3kYc9tute1ErJ5TBRntCgtR8bW6K9gg1Qc9PJ4Q5Z` | [View](https://explorer.solana.com/tx/5XZFiVGMX1kHWPfxBv1tukNPmam6C3SYGtxZpMW7SV9tSXT3kYc9tute1ErJ5TBRntCgtR8bW6K9gg1Qc9PJ4Q5Z?cluster=devnet) |
+| `5rYCzT4UEjj3XfwrzJJNd6cHQG8BFQGWhoHnVUAPgYL8sHHkksrsHJMEvg91umhCXNhF8Mxwrnc1UC9z9nBWhBJy` | [View](https://explorer.solana.com/tx/5rYCzT4UEjj3XfwrzJJNd6cHQG8BFQGWhoHnVUAPgYL8sHHkksrsHJMEvg91umhCXNhF8Mxwrnc1UC9z9nBWhBJy?cluster=devnet) |
+| `47HBj1yRvywkR3GKKTnsFZpdtqPBAG1snL7xgyaM5QW3SDFMucsa7mDwHJwM8yijFMaKuZ2nZsVXh74eANpxYi96` | [View](https://explorer.solana.com/tx/47HBj1yRvywkR3GKKTnsFZpdtqPBAG1snL7xgyaM5QW3SDFMucsa7mDwHJwM8yijFMaKuZ2nZsVXh74eANpxYi96?cluster=devnet) |
+| `2tA9vZmxQBxLwxB34WCFbXWwpUZkWG44pBtDRK5xSZUBZ8w22YzFAdt42fRpj5CXuYsoNZBqdXXcksTUEeivM39U` | [View](https://explorer.solana.com/tx/2tA9vZmxQBxLwxB34WCFbXWwpUZkWG44pBtDRK5xSZUBZ8w22YzFAdt42fRpj5CXuYsoNZBqdXXcksTUEeivM39U?cluster=devnet) |
+
+#### sss-transfer-hook Program Transactions
+
+| Transaction | Explorer |
+|------------|----------|
+| `vuoWMrv1PX2a6Hd2B4fyfX6nfWnVfjgz1qLjga9zeNmioZ6RLem5jqs9m93MQfxaZ7oYU9zsBjro5LXHzQZi8qf` | [View](https://explorer.solana.com/tx/vuoWMrv1PX2a6Hd2B4fyfX6nfWnVfjgz1qLjga9zeNmioZ6RLem5jqs9m93MQfxaZ7oYU9zsBjro5LXHzQZi8qf?cluster=devnet) |
+| `3U2PC1mgEasmfknKJV1HDJBpgQCrvyjrYMZGWqn74a43po5PiYfQir2pUJiUoz4yXCDw6XhcP9pN7au7yNF4s2kd` | [View](https://explorer.solana.com/tx/3U2PC1mgEasmfknKJV1HDJBpgQCrvyjrYMZGWqn74a43po5PiYfQir2pUJiUoz4yXCDw6XhcP9pN7au7yNF4s2kd?cluster=devnet) |
+| `5LgJR4gBiU8DbrG9ErtHHpSMjPgeMwx2ev7d6kKULmcixJast9weer3gjBsFASco8zQtnjEnbaaGbxbtCZtrdT6s` | [View](https://explorer.solana.com/tx/5LgJR4gBiU8DbrG9ErtHHpSMjPgeMwx2ev7d6kKULmcixJast9weer3gjBsFASco8zQtnjEnbaaGbxbtCZtrdT6s?cluster=devnet) |
+| `28uwvPxYciTW2TPgj4FZSYmsfA6Tt18eVSHFfd49HDmwb4GjoWKZ7qm9bQz7E2zCH8YKEnapkkMse9WjK6k2xgkE` | [View](https://explorer.solana.com/tx/28uwvPxYciTW2TPgj4FZSYmsfA6Tt18eVSHFfd49HDmwb4GjoWKZ7qm9bQz7E2zCH8YKEnapkkMse9WjK6k2xgkE?cluster=devnet) |
+| `51wcBkeph3r7LmjxvE7A3gYX96wTK9nq79dPruR48QyXZhGvDQth6CYXPmcaurrTn6oD7Z2dpABccBUtePS3NKsZ` | [View](https://explorer.solana.com/tx/51wcBkeph3r7LmjxvE7A3gYX96wTK9nq79dPruR48QyXZhGvDQth6CYXPmcaurrTn6oD7Z2dpABccBUtePS3NKsZ?cluster=devnet) |
+| `5275w7y59YWSmM5mtJ7DdE2dhJ4ES2nrEdynHPmWMtN7WRg2K9VwY26SPZWMCZoRxeVZWuSVxeDkM32pYyWwGon5` | [View](https://explorer.solana.com/tx/5275w7y59YWSmM5mtJ7DdE2dhJ4ES2nrEdynHPmWMtN7WRg2K9VwY26SPZWMCZoRxeVZWuSVxeDkM32pYyWwGon5?cluster=devnet) |
+
+#### Authority Wallet Recent Activity
+
+The deployer wallet (`4HDC3Hh8jW6YTDGRtwUczEmXtGgiFAgCF49HSadCctH1`) has 20+ transactions on devnet. The 20 most recent:
+
+| Transaction | Explorer |
+|------------|----------|
+| `5CmfpQs1nT74yZ2BYY6DzSt82MvpStcefbe9qtozTgZ3gsD3H9G5HStonp8jjC22L9fAjGxLzBHb2kwUUaAx8uSk` | [View](https://explorer.solana.com/tx/5CmfpQs1nT74yZ2BYY6DzSt82MvpStcefbe9qtozTgZ3gsD3H9G5HStonp8jjC22L9fAjGxLzBHb2kwUUaAx8uSk?cluster=devnet) |
+| `6ZUP9876XTHoUaatMAgNk8zDSnU1AcAMFmpRiTxZVT6pdirucRRpR1124t5AogKnMvov9PLn9PuNgXQMET8nQyc` | [View](https://explorer.solana.com/tx/6ZUP9876XTHoUaatMAgNk8zDSnU1AcAMFmpRiTxZVT6pdirucRRpR1124t5AogKnMvov9PLn9PuNgXQMET8nQyc?cluster=devnet) |
+| `3EDBjjBy6k4orewct7HSrcx3FqwdtPzYdfrVDU7siP3BvH6XHSr7zZ8Vce5HFTLkf9fBBE8kW5Bsp8LcghdazcAU` | [View](https://explorer.solana.com/tx/3EDBjjBy6k4orewct7HSrcx3FqwdtPzYdfrVDU7siP3BvH6XHSr7zZ8Vce5HFTLkf9fBBE8kW5Bsp8LcghdazcAU?cluster=devnet) |
+| `4LMdba8rJiYeHNJfKvJcB1BfvKfZxADfxmLvKYqbuoL3bYfdQgnNxy7TGuaVX5yGtcWwNhJtoxhuK3ytcJST2YM2` | [View](https://explorer.solana.com/tx/4LMdba8rJiYeHNJfKvJcB1BfvKfZxADfxmLvKYqbuoL3bYfdQgnNxy7TGuaVX5yGtcWwNhJtoxhuK3ytcJST2YM2?cluster=devnet) |
+| `5i8f8Lh8UEoXVb6ioVGafcEoTCRVXZs7fb68GqqZzZ6Ri8KYPYuHugkXhDW5ffQnwiVm35J2WEcg9teVNSQ8kuR3` | [View](https://explorer.solana.com/tx/5i8f8Lh8UEoXVb6ioVGafcEoTCRVXZs7fb68GqqZzZ6Ri8KYPYuHugkXhDW5ffQnwiVm35J2WEcg9teVNSQ8kuR3?cluster=devnet) |
+| `42MDm7KnnNjmuK9ENCwAnPofY1my66uByeSmxN1pCD7oE4Hc6QQXgYbX3npwM8ee7ahPsnZqsJE4XB6YJ4s3uUR8` | [View](https://explorer.solana.com/tx/42MDm7KnnNjmuK9ENCwAnPofY1my66uByeSmxN1pCD7oE4Hc6QQXgYbX3npwM8ee7ahPsnZqsJE4XB6YJ4s3uUR8?cluster=devnet) |
+| `3tjop1nayXE571NwJM11Dqb9Cr9UgSqh1RkbAutGvWSwDf4HSqJDoe7AXYEfekxzghFdpLgFhErZmMed1NN1t9xQ` | [View](https://explorer.solana.com/tx/3tjop1nayXE571NwJM11Dqb9Cr9UgSqh1RkbAutGvWSwDf4HSqJDoe7AXYEfekxzghFdpLgFhErZmMed1NN1t9xQ?cluster=devnet) |
+| `4pBF1gLRKFMqtsaVFax3SQtwiH2P8RTVep95WawdjVBJeU3K2J5bRjmrobPUzSXC8JNGyj6xg2nYFvuYJrcqRDP3` | [View](https://explorer.solana.com/tx/4pBF1gLRKFMqtsaVFax3SQtwiH2P8RTVep95WawdjVBJeU3K2J5bRjmrobPUzSXC8JNGyj6xg2nYFvuYJrcqRDP3?cluster=devnet) |
+| `4QzDc4nEq2p33k9CkxrxUi9R1J5BsUbmDJBUSqwvUjS55MzVNRMuPceaiuxvPugpMHES3j44B7EjHqKrom2VHUnn` | [View](https://explorer.solana.com/tx/4QzDc4nEq2p33k9CkxrxUi9R1J5BsUbmDJBUSqwvUjS55MzVNRMuPceaiuxvPugpMHES3j44B7EjHqKrom2VHUnn?cluster=devnet) |
+| `5TKm3BzQph3Xa9nuyh8RwEJdTjTXAPpGcKoJBjLwa1N8SZHqdEC1YqRt2GKnnC7rRMkZTPhYiS4JF2b5p2PLZD8M` | [View](https://explorer.solana.com/tx/5TKm3BzQph3Xa9nuyh8RwEJdTjTXAPpGcKoJBjLwa1N8SZHqdEC1YqRt2GKnnC7rRMkZTPhYiS4JF2b5p2PLZD8M?cluster=devnet) |
+| `61fzmin5kT9ZgJqNYcNTyQ3Dn3GS1Dtwp3Rtn2X8b9Fo5csY9Bg2oq2FaaPFwCEVr79HfVptZUZTCWuUxCSEXsos` | [View](https://explorer.solana.com/tx/61fzmin5kT9ZgJqNYcNTyQ3Dn3GS1Dtwp3Rtn2X8b9Fo5csY9Bg2oq2FaaPFwCEVr79HfVptZUZTCWuUxCSEXsos?cluster=devnet) |
+| `2bDkxQYp1BsXjT5KEPYGTWQa4HjBWaJnrW2MTdMN8HvzSJmZk4eEuoP23bypJ2s8LdYnsfnVMbPU7LPxaw6axbim` | [View](https://explorer.solana.com/tx/2bDkxQYp1BsXjT5KEPYGTWQa4HjBWaJnrW2MTdMN8HvzSJmZk4eEuoP23bypJ2s8LdYnsfnVMbPU7LPxaw6axbim?cluster=devnet) |
+| `5hgsMA9PVa5JpDjpkgwcqdJ4nLt44eMjGiU8tLrR8K9tQLHEzxihUBKapj9bqFcm9ME6VhTJtkLkp2of7KV51Vba` | [View](https://explorer.solana.com/tx/5hgsMA9PVa5JpDjpkgwcqdJ4nLt44eMjGiU8tLrR8K9tQLHEzxihUBKapj9bqFcm9ME6VhTJtkLkp2of7KV51Vba?cluster=devnet) |
+| `K8ZrKJAfM8W9asghBT3WjAR2ZQ7LrFery8mYDd4w5g1GsuCBFWYjuQbrj1QsCejgvW9btJRJnQjLM9t7Jo7EdGb` | [View](https://explorer.solana.com/tx/K8ZrKJAfM8W9asghBT3WjAR2ZQ7LrFery8mYDd4w5g1GsuCBFWYjuQbrj1QsCejgvW9btJRJnQjLM9t7Jo7EdGb?cluster=devnet) |
+| `4CLM1XiFoC4EnM6MNFAwZRe1HkbVM1kDHzu4J6DdCH1fnF1cPcb7Z5M1jMFFeMt1BUPh3HSaNwZcfmx83wyy7mgE` | [View](https://explorer.solana.com/tx/4CLM1XiFoC4EnM6MNFAwZRe1HkbVM1kDHzu4J6DdCH1fnF1cPcb7Z5M1jMFFeMt1BUPh3HSaNwZcfmx83wyy7mgE?cluster=devnet) |
+| `3UiXe5AAR1Nkys55LVpHj5NP7wkAqrbh9VzuKxJmyuNK5EKKEsMGaYTczcTSzyWUepZSaCuFFKjQkCHPUZJYT8JL` | [View](https://explorer.solana.com/tx/3UiXe5AAR1Nkys55LVpHj5NP7wkAqrbh9VzuKxJmyuNK5EKKEsMGaYTczcTSzyWUepZSaCuFFKjQkCHPUZJYT8JL?cluster=devnet) |
+| `5iYEDNwDUmKYu4DmF3wLeQVHPBUMMPkXTu8i9ENegLyFFHx4uKqfftdqMSLmJdqjpMsFoiMM6GBMCyHMiUs97xno` | [View](https://explorer.solana.com/tx/5iYEDNwDUmKYu4DmF3wLeQVHPBUMMPkXTu8i9ENegLyFFHx4uKqfftdqMSLmJdqjpMsFoiMM6GBMCyHMiUs97xno?cluster=devnet) |
+| `48HLGMFSq4c4EwtPQkAxuFSCSngucEy3hrCG59aqXBQFpBCkmzvzg7mrMvayLm8e5g2WKjRYPCiSC4Wkk6ohwJ1m` | [View](https://explorer.solana.com/tx/48HLGMFSq4c4EwtPQkAxuFSCSngucEy3hrCG59aqXBQFpBCkmzvzg7mrMvayLm8e5g2WKjRYPCiSC4Wkk6ohwJ1m?cluster=devnet) |
+| `n763mNkSn7JePS2uDnv7rZUxax1HHz6ELm9HcoTYtuA5EwcLN4f3vqdTCAjKormCj7W5LwyhJEThCVegbVNsZ9T` | [View](https://explorer.solana.com/tx/n763mNkSn7JePS2uDnv7rZUxax1HHz6ELm9HcoTYtuA5EwcLN4f3vqdTCAjKormCj7W5LwyhJEThCVegbVNsZ9T?cluster=devnet) |
+| `4MvpXyFRr4KiN9hK5CDzQG1kjKzhseS9MsLrmedLQfKtc5WVybQkrvzYEzqP2GEsM5RxPikutqYqTHRKWoyHbB6f` | [View](https://explorer.solana.com/tx/4MvpXyFRr4KiN9hK5CDzQG1kjKzhseS9MsLrmedLQfKtc5WVybQkrvzYEzqP2GEsM5RxPikutqYqTHRKWoyHbB6f?cluster=devnet) |
 
 ### Devnet Proof Script
 
@@ -684,11 +726,73 @@ solana-stablecoin-standard/
         commands/              18 command modules
         helpers.ts             Wallet/connection utilities
         index.ts               Entry point
+    tui/                       Interactive admin TUI (blessed)
+      src/
+        index.ts               Entry point + arg parsing
+        dashboard.ts           Main dashboard screen + live polling
+        operations.ts          Operation handlers (mint/burn/pause/freeze/thaw)
+      bin/
+        sss-tui                Binary entry point
   tests/                       395 tests across 16 files
   backend/                     Fastify REST API (port 3001)
   frontend/                    Next.js dashboard
   docs/                        Extended documentation (11 files)
   target/                      Build artifacts (IDL, types, .so)
+```
+
+## Admin TUI (Terminal Dashboard)
+
+An interactive terminal UI for real-time monitoring and administration of SSS stablecoins. Built with `blessed` for a rich, color-coded dashboard experience.
+
+### Features
+
+- **Live dashboard** -- Token info, total supply, pause state, reserve attestation, collateralization ratio
+- **Role management view** -- All assigned roles, minter quotas, and minted amounts
+- **Recent transactions** -- Last 15 transactions for the mint with status indicators
+- **Keyboard-driven operations** -- Mint, burn, pause/unpause, freeze, thaw via single keypress
+- **Auto-polling** -- Refreshes on-chain data every 5 seconds
+
+### Usage
+
+```bash
+cd sdk/tui
+npm install
+npx ts-node src/index.ts --mint <MINT_ADDRESS> --rpc https://api.devnet.solana.com
+```
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|:---:|--------|
+| `M` | Mint tokens (prompts for recipient + amount) |
+| `B` | Burn tokens (prompts for account + amount) |
+| `P` | Toggle pause / unpause |
+| `F` | Freeze a token account |
+| `T` | Thaw a frozen token account |
+| `R` | Force refresh data |
+| `Q` | Quit |
+
+### Screenshot Layout
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  SSS Admin TUI  |  TestUSD (TUSD)  |  Cluster: devnet  | ACTIVE│
+├──────────────── Token Info ──────────┬── Supply & Reserves ─────┤
+│ Authority:    4HDC...ctH1            │ Total Supply:             │
+│ Decimals:     6                      │   1,000.00 TUSD           │
+│ Paused:       NO                     │ Reserve Attestation:      │
+│ Transfer Hook: Enabled               │   Ratio: 100.00%          │
+│ Preset:       SSS-2 (Compliance)     │   Expires: 2026-03-12     │
+├──────── Role Assignments ────────────┼── Recent Transactions ───┤
+│ Minter    4HDC...ctH1  ACTIVE        │ OK   12:34:56  5Cmf...8uSk│
+│ Burner    4HDC...ctH1  ACTIVE        │ OK   12:34:50  3xtK...Y9Yj│
+│ Pauser    4HDC...ctH1  ACTIVE        │ OK   12:34:45  vuoW...8qf │
+├──────── Activity Log ────────────────┴──────────────────────────┤
+│ [12:34:56] INFO    Connected and monitoring. Polling every 5s.  │
+│ [12:34:51] SUCCESS Minted 100 tokens — tx: 5Cmf...8uSk         │
+├─────────────────────────────────────────────────────────────────┤
+│ [M] Mint  [B] Burn  [P] Pause  [F] Freeze  [T] Thaw  [Q] Quit │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Documentation

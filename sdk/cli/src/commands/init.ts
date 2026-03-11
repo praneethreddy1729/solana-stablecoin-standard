@@ -58,11 +58,11 @@ export const initCommand = new Command("init")
       }
 
       // Apply sensible defaults for named presets when name/symbol not provided
-      const presetDefaults: Record<number, { name: string; symbol: string }> = {
-        [Preset.SSS_1 as number]: { name: "SSS-1 Stablecoin", symbol: "SSS1" },
-        [Preset.SSS_2 as number]: { name: "SSS-2 Stablecoin", symbol: "SSS2" },
+      const presetDefaults: Record<string, { name: string; symbol: string }> = {
+        [Preset.SSS_1]: { name: "SSS-1 Stablecoin", symbol: "SSS1" },
+        [Preset.SSS_2]: { name: "SSS-2 Stablecoin", symbol: "SSS2" },
       };
-      const defaults = presetDefaults[resolvedPreset as number] ?? { name: "", symbol: "" };
+      const defaults = presetDefaults[resolvedPreset as string] ?? { name: "", symbol: "" };
 
       name = opts.name ?? defaults.name;
       symbol = opts.symbol ?? defaults.symbol;

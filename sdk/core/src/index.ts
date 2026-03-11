@@ -44,5 +44,18 @@ export {
   parseSSSError,
   type SSSErrorInfo,
 } from "./errors";
+export {
+  OraclePriceGuard,
+  PYTH_FEED_IDS,
+  pythPriceToNumber,
+  fetchPythHermesPrice,
+  fetchPythOnChainPrice,
+  type PriceGuardConfig,
+  type PriceCheckResult,
+  type DepegAlert,
+  type OracleGuardStatus,
+  type PriceHistoryEntry,
+  type PythPriceData,
+} from "./oracle";
 export { BN } from "@coral-xyz/anchor";
 export { PublicKey } from "@solana/web3.js";

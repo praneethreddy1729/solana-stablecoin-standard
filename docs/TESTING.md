@@ -199,20 +199,34 @@ initialize -> assign roles -> set quota -> mint -> burn -> freeze -> thaw -> pau
 Single end-to-end test covering the full SSS-2 lifecycle:
 initialize (with hook + delegate) -> setup ExtraAccountMetas -> assign roles -> mint -> transfer -> blacklist (with reason) -> verify transfer blocked -> seize (via Seizer role) -> verify seized
 
-## Fuzz Testing (Planned/Stub)
+## Property-Based / Fuzz Testing
 
-Fuzz target stubs for six instruction categories are scaffolded in `trident-tests/fuzz_tests/fuzz_sss_token.rs` using the [Trident](https://ackee.xyz/trident/docs/latest/) framework. **These are currently empty module stubs** -- the invariants are documented below but the fuzz logic is not yet implemented. They compile-gate behind `#[cfg(feature = "fuzz")]` so they do not affect normal builds.
+Property-based test invariants are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` with planned migration to the [Trident](https://ackee.xyz/trident/docs/latest/) framework when Anchor 0.32 compatibility is available. Current coverage relies on 395+ integration tests covering the same invariants, supplemented by **46 property-based test functions** that exercise ~25,000+ randomized iterations against a local simulation of on-chain logic.
 
-### Planned Fuzz Targets and Invariants
+### Status
 
-| Target | Instruction(s) | Planned Invariants |
-|--------|----------------|-------------------|
-| `fuzz_initialize` | `initialize` | Config PDA derivation, decimals <= 18, name/symbol/URI bounds, extension flags |
-| `fuzz_mint` | `mint` | Quota enforcement (minted_amount + amount <= quota), checked_add overflow, supply tracking, pause rejection |
-| `fuzz_burn` | `burn` | Cannot burn > balance, supply decreases by exact amount, pause rejection |
-| `fuzz_roles` | `update_roles` | Authority-only access, role type range 0-6, deactivated role rejection |
-| `fuzz_blacklist` | `add_to_blacklist`, `remove_from_blacklist`, `seize` | Sender/receiver blacklist enforcement, seize bypass via permanent delegate, reason string <= 64 bytes |
-| `fuzz_attestation` | `attest_reserves` | u128 intermediate ratio calc no overflow, auto-pause when reserves < supply, auto-unpause when reserves >= supply, positive expiry |
+The Trident fuzz framework does not yet support Anchor 0.32.x. Rather than leaving empty scaffolds, we implemented real property-based tests using standard Rust `#[test]` infrastructure with a deterministic xorshift64 PRNG. These tests validate the exact same invariants a Trident harness would check, using simulated instruction logic that mirrors the on-chain handlers. When Trident compatibility arrives, each `simulate_*` function maps directly to a Trident `IxOps::check()` implementation.
+
+### Fuzz Modules and Invariants (46 tests)
+
+| Module | Tests | Instruction(s) | Invariants Verified |
+|--------|-------|----------------|-------------------|
+| `fuzz_initialize` | 6 | `initialize` | Decimals [0,18] bounds, name/symbol/URI length limits, compliance_level derivation from flags, config initial state (paused=false) |
+| `fuzz_mint` | 8 | `mint` | Zero amount rejection, pause/attestation-pause blocking, inactive role rejection, quota enforcement at exact boundaries, u64 overflow protection, supply tracking consistency |
+| `fuzz_burn` | 5 | `burn` | Zero burn rejection, underflow prevention (amount > balance), pause checks, monotonically decreasing supply, exact boundary values |
+| `fuzz_roles` | 6 | `update_roles` | Invalid role_type (>=7) rejection, activation/deactivation correctness, toggle idempotency, independent role holders, deactivated role blocks actions, PDA seed uniqueness |
+| `fuzz_blacklist` | 7 | `add/remove_from_blacklist`, `seize` | Reason string <=64 bytes, SSS-1 compliance rejection, sender+receiver blocking, removal restores transfers, seize bypasses blacklist, remove non-blacklisted fails, random add/remove sequence consistency |
+| `fuzz_attestation` | 11 | `attest_reserves` | Non-positive expiration rejection, URI <=256 bytes, auto-pause when reserves < supply, exact boundary (reserve==supply => not paused), u128 ratio calculation no overflow, ratio accuracy verification, zero supply = 100%, expiry timestamp arithmetic, independence from manual pause, inactive attestor rejection, random sequential attestation consistency |
+| `fuzz_cross_module` | 3 | Multiple | Token conservation (minted - burned == supply), dual pause flag blocks all operations, failure atomicity (no partial state updates) |
+
+### Migration Path to Trident
+
+When Trident supports Anchor 0.32.x:
+
+1. Each `simulate_*` function becomes the body of `IxOps::check()` for that instruction.
+2. Random input generation (`Xorshift64`) is replaced by Trident's built-in fuzzer (honggfuzz/AFL).
+3. The `struct FuzzInitArgs` / `MinterState` / etc. map to Trident's `FuzzAccounts` and `IxData` types.
+4. Invariant assertions remain identical -- they are the property specifications.
 
 ## Test Setup Pattern
 

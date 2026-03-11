@@ -17,6 +17,7 @@ import { acceptAuthorityCommand } from "./commands/accept-authority";
 import { cancelAuthorityTransferCommand } from "./commands/cancel-authority-transfer";
 import { updateTreasuryCommand } from "./commands/update-treasury";
 import { attestReservesCommand } from "./commands/attest-reserves";
+import { oracleCommand } from "./commands/oracle";
 
 const program = new Command();
 
@@ -44,5 +45,6 @@ program.addCommand(acceptAuthorityCommand);
 program.addCommand(cancelAuthorityTransferCommand);
 program.addCommand(updateTreasuryCommand);
 program.addCommand(attestReservesCommand);
+program.addCommand(oracleCommand);
 
 program.parse();
