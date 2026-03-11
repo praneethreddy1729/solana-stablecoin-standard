@@ -29,12 +29,22 @@ export async function sendWebhook(
   const body = JSON.stringify(payload);
 
   // Compute HMAC-SHA256 signature if WEBHOOK_SECRET is configured.
-  // Recipients should verify by computing HMAC-SHA256(raw_body, secret) and
-  // comparing with the X-Webhook-Signature header using a timing-safe comparison.
+  // The signature is computed over `${timestamp}.${body}` to prevent replay attacks.
+  // Recipients should:
+  //   1. Extract X-SSS-Timestamp and X-SSS-Signature headers
+  //   2. Compute HMAC-SHA256(`${timestamp}.${rawBody}`, secret)
+  //   3. Compare with X-SSS-Signature using a timing-safe comparison
+  //   4. Reject if timestamp is too old (e.g., > 5 minutes)
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (WEBHOOK_SECRET) {
-    const signature = crypto.createHmac("sha256", WEBHOOK_SECRET).update(body).digest("hex");
-    headers["X-Webhook-Signature"] = signature;
+    const unixTimestamp = Math.floor(Date.now() / 1000).toString();
+    const signaturePayload = `${unixTimestamp}.${body}`;
+    const signature = crypto
+      .createHmac("sha256", WEBHOOK_SECRET)
+      .update(signaturePayload)
+      .digest("hex");
+    headers["X-SSS-Signature"] = signature;
+    headers["X-SSS-Timestamp"] = unixTimestamp;
   }
 
   for (let attempt = 0; attempt < retries; attempt++) {
