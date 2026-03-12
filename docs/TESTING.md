@@ -4,7 +4,7 @@
 
 The test suite validates all SSS-1 and SSS-2 functionality through Anchor integration tests. Tests run against a local Solana validator with both programs deployed.
 
-**Total: 603 tests** (383 integration + 173 SDK unit + 47 property-based) across 16 integration test files + SDK unit tests + property-based fuzz tests covering all instructions, role checks, compliance flows, and edge cases.
+**Total: 606 tests** (386 integration + 173 SDK unit + 47 property-based) across 16 integration test files + SDK unit tests + property-based fuzz tests covering all instructions, role checks, compliance flows, and edge cases.
 
 ## Running Tests
 
@@ -50,7 +50,7 @@ tests/
   sss-transfer-hook.ts      -- Transfer hook tests (11 tests)
   admin-extended.ts         -- Extended admin/role tests (15 tests)
   authority-pause-extended.ts -- Authority & pause tests (30 tests)
-  compliance-extended.ts    -- Compliance flow tests (35 tests)
+  compliance-extended.ts    -- Compliance flow tests (38 tests)
   edge-cases.ts             -- Edge case coverage (17 tests)
   multi-user.ts             -- Multi-user scenarios (15 tests)
   invariants.ts             -- Invariant checks (11 tests)
@@ -159,13 +159,13 @@ Full lifecycle scenarios covering various combinations of SSS-1 and SSS-2 featur
 
 Extended coverage for authority transfer edge cases and pause/unpause interaction with all operations.
 
-### compliance-extended.ts (35 tests)
+### compliance-extended.ts (38 tests)
 
 Comprehensive compliance testing including blacklist reason validation, CPI flow edge cases, and seize permission checks.
 
-### role-matrix.ts (47 tests)
+### role-matrix.ts (98 tests, dynamically generated)
 
-Full role permission matrix ensuring every instruction correctly accepts authorized roles and rejects unauthorized ones.
+Full role permission matrix ensuring every instruction correctly accepts authorized roles and rejects unauthorized ones. Uses `for` loops to generate per-role rejection tests dynamically.
 
 ### token-ops-extended.ts (40 tests)
 
@@ -190,19 +190,19 @@ Tests for the reserve attestation and auto-pause mechanism:
 - Attestation interaction with manual pause/unpause
 - Edge cases for reserve amounts at boundary values
 
-### e2e-sss1.ts (1 test)
+### e2e-sss1.ts (17 tests)
 
-Single end-to-end test that exercises the complete SSS-1 lifecycle:
-initialize -> assign roles -> set quota -> mint -> burn -> freeze -> thaw -> pause -> unpause -> authority transfer
+End-to-end tests exercising the complete SSS-1 lifecycle:
+initialize -> assign roles -> set quota -> mint -> verify balance -> burn -> verify balance -> freeze -> reject mint to frozen -> thaw -> pause -> reject mint while paused -> unpause -> authority transfer -> accept -> verify new authority -> final state check
 
-### e2e-sss2.ts (1 test)
+### e2e-sss2.ts (13 tests)
 
-Single end-to-end test covering the full SSS-2 lifecycle:
-initialize (with hook + delegate) -> setup ExtraAccountMetas -> assign roles -> mint -> transfer -> blacklist (with reason) -> verify transfer blocked -> seize (via Seizer role) -> verify seized
+End-to-end tests covering the full SSS-2 lifecycle:
+initialize (with hook + delegate) -> setup ExtraAccountMetas -> assign roles -> create ATAs + mint -> transfer between clean users -> blacklist with reason -> verify transfer blocked (sender) -> verify transfer blocked (receiver) -> seize via permanent delegate -> verify seized amount -> remove from blacklist -> transfer succeeds after removal -> final state integrity
 
 ## Property-Based / Fuzz Testing
 
-Property-based test invariants are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` with planned migration to the [Trident](https://ackee.xyz/trident/docs/latest/) framework when Anchor 0.32 compatibility is available. Current coverage relies on 383 integration tests covering the same invariants, supplemented by **47 property-based test functions** that exercise ~25,000+ randomized iterations against a local simulation of on-chain logic.
+Property-based test invariants are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` with planned migration to the [Trident](https://ackee.xyz/trident/docs/latest/) framework when Anchor 0.32 compatibility is available. Current coverage relies on 386 integration tests covering the same invariants, supplemented by **47 property-based test functions** that exercise ~25,000+ randomized iterations against a local simulation of on-chain logic.
 
 ### Status
 

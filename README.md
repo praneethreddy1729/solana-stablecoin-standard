@@ -1,12 +1,12 @@
 # Solana Stablecoin Standard (SSS)
 
-A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 603 tests, 19 documentation files (4,159 lines), and a full-stack operational toolkit.**
+A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 606 tests, 19 documentation files (4,159 lines), and a full-stack operational toolkit.**
 
 | Metric | Count |
 |--------|------:|
 | On-chain instructions | **23** (17 sss-token + 5 instructions + fallback in hook) |
 | Role types | **7** (Minter, Burner, Pauser, Freezer, Blacklister, Seizer, Attestor) |
-| Tests | **603** (383 integration + 173 SDK unit + 47 property-based) across 24 files |
+| Tests | **606** (386 integration + 173 SDK unit + 47 property-based) across 24 files |
 | Error variants | **42** (35 sss-token + 7 hook) |
 | Anchor events | **17** (every state-changing instruction) |
 | CLI commands | **18** |
@@ -38,7 +38,7 @@ yarn install
 # 2. Build both programs
 anchor build
 
-# 3. Run all 603 tests (starts local validator automatically)
+# 3. Run all 606 tests (starts local validator automatically)
 anchor test
 
 # 4. Create an SSS-1 stablecoin via CLI
@@ -344,7 +344,7 @@ The script performs the following operations against the deployed programs:
 
 All six transactions are signed and submitted to devnet, with explorer links printed for each.
 
-> **Note:** Devnet currently runs Agave 3.0.x which has a known SIMD-0219 bug affecting Token-2022 metadata reallocation ([anza-xyz/agave#9799](https://github.com/anza-xyz/agave/issues/9799)). The `initialize` instruction uses Token-2022's `token_metadata_initialize` which triggers a metadata realloc that fails under SIMD-0219. This feature is deactivated in the local test validator via `Anchor.toml`, but cannot be deactivated on devnet. The programs themselves are deployed and verified as shown above; all 603 tests pass on localnet with the feature deactivated.
+> **Note:** Devnet currently runs Agave 3.0.x which has a known SIMD-0219 bug affecting Token-2022 metadata reallocation ([anza-xyz/agave#9799](https://github.com/anza-xyz/agave/issues/9799)). The `initialize` instruction uses Token-2022's `token_metadata_initialize` which triggers a metadata realloc that fails under SIMD-0219. This feature is deactivated in the local test validator via `Anchor.toml`, but cannot be deactivated on devnet. The programs themselves are deployed and verified as shown above; all 606 tests pass on localnet with the feature deactivated.
 
 ---
 
@@ -756,12 +756,12 @@ npx ts-node src/index.ts --mint <MINT_ADDRESS> --rpc https://api.devnet.solana.c
 
 ---
 
-## Testing (603 Tests)
+## Testing (606 Tests)
 
 ### Run All Tests
 
 ```bash
-# Integration tests (383 passing, starts local validator)
+# Integration tests (386 passing, starts local validator)
 anchor test
 
 # SDK unit tests (173 passing)
@@ -779,7 +779,7 @@ cargo test --manifest-path trident-tests/Cargo.toml
 | Transfer hook + blacklist | 11 | `sss-transfer-hook.ts` |
 | Role matrix (7 roles x permissions) | 47 | `role-matrix.ts` |
 | Token operations extended | 40 | `token-ops-extended.ts` |
-| Compliance extended | 35 | `compliance-extended.ts` |
+| Compliance extended | 38 | `compliance-extended.ts` |
 | Authority + pause extended | 30 | `authority-pause-extended.ts` |
 | SDK integration | 26 | `sdk-integration.ts` |
 | E2E SSS-1 lifecycle | 17 | `e2e-sss1.ts` |
@@ -791,7 +791,7 @@ cargo test --manifest-path trident-tests/Cargo.toml
 | Reserve attestation | 11 | `reserve-attestation.ts` |
 | Full lifecycle | 8 | `full-lifecycle.ts` |
 | Registry | 2 | `registry.ts` |
-| **Subtotal (integration)** | **383** | **16 files** |
+| **Subtotal (integration)** | **386** | **16 files** |
 | SDK unit tests | 48 | `sdk.test.ts` |
 | PDA derivation tests | 36 | `pda.test.ts` |
 | Error parsing tests | 26 | `errors.test.ts` |
@@ -801,7 +801,7 @@ cargo test --manifest-path trident-tests/Cargo.toml
 | **Subtotal (SDK unit)** | **173** | **6 files** |
 | Property-based fuzz tests | 47 | `fuzz_sss_token.rs` |
 | **Subtotal (property)** | **47** | **1 file** |
-| **Total** | **603** | **24 files** |
+| **Total** | **606** | **24 files** |
 
 ### What Tests Verify
 
@@ -937,7 +937,7 @@ solana-stablecoin-standard/
       tests/                       173 tests (48 SDK + 25 oracle + 36 pda + 26 errors + 20 types + 18 constants)
     cli/                           CLI tool (commander.js, 18 commands)
     tui/                           Interactive admin TUI (blessed)
-  tests/                           383 integration tests across 16 files
+  tests/                           386 integration tests across 16 files
   backend/                         Fastify REST API (10 endpoints, port 3001)
     src/
       routes/                      5 route modules

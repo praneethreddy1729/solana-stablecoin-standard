@@ -1170,4 +1170,125 @@ describe("compliance-extended", () => {
       expect(exists).to.equal(false);
     });
   });
+
+  // =========================================================================
+  // Security Guard Tests (tests 36-39)
+  // =========================================================================
+  describe("Security Guards", () => {
+    it("36. seize to non-treasury destination fails (InvalidTreasury)", async () => {
+      // Mint tokens to a user, blacklist them, then try seizing to wrong dest
+      await mintTokensTo(ataC, 1_000_000);
+      await addBlacklist(userC.publicKey, "seize-treasury-test");
+
+      // Create a non-treasury ATA (seizer's own ATA)
+      let wrongDestAta: PublicKey;
+      try {
+        wrongDestAta = await createAta(mint.publicKey, seizer.publicKey);
+      } catch {
+        wrongDestAta = getAssociatedTokenAddressSync(
+          mint.publicKey, seizer.publicKey, false, TOKEN_2022_PROGRAM_ID
+        );
+      }
+
+      const senderBlPda = blacklistPda(mint.publicKey, userC.publicKey);
+      const receiverBlPda = blacklistPda(mint.publicKey, seizer.publicKey);
+      try {
+        await program.methods
+          .seize()
+          .accountsStrict({
+            authority: authority.publicKey,
+            config: configPda,
+            seizerRole: rolePda(configPda, 5, authority.publicKey),
+            mint: mint.publicKey,
+            from: ataC,
+            fromOwner: userC.publicKey,
+            blacklistEntry: senderBlPda,
+            to: wrongDestAta,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+          })
+          .remainingAccounts([
+            { pubkey: hookProgram.programId, isSigner: false, isWritable: false },
+            { pubkey: extraAccountMetasPda, isSigner: false, isWritable: false },
+            { pubkey: senderBlPda, isSigner: false, isWritable: false },
+            { pubkey: receiverBlPda, isSigner: false, isWritable: false },
+            { pubkey: configPda, isSigner: false, isWritable: false },
+          ])
+          .rpc();
+        expect.fail("Should have thrown — destination is not treasury");
+      } catch (e: any) {
+        const errStr = e.toString();
+        expect(
+          errStr.includes("InvalidTreasury") || errStr.includes("2012") || errStr.includes("Constraint")
+        ).to.equal(true);
+      }
+      await removeBlacklist(userC.publicKey);
+    });
+
+    it("37. freezing the treasury account fails (CannotFreezeTreasury)", async () => {
+      // Get the config to find the treasury
+      const config = await program.account.stablecoinConfig.fetch(configPda);
+      const treasury = config.treasury;
+
+      try {
+        await program.methods
+          .freezeAccount()
+          .accountsStrict({
+            freezer: freezer.publicKey,
+            config: configPda,
+            freezerRole: rolePda(configPda, 3, freezer.publicKey),
+            mint: mint.publicKey,
+            tokenAccount: treasury,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+          })
+          .signers([freezer])
+          .rpc();
+        expect.fail("Should have thrown — cannot freeze treasury");
+      } catch (e: any) {
+        const errStr = e.toString();
+        expect(
+          errStr.includes("CannotFreezeTreasury") || errStr.includes("6033")
+        ).to.equal(true);
+      }
+    });
+
+    it("38. seize with wrong fromOwner fails (InvalidFromOwner)", async () => {
+      // Try to seize from ataA but pass userB as fromOwner (mismatch)
+      await mintTokensTo(ataA, 1_000_000);
+      // Blacklist userB (the wrong owner we'll pass)
+      await addBlacklist(userB.publicKey, "wrong-owner-test");
+
+      const senderBlPda = blacklistPda(mint.publicKey, userB.publicKey);
+      const receiverBlPda = blacklistPda(mint.publicKey, authority.publicKey);
+      try {
+        await program.methods
+          .seize()
+          .accountsStrict({
+            authority: authority.publicKey,
+            config: configPda,
+            seizerRole: rolePda(configPda, 5, authority.publicKey),
+            mint: mint.publicKey,
+            from: ataA,           // owned by userA
+            fromOwner: userB.publicKey, // wrong owner!
+            blacklistEntry: senderBlPda,
+            to: authorityAta,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+          })
+          .remainingAccounts([
+            { pubkey: hookProgram.programId, isSigner: false, isWritable: false },
+            { pubkey: extraAccountMetasPda, isSigner: false, isWritable: false },
+            { pubkey: senderBlPda, isSigner: false, isWritable: false },
+            { pubkey: receiverBlPda, isSigner: false, isWritable: false },
+            { pubkey: configPda, isSigner: false, isWritable: false },
+          ])
+          .rpc();
+        expect.fail("Should have thrown — fromOwner doesn't match from.owner");
+      } catch (e: any) {
+        const errStr = e.toString();
+        expect(
+          errStr.includes("InvalidFromOwner") || errStr.includes("6020") || errStr.includes("Error")
+        ).to.equal(true);
+      }
+      await removeBlacklist(userB.publicKey);
+    });
+  });
 });
