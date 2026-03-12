@@ -26,7 +26,7 @@ This self-audit was conducted through:
 |------|-------|-------------|
 | Integration tests | 386 | Full instruction lifecycle on local validator |
 | SDK unit tests | 173 | Input validation, PDA derivation, error mapping |
-| Property tests | 47 | Invariant checks across randomized inputs |
+| Property tests | 49 | Invariant checks across randomized inputs |
 | **Total** | **606** | |
 
 ---

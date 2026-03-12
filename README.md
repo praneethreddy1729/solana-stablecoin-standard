@@ -1,18 +1,18 @@
 # Solana Stablecoin Standard (SSS)
 
-A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 606 tests, 20 documentation files (4,957 lines), and a full-stack operational toolkit.**
+A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 606 tests, 20 documentation files (5,119 lines), and a full-stack operational toolkit.**
 
 | Metric | Count |
 |--------|------:|
 | On-chain instructions | **23** (17 sss-token + 5 instructions + fallback in hook) |
 | Role types | **7** (Minter, Burner, Pauser, Freezer, Blacklister, Seizer, Attestor) |
 | Tests | **606** (386 integration + 173 SDK unit + 47 property-based) across 24 files |
-| Error variants | **42** (35 sss-token + 7 hook) |
-| Anchor events | **17** (every state-changing instruction) |
+| Error variants | **43** (35 sss-token + 8 hook) |
+| Anchor events | **20** (every state-changing instruction) |
 | CLI commands | **20** |
 | Backend API endpoints | **11** |
-| Frontend components | **19** React/Next.js components |
-| Documentation files | **20** (4,957 lines) |
+| Frontend components | **17** React/Next.js components |
+| Documentation files | **20** (5,119 lines) |
 | Rust LoC (programs) | **2,792** |
 | TypeScript LoC (SDK/CLI/backend/frontend) | **6,477** |
 | Devnet programs deployed | **2** |
@@ -203,9 +203,9 @@ Unlike simpler implementations that only check the sender, the SSS transfer hook
 
 ## Security
 
-### 3 Full Security Audits Completed
+### Internal Security Review (12 Findings, All Resolved)
 
-Three independent security audits were performed covering all 23 instructions, role-based access control, CPI boundary validation, arithmetic safety, and Token-2022 extension interactions. All CRITICAL, HIGH, MEDIUM, and LOW issues identified have been resolved.
+A comprehensive self-audit was conducted covering all 23 instructions, role-based access control, CPI boundary validation, arithmetic safety, and Token-2022 extension interactions. 12 findings were identified (1 Critical, 3 High, 3 Medium, 2 Low, 3 Informational) — all CRITICAL, HIGH, MEDIUM, and LOW issues have been resolved. See [docs/SECURITY-AUDIT.md](docs/SECURITY-AUDIT.md) for the full report.
 
 ### Access Control Model
 
@@ -867,7 +867,7 @@ Fuzz target stubs for six instruction categories are defined in `trident-tests/f
 | 6033 | `CannotFreezeTreasury` | Cannot freeze the treasury account |
 | 6034 | `InvalidTokenProgram` | Invalid token program: must be Token-2022 |
 
-### sss-transfer-hook Program Errors (7)
+### sss-transfer-hook Program Errors (8)
 
 | Code | Name | Message |
 |:----:|------|---------|
@@ -878,16 +878,18 @@ Fuzz target stubs for six instruction categories are defined in `trident-tests/f
 | 6004 | `AlreadyBlacklisted` | Already blacklisted |
 | 6005 | `NotBlacklisted` | Not blacklisted |
 | 6006 | `Unauthorized` | Unauthorized |
+| 6007 | `TokenPausedByAttestation` | Token paused by reserve attestation |
 
 ---
 
-## Events (17)
+## Events (20)
 
 All state-changing instructions emit Anchor events for off-chain indexing.
 
 | Event | Fields | Emitted By |
 |-------|--------|------------|
 | `StablecoinInitialized` | mint, authority, decimals, name, symbol, enable_transfer_hook, enable_permanent_delegate, default_account_frozen | `initialize` |
+| `StablecoinRegistered` | mint, issuer, compliance_level, name, symbol | `initialize` |
 | `TokensMinted` | mint, to, amount, minter | `mint` |
 | `TokensBurned` | mint, from, amount, burner | `burn` |
 | `AccountFrozen` | mint, account, freezer | `freeze_account` |
@@ -904,6 +906,8 @@ All state-changing instructions emit Anchor events for off-chain indexing.
 | `TokensSeized` | mint, from, to, amount, seizer | `seize` |
 | `ReservesAttested` | config, attestor, reserve_amount, token_supply, collateralization_ratio_bps, auto_paused, timestamp | `attest_reserves` |
 | `TreasuryUpdated` | config, old_treasury, new_treasury, authority | `update_treasury` |
+| `ExtraAccountMetasInitialized` | mint | `initialize_extra_account_metas` (hook) |
+| `ExtraAccountMetasUpdated` | mint | `update_extra_account_metas` (hook) |
 
 ---
 
@@ -912,19 +916,19 @@ All state-changing instructions emit Anchor events for off-chain indexing.
 ```
 solana-stablecoin-standard/
   programs/
-    sss-token/                     Main stablecoin program (2,854 LoC Rust)
+    sss-token/                     Main stablecoin program
       src/
         instructions/              17 instruction handlers
         state/                     StablecoinConfig, RoleAssignment, RegistryEntry, ReserveAttestation
         errors.rs                  35 error variants (6000-6034)
-        events.rs                  17 event structs
+        events.rs                  18 event structs
         constants.rs               PDA seeds, account sizes, CPI discriminators
         utils/                     Validation, PDA, Token-2022 helpers
     sss-transfer-hook/             Transfer hook program
       src/
         instructions/              5 instruction handlers + fallback
         state.rs                   BlacklistEntry
-        errors.rs                  7 error variants (6000-6006)
+        errors.rs                  8 error variants (6000-6007)
   sdk/
     core/                          TypeScript SDK
       src/
@@ -937,21 +941,21 @@ solana-stablecoin-standard/
       tests/                       173 tests (48 SDK + 25 oracle + 36 pda + 26 errors + 20 types + 18 constants)
     cli/                           CLI tool (commander.js, 20 commands)
     tui/                           Interactive admin TUI (blessed)
-  tests/                           386 integration tests across 16 files
+  tests/                           386 integration tests across 16 files + SDK + property tests
   backend/                         Fastify REST API (11 endpoints, port 3001)
     src/
       routes/                      5 route modules
       services/                    Compliance, event-poller, webhook (HMAC-SHA256)
       middleware/                   API key authentication
-  frontend/                        Next.js dashboard (19 components)
-  docs/                            20 documentation files (4,957 lines)
+  frontend/                        Next.js dashboard (17 components)
+  docs/                            20 documentation files (5,119 lines)
   scripts/                         Devnet proof script
   target/                          Build artifacts (IDL, types, .so)
 ```
 
 ---
 
-## Documentation (20 Files, 4,957 Lines)
+## Documentation (20 Files, 5,119 Lines)
 
 | Document | Description |
 |----------|-------------|

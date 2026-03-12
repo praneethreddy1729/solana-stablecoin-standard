@@ -122,7 +122,7 @@ Tests organized by describe block:
 **seize (SSS-2 on SSS-1)** (1 test)
 - Rejects seize on SSS-1 token (PermanentDelegateNotEnabled)
 
-### sss-transfer-hook.ts (5 tests)
+### sss-transfer-hook.ts (11 tests)
 
 Runs against a full SSS-2 token (transfer hook + permanent delegate enabled).
 

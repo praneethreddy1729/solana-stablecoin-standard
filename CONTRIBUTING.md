@@ -40,7 +40,7 @@ yarn --version
 ## Getting Started
 
 ```bash
-git clone https://github.com/your-org/solana-stablecoin-standard.git
+git clone https://github.com/solanabr/solana-stablecoin-standard.git
 cd solana-stablecoin-standard
 yarn install
 PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/usr/bin:$HOME/.local/share/solana/install/active_release/bin:/usr/local/bin:$PATH" CC=/usr/bin/cc anchor build
