@@ -5,9 +5,7 @@ use crate::constants::*;
 use crate::errors::SSSError;
 use crate::events::TokensSeized;
 use crate::state::{RoleAssignment, RoleType, StablecoinConfig};
-use crate::utils::{
-    require_permanent_delegate_enabled, require_role_active, thaw_token_account,
-};
+use crate::utils::{require_permanent_delegate_enabled, require_role_active, thaw_token_account};
 
 /// Blacklist PDA seed used by the transfer hook program.
 /// Must match `programs/sss-transfer-hook/src/state.rs::BLACKLIST_SEED`.

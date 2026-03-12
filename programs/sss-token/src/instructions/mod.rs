@@ -16,13 +16,13 @@ pub mod update_minter_quota;
 pub mod update_roles;
 pub mod update_treasury;
 
+#[allow(ambiguous_glob_reexports)]
 pub use accept_authority::*;
 pub use add_to_blacklist::*;
 pub use attest_reserves::*;
 pub use burn::*;
 pub use cancel_authority_transfer::*;
 pub use freeze_account::*;
-#[allow(ambiguous_glob_reexports)]
 pub use initialize::*;
 pub use mint::*;
 pub use pause::*;

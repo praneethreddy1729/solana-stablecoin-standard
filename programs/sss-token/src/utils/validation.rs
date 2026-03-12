@@ -5,10 +5,7 @@ use anchor_lang::prelude::*;
 /// Require that the token is NOT paused (neither manually nor by attestation)
 pub fn require_not_paused(config: &StablecoinConfig) -> Result<()> {
     require!(!config.paused, SSSError::TokenPaused);
-    require!(
-        !config.paused_by_attestation,
-        SSSError::Undercollateralized
-    );
+    require!(!config.paused_by_attestation, SSSError::Undercollateralized);
     Ok(())
 }
 
@@ -33,4 +30,3 @@ pub fn require_permanent_delegate_enabled(config: &StablecoinConfig) -> Result<(
     );
     Ok(())
 }
-

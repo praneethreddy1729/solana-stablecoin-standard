@@ -67,10 +67,7 @@ fn validate_config(config: &AccountInfo, mint_key: &Pubkey) -> Result<()> {
     // Verify PDA derivation
     let (expected_config, _) =
         Pubkey::find_program_address(&[b"config", mint_key.as_ref()], &SSS_TOKEN_PROGRAM_ID);
-    require!(
-        config.key() == expected_config,
-        HookError::Unauthorized
-    );
+    require!(config.key() == expected_config, HookError::Unauthorized);
 
     Ok(())
 }
@@ -111,7 +108,9 @@ pub fn handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
     }
     // Check attestation-triggered pause (undercollateralized reserves) separately
     // so callers get a more specific error and can distinguish the two states
-    if config_data.len() > CONFIG_PAUSED_BY_ATTESTATION_OFFSET && config_data[CONFIG_PAUSED_BY_ATTESTATION_OFFSET] == 1 {
+    if config_data.len() > CONFIG_PAUSED_BY_ATTESTATION_OFFSET
+        && config_data[CONFIG_PAUSED_BY_ATTESTATION_OFFSET] == 1
+    {
         return Err(HookError::TokenPausedByAttestation.into());
     }
     drop(config_data);
@@ -177,7 +176,9 @@ pub fn fallback_execute<'info>(
         return Err(HookError::TokenPaused.into());
     }
     // Check attestation-triggered pause separately for better diagnostics
-    if config_data.len() > CONFIG_PAUSED_BY_ATTESTATION_OFFSET && config_data[CONFIG_PAUSED_BY_ATTESTATION_OFFSET] == 1 {
+    if config_data.len() > CONFIG_PAUSED_BY_ATTESTATION_OFFSET
+        && config_data[CONFIG_PAUSED_BY_ATTESTATION_OFFSET] == 1
+    {
         return Err(HookError::TokenPausedByAttestation.into());
     }
     drop(config_data);
@@ -226,13 +227,18 @@ pub fn check_permanent_delegate(mint_data: &[u8], owner_delegate: &Pubkey) -> bo
     }
 
     let mut offset = MINT_EXTENSIONS_OFFSET;
-    while offset.checked_add(4).map_or(false, |end| end <= mint_data.len()) {
+    while offset
+        .checked_add(4)
+        .is_some_and(|end| end <= mint_data.len())
+    {
         let ext_type = u16::from_le_bytes([mint_data[offset], mint_data[offset + 1]]);
         let ext_len = u16::from_le_bytes([mint_data[offset + 2], mint_data[offset + 3]]) as usize;
 
         if ext_type == PERMANENT_DELEGATE_EXTENSION_TYPE
             && ext_len >= 32
-            && offset.checked_add(4 + 32).map_or(false, |end| end <= mint_data.len())
+            && offset
+                .checked_add(4 + 32)
+                .is_some_and(|end| end <= mint_data.len())
         {
             let delegate_bytes = &mint_data[offset + 4..offset + 4 + 32];
             return delegate_bytes == owner_delegate.as_ref();

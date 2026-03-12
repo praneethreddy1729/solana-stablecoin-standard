@@ -28,7 +28,8 @@
     "src/idl/"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json",
+    "test": "jest"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",

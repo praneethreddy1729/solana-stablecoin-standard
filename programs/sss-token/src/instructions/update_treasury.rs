@@ -22,10 +22,7 @@ pub struct UpdateTreasury<'info> {
 /// Authority-only operation.
 pub fn handler(ctx: Context<UpdateTreasury>, new_treasury: Pubkey) -> Result<()> {
     // Treasury must not be zero address — seize would fail
-    require!(
-        new_treasury != Pubkey::default(),
-        SSSError::InvalidTreasury
-    );
+    require!(new_treasury != Pubkey::default(), SSSError::InvalidTreasury);
 
     // Note: We validate the treasury is not the zero address. Full ATA validation
     // (checking it's an initialized Token-2022 account for this mint) would require

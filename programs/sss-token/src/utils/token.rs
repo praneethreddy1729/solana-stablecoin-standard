@@ -55,4 +55,3 @@ pub fn thaw_token_account<'info>(
         CpiContext::new_with_signer(token_program.to_account_info(), cpi_accounts, signer_seeds);
     token_2022::thaw_account(cpi_ctx)
 }
-

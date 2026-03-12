@@ -115,6 +115,11 @@ pub mod sss_token {
         expires_in_seconds: i64,
         attestation_uri: String,
     ) -> Result<()> {
-        instructions::attest_reserves::handler(ctx, reserve_amount, expires_in_seconds, attestation_uri)
+        instructions::attest_reserves::handler(
+            ctx,
+            reserve_amount,
+            expires_in_seconds,
+            attestation_uri,
+        )
     }
 }

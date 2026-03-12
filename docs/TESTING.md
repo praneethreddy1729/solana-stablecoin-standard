@@ -4,7 +4,7 @@
 
 The test suite validates all SSS-1 and SSS-2 functionality through Anchor integration tests. Tests run against a local Solana validator with both programs deployed.
 
-**Total: 503 tests** (383 integration + 73 SDK unit + 47 property-based) across 16 integration test files + SDK unit tests + property-based fuzz tests covering all instructions, role checks, compliance flows, and edge cases.
+**Total: 603 tests** (383 integration + 173 SDK unit + 47 property-based) across 16 integration test files + SDK unit tests + property-based fuzz tests covering all instructions, role checks, compliance flows, and edge cases.
 
 ## Running Tests
 
@@ -47,7 +47,7 @@ Tests are located in the `tests/` directory:
 ```
 tests/
   sss-token.ts              -- Main test suite (34 tests)
-  sss-transfer-hook.ts      -- Transfer hook tests (5 tests)
+  sss-transfer-hook.ts      -- Transfer hook tests (11 tests)
   admin-extended.ts         -- Extended admin/role tests (15 tests)
   authority-pause-extended.ts -- Authority & pause tests (30 tests)
   compliance-extended.ts    -- Compliance flow tests (35 tests)
@@ -55,13 +55,13 @@ tests/
   multi-user.ts             -- Multi-user scenarios (15 tests)
   invariants.ts             -- Invariant checks (11 tests)
   full-lifecycle.ts         -- Full lifecycle scenarios (8 tests)
-  role-matrix.ts            -- Role permission matrix (47 tests)
+  role-matrix.ts            -- Role permission matrix (98 tests, dynamically generated)
   token-ops-extended.ts     -- Extended token operations (40 tests)
   sdk-integration.ts        -- SDK integration tests (26 tests)
   reserve-attestation.ts    -- Reserve attestation tests (11 tests)
-  registry.ts               -- Stablecoin registry tests
-  e2e-sss1.ts               -- End-to-end SSS-1 lifecycle (1 test)
-  e2e-sss2.ts               -- End-to-end SSS-2 lifecycle (1 test)
+  registry.ts               -- Stablecoin registry tests (2 tests)
+  e2e-sss1.ts               -- End-to-end SSS-1 lifecycle (17 tests)
+  e2e-sss2.ts               -- End-to-end SSS-2 lifecycle (13 tests)
 ```
 
 ### sss-token.ts (34 tests)
@@ -202,13 +202,13 @@ initialize (with hook + delegate) -> setup ExtraAccountMetas -> assign roles -> 
 
 ## Property-Based / Fuzz Testing
 
-Property-based test invariants are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` with planned migration to the [Trident](https://ackee.xyz/trident/docs/latest/) framework when Anchor 0.32 compatibility is available. Current coverage relies on 395+ integration tests covering the same invariants, supplemented by **46 property-based test functions** that exercise ~25,000+ randomized iterations against a local simulation of on-chain logic.
+Property-based test invariants are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` with planned migration to the [Trident](https://ackee.xyz/trident/docs/latest/) framework when Anchor 0.32 compatibility is available. Current coverage relies on 383 integration tests covering the same invariants, supplemented by **47 property-based test functions** that exercise ~25,000+ randomized iterations against a local simulation of on-chain logic.
 
 ### Status
 
 The Trident fuzz framework does not yet support Anchor 0.32.x. Rather than leaving empty scaffolds, we implemented real property-based tests using standard Rust `#[test]` infrastructure with a deterministic xorshift64 PRNG. These tests validate the exact same invariants a Trident harness would check, using simulated instruction logic that mirrors the on-chain handlers. When Trident compatibility arrives, each `simulate_*` function maps directly to a Trident `IxOps::check()` implementation.
 
-### Fuzz Modules and Invariants (46 tests)
+### Fuzz Modules and Invariants (47 tests)
 
 | Module | Tests | Instruction(s) | Invariants Verified |
 |--------|-------|----------------|-------------------|

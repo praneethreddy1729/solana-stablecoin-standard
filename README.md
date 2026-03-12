@@ -1,10 +1,10 @@
 # Solana Stablecoin Standard (SSS)
 
-A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 603 tests, 17 documentation files (4,159 lines), and a full-stack operational toolkit.**
+A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 603 tests, 19 documentation files (4,159 lines), and a full-stack operational toolkit.**
 
 | Metric | Count |
 |--------|------:|
-| On-chain instructions | **23** (17 sss-token + 6 hook) |
+| On-chain instructions | **23** (17 sss-token + 5 instructions + fallback in hook) |
 | Role types | **7** (Minter, Burner, Pauser, Freezer, Blacklister, Seizer, Attestor) |
 | Tests | **603** (383 integration + 173 SDK unit + 47 property-based) across 24 files |
 | Error variants | **42** (35 sss-token + 7 hook) |
@@ -138,7 +138,7 @@ flowchart TD
             B5["add/remove blacklist via CPI"]
             B6["seize / update_treasury / attest_reserves"]
         end
-        subgraph Hook["sss-transfer-hook — 6 instructions"]
+        subgraph Hook["sss-transfer-hook — 5 instructions + fallback"]
             C1["init / update ExtraAccountMetas"]
             C2["execute — blacklist + pause check"]
             C3["add / remove_from_blacklist"]
@@ -379,7 +379,7 @@ All six transactions are signed and submitted to devnet, with explorer links pri
 | `update_treasury` | Authority | Set treasury Pubkey for seized token destination |
 | `attest_reserves` | Attestor | Submit reserve proof; auto-pauses if undercollateralized |
 
-### sss-transfer-hook (6 instructions)
+### sss-transfer-hook (5 instructions + fallback)
 
 | Instruction | Description |
 |-------------|-------------|
@@ -756,7 +756,7 @@ npx ts-node src/index.ts --mint <MINT_ADDRESS> --rpc https://api.devnet.solana.c
 
 ---
 
-## Testing (503 Tests)
+## Testing (603 Tests)
 
 ### Run All Tests
 
@@ -764,7 +764,7 @@ npx ts-node src/index.ts --mint <MINT_ADDRESS> --rpc https://api.devnet.solana.c
 # Integration tests (383 passing, starts local validator)
 anchor test
 
-# SDK unit tests (73 passing)
+# SDK unit tests (173 passing)
 cd sdk/core && npx jest
 
 # Property-based tests (47 passing)
@@ -934,24 +934,24 @@ solana-stablecoin-standard/
         pda.ts                     PDA derivation helpers
         constants.ts               Program IDs, seeds
         errors.ts                  Error parsing utilities
-      tests/                       73 tests (48 SDK + 25 oracle)
+      tests/                       173 tests (48 SDK + 25 oracle + 36 pda + 26 errors + 20 types + 18 constants)
     cli/                           CLI tool (commander.js, 18 commands)
     tui/                           Interactive admin TUI (blessed)
-  tests/                           332 integration tests across 16 files
+  tests/                           383 integration tests across 16 files
   backend/                         Fastify REST API (10 endpoints, port 3001)
     src/
       routes/                      5 route modules
       services/                    Compliance, event-poller, webhook (HMAC-SHA256)
       middleware/                   API key authentication
   frontend/                        Next.js dashboard (19 components)
-  docs/                            17 documentation files (4,159 lines)
+  docs/                            19 documentation files (4,159 lines)
   scripts/                         Devnet proof script
   target/                          Build artifacts (IDL, types, .so)
 ```
 
 ---
 
-## Documentation (17 Files, 4,159 Lines)
+## Documentation (19 Files, 4,159 Lines)
 
 | Document | Description |
 |----------|-------------|
@@ -961,8 +961,10 @@ solana-stablecoin-standard/
 | [docs/SSS-3.md](docs/SSS-3.md) | SSS-3 specification (future) |
 | [docs/SDK.md](docs/SDK.md) | TypeScript SDK reference |
 | [docs/CLI.md](docs/CLI.md) | Full CLI command reference (18 commands) |
+| [docs/CONSTANTS.md](docs/CONSTANTS.md) | Program IDs, PDA seeds, and configuration constants |
 | [docs/API.md](docs/API.md) | Backend REST API reference |
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Blacklist, seizure, OFAC integration |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment instructions for localnet and devnet |
 | [docs/SECURITY.md](docs/SECURITY.md) | Security model and threat analysis |
 | [docs/TESTING.md](docs/TESTING.md) | Test suite documentation |
 | [docs/OPERATIONS.md](docs/OPERATIONS.md) | Deployment and operational guide |

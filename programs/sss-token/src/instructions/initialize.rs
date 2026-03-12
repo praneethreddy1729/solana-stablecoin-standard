@@ -259,7 +259,11 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
     let registry = &mut ctx.accounts.registry_entry;
     registry.mint = mint_key;
     registry.issuer = ctx.accounts.authority.key();
-    registry.compliance_level = if args.enable_transfer_hook && args.enable_permanent_delegate { 2 } else { 1 };
+    registry.compliance_level = if args.enable_transfer_hook && args.enable_permanent_delegate {
+        2
+    } else {
+        1
+    };
     registry.created_at = Clock::get()?.unix_timestamp;
     registry.name = args.name.clone();
     registry.symbol = args.symbol.clone();
