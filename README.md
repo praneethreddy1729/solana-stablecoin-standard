@@ -1,6 +1,6 @@
 # Solana Stablecoin Standard (SSS)
 
-A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 606 tests, 19 documentation files (4,159 lines), and a full-stack operational toolkit.**
+A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 606 tests, 20 documentation files (4,957 lines), and a full-stack operational toolkit.**
 
 | Metric | Count |
 |--------|------:|
@@ -9,10 +9,10 @@ A production-grade, two-tier stablecoin specification for Solana built on Token-
 | Tests | **606** (386 integration + 173 SDK unit + 47 property-based) across 24 files |
 | Error variants | **42** (35 sss-token + 7 hook) |
 | Anchor events | **17** (every state-changing instruction) |
-| CLI commands | **18** |
-| Backend API endpoints | **10** |
+| CLI commands | **20** |
+| Backend API endpoints | **11** |
 | Frontend components | **19** React/Next.js components |
-| Documentation files | **17** (4,159 lines) |
+| Documentation files | **20** (4,957 lines) |
 | Rust LoC (programs) | **2,854** |
 | TypeScript LoC (SDK/CLI/backend/frontend) | **6,477** |
 | Devnet programs deployed | **2** |
@@ -113,7 +113,7 @@ flowchart TD
         F3["Attestation / AuthorityTransfer / TxHistory"]
     end
 
-    subgraph Backend["Fastify Backend (10 endpoints)"]
+    subgraph Backend["Fastify Backend (11 endpoints)"]
         E1["POST /mint  ·  POST /burn"]
         E2["GET /status  ·  GET /health"]
         E3["POST /compliance/screen"]
@@ -125,7 +125,7 @@ flowchart TD
     subgraph SDK["TypeScript SDK / CLI"]
         A1["SolanaStablecoin class"]
         A2["OraclePriceGuard (Pyth)"]
-        A3["CLI — 18 commands"]
+        A3["CLI — 20 commands"]
         A4["PDA helpers + error parser"]
     end
 
@@ -620,7 +620,7 @@ try {
 
 ---
 
-## CLI (18 Commands)
+## CLI (20 Commands)
 
 ```bash
 cd sdk/cli
@@ -675,7 +675,7 @@ sss-token status --mint <MINT_ADDRESS>
 
 ---
 
-## Backend API (10 Endpoints)
+## Backend API (11 Endpoints)
 
 Fastify REST API on port 3001 with API key authentication, HMAC-signed webhook delivery, sanctions screening integration, and in-memory audit logging.
 
@@ -935,23 +935,23 @@ solana-stablecoin-standard/
         constants.ts               Program IDs, seeds
         errors.ts                  Error parsing utilities
       tests/                       173 tests (48 SDK + 25 oracle + 36 pda + 26 errors + 20 types + 18 constants)
-    cli/                           CLI tool (commander.js, 18 commands)
+    cli/                           CLI tool (commander.js, 20 commands)
     tui/                           Interactive admin TUI (blessed)
   tests/                           386 integration tests across 16 files
-  backend/                         Fastify REST API (10 endpoints, port 3001)
+  backend/                         Fastify REST API (11 endpoints, port 3001)
     src/
       routes/                      5 route modules
       services/                    Compliance, event-poller, webhook (HMAC-SHA256)
       middleware/                   API key authentication
   frontend/                        Next.js dashboard (19 components)
-  docs/                            19 documentation files (4,159 lines)
+  docs/                            20 documentation files (4,957 lines)
   scripts/                         Devnet proof script
   target/                          Build artifacts (IDL, types, .so)
 ```
 
 ---
 
-## Documentation (19 Files, 4,159 Lines)
+## Documentation (20 Files, 4,957 Lines)
 
 | Document | Description |
 |----------|-------------|
@@ -960,12 +960,13 @@ solana-stablecoin-standard/
 | [docs/SSS-2.md](docs/SSS-2.md) | SSS-2 specification details |
 | [docs/SSS-3.md](docs/SSS-3.md) | SSS-3 specification (future) |
 | [docs/SDK.md](docs/SDK.md) | TypeScript SDK reference |
-| [docs/CLI.md](docs/CLI.md) | Full CLI command reference (18 commands) |
+| [docs/CLI.md](docs/CLI.md) | Full CLI command reference (20 commands) |
 | [docs/CONSTANTS.md](docs/CONSTANTS.md) | Program IDs, PDA seeds, and configuration constants |
 | [docs/API.md](docs/API.md) | Backend REST API reference |
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Blacklist, seizure, OFAC integration |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment instructions for localnet and devnet |
 | [docs/SECURITY.md](docs/SECURITY.md) | Security model and threat analysis |
+| [docs/SECURITY-AUDIT.md](docs/SECURITY-AUDIT.md) | Security self-audit with 12 findings documented |
 | [docs/TESTING.md](docs/TESTING.md) | Test suite documentation |
 | [docs/OPERATIONS.md](docs/OPERATIONS.md) | Deployment and operational guide |
 | [docs/ORACLE.md](docs/ORACLE.md) | Oracle Price Guard with Pyth integration |

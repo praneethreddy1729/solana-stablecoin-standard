@@ -27,6 +27,7 @@ export async function statusRoutes(app: FastifyInstance): Promise<void> {
           authority: config.authority.toBase58(),
           mint: config.mint.toBase58(),
           paused: config.paused,
+          pausedByAttestation: config.pausedByAttestation,
           enableTransferHook: config.enableTransferHook,
           enablePermanentDelegate: config.enablePermanentDelegate,
           defaultAccountFrozen: config.defaultAccountFrozen,

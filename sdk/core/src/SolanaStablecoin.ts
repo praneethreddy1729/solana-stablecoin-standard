@@ -985,7 +985,7 @@ export class SolanaStablecoin {
     const [senderBlacklist] = findBlacklistPda(this.mintAddress, fromOwnerKey, this.hookProgramId);
     const [receiverBlacklist] = findBlacklistPda(this.mintAddress, toOwnerKey, this.hookProgramId);
 
-    const [seizerRole] = findRolePda(this.configPda, 5, provider.wallet.publicKey, this.program.programId);
+    const [seizerRole] = findRolePda(this.configPda, RoleType.Seizer, provider.wallet.publicKey, this.programId);
 
     return wrapError("seize", () =>
       this.program.methods

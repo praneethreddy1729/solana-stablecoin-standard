@@ -17,8 +17,12 @@ The backend is configured via environment variables:
 | `HOST` | `0.0.0.0` | Server bind address |
 | `AUTHORITY_KEYPAIR` | `~/.config/solana/id.json` | Path to authority keypair file |
 | `MINT_ADDRESS` | (required) | The mint address to manage |
-| `ENABLE_SANCTIONS_SCREENING` | `false` | Enable OFAC screening on mint |
+| `ENABLE_SANCTIONS_SCREENING` | `false` | Enable OFAC screening on mint/burn/blacklist |
 | `SANCTIONS_API_URL` | (none) | External sanctions API URL |
+| `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated list of allowed CORS origins |
+| `API_KEY` | (none) | Bearer token required on protected routes; if unset, all requests are allowed (dev mode) |
+| `RATE_LIMIT_MAX` | `100` | Maximum requests per window per IP |
+| `RATE_LIMIT_WINDOW_MS` | `60000` | Rate limit window in milliseconds |
 
 ## Startup
 
@@ -86,9 +90,11 @@ Fetch mint info and parsed config PDA data.
     "authority": "AuthorityBase58",
     "mint": "MintBase58Address",
     "paused": false,
+    "pausedByAttestation": false,
     "enableTransferHook": true,
     "enablePermanentDelegate": true,
-    "defaultAccountFrozen": false
+    "defaultAccountFrozen": false,
+    "decimals": 6
   }
 }
 ```
@@ -187,11 +193,12 @@ Screen an address against the sanctions list.
   "address": "WalletBase58",
   "sanctioned": false,
   "timestamp": 1709650000000,
-  "source": "mock"
+  "source": "mock",
+  "onChainBlacklisted": false
 }
 ```
 
-The `source` field indicates whether the result came from an `"external"` sanctions API (if `SANCTIONS_API_URL` is configured) or the `"mock"` built-in list.
+The `source` field indicates whether the result came from an `"external"` sanctions API (if `SANCTIONS_API_URL` is configured) or the `"mock"` built-in list. `onChainBlacklisted` reflects a live lookup against the on-chain BlacklistEntry PDA.
 
 Source: `backend/src/routes/compliance.ts`, `backend/src/services/compliance.ts`
 
@@ -222,6 +229,119 @@ Retrieve the in-memory audit log of all screening results.
 
 Source: `backend/src/routes/compliance.ts`
 
+### POST /compliance/blacklist/add
+
+Add an address to the on-chain blacklist. Requires the authority to hold the Blacklister role. Optionally screens the address against the sanctions list first (if `ENABLE_SANCTIONS_SCREENING=true`).
+
+**Authentication**: Required (`Authorization: Bearer <key>`).
+
+**Request Body**:
+```json
+{
+  "address": "WalletBase58",
+  "reason": "Optional reason string (max 64 bytes)"
+}
+```
+
+**Validation**:
+- `address` is required (400 if missing or invalid public key)
+- `reason` is optional
+- If `ENABLE_SANCTIONS_SCREENING=true`, the address is screened before blacklisting (403 if sanctioned, 503 if screening service unavailable)
+
+**Response** (200):
+```json
+{
+  "signature": "TransactionSignatureBase58",
+  "address": "WalletBase58",
+  "reason": "Optional reason string"
+}
+```
+
+Source: `backend/src/routes/compliance.ts`
+
+### POST /compliance/blacklist/remove
+
+Remove an address from the on-chain blacklist.
+
+**Authentication**: Required (`Authorization: Bearer <key>`).
+
+**Request Body**:
+```json
+{
+  "address": "WalletBase58"
+}
+```
+
+**Validation**:
+- `address` is required (400 if missing or invalid public key)
+
+**Response** (200):
+```json
+{
+  "signature": "TransactionSignatureBase58",
+  "address": "WalletBase58"
+}
+```
+
+Source: `backend/src/routes/compliance.ts`
+
+### GET /compliance/audit/actions
+
+Retrieve the in-memory action audit log (mints, burns, blacklist adds/removes). Separate from the screening audit log returned by `GET /compliance/audit`.
+
+**Authentication**: Required (`Authorization: Bearer <key>`).
+
+**Query Parameters**:
+- `limit` (default: 100, max: 500)
+- `offset` (default: 0)
+
+**Response** (200):
+```json
+{
+  "total": 10,
+  "limit": 100,
+  "offset": 0,
+  "entries": [
+    {
+      "timestamp": "2024-03-05T12:00:00.000Z",
+      "action": "mint",
+      "actor": "AuthorityBase58",
+      "txSignature": "TransactionSignatureBase58",
+      "details": { "mint": "MintBase58Address", "to": "RecipientBase58", "amount": "1000000" }
+    }
+  ]
+}
+```
+
+Source: `backend/src/routes/compliance.ts`
+
+### GET /compliance/audit/events
+
+Retrieve on-chain events from the EventPoller, with optional filtering by action type and date range.
+
+**Authentication**: Required (`Authorization: Bearer <key>`).
+
+**Query Parameters**:
+- `action` (optional) — filter events whose log lines contain this string (e.g. `"mint"`, `"burn"`)
+- `from` (optional) — ISO 8601 date string; only return events at or after this time
+- `to` (optional) — ISO 8601 date string; only return events at or before this time
+
+**Response** (200):
+```json
+{
+  "total": 5,
+  "events": [
+    {
+      "signature": "TransactionSignatureBase58",
+      "blockTime": 1709650000,
+      "logs": ["Program log: Instruction: Mint", "..."]
+    }
+  ]
+}
+```
+
+Source: `backend/src/routes/compliance.ts`
+
 ### GET /events
 
 Retrieve polled events from the EventPoller.
@@ -244,18 +364,57 @@ Source: `backend/src/index.ts` (inline route)
 
 ## CORS
 
-The backend sets permissive CORS headers on all requests:
+CORS is origin-allowlist-based. The allowed origins are controlled by the `CORS_ORIGINS` environment variable (comma-separated), defaulting to `http://localhost:3000`. Only requests from an allowed origin receive the `Access-Control-Allow-Origin` header; all others receive no CORS header.
+
 ```
-Access-Control-Allow-Origin: *
+Access-Control-Allow-Origin: <matched-origin>
 Access-Control-Allow-Methods: GET, POST, OPTIONS
-Access-Control-Allow-Headers: Content-Type
+Access-Control-Allow-Headers: Content-Type, Authorization
+Vary: Origin
 ```
 
-OPTIONS requests return 204 immediately.
+OPTIONS preflight requests return 204 immediately (no auth check).
 
 ## Authentication
 
-The current backend implementation has **no authentication**. All endpoints are publicly accessible. For production deployments, add authentication middleware (e.g., API keys, JWT) before exposing the server.
+Protected routes require an API key passed as a Bearer token:
+
+```
+Authorization: Bearer <API_KEY>
+```
+
+The `API_KEY` environment variable controls the required value. If `API_KEY` is not set, all requests are allowed (dev mode — a one-time warning is logged).
+
+**Public routes** (no auth required): `GET /health`, `GET /status`, `GET /events`
+
+**Protected routes** (auth required when `API_KEY` is set): `POST /mint`, `POST /burn`, `POST /compliance/screen`, `POST /compliance/blacklist/add`, `POST /compliance/blacklist/remove`, `GET /compliance/audit`, `GET /compliance/audit/actions`, `GET /compliance/audit/events`
+
+Unauthenticated requests to protected routes return:
+```json
+{ "error": "Missing or invalid Authorization header" }
+```
+with status 401.
+
+## Rate Limiting
+
+All routes except `GET /health` are subject to per-IP rate limiting. Limits are configurable via `RATE_LIMIT_MAX` (default: 100 requests) and `RATE_LIMIT_WINDOW_MS` (default: 60 seconds).
+
+Rate limit headers are included on every response:
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Maximum requests allowed in the window |
+| `X-RateLimit-Remaining` | Remaining requests in the current window |
+| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+
+When the limit is exceeded, the response is 429 with `Retry-After` header and body:
+```json
+{
+  "error": "Too Many Requests",
+  "message": "Rate limit of 100 requests per 60s exceeded",
+  "retryAfter": 42
+}
+```
 
 ## Error Format
 
@@ -272,8 +431,11 @@ Errors follow a consistent format:
 |--------|---------|
 | 200 | Success |
 | 400 | Bad request (missing/invalid parameters) |
+| 401 | Unauthorized (missing or invalid API key) |
 | 403 | Forbidden (sanctions screening failed) |
+| 429 | Too Many Requests (rate limit exceeded) |
 | 500 | Internal server error (transaction failed, RPC error, config missing) |
+| 503 | Service unavailable (sanctions screening service unreachable) |
 
 ## Running the Backend
 
