@@ -89,9 +89,9 @@ Sets `config.paused = true`. While paused, `mint` and `burn` will fail with `Tok
 
 **Instruction**: `unpause`
 **Required Role**: Pauser
-**Checks**: Role active, token is currently paused (TokenNotPaused)
+**Checks**: Role active, token is currently paused (TokenPaused)
 
-Sets `config.paused = false`, resuming normal operations.
+Sets `config.paused = false` and `config.paused_by_attestation = false`, resuming normal operations.
 
 ## Role Management
 

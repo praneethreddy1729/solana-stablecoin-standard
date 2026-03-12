@@ -56,7 +56,7 @@ SSS-2 tokens map to the **e-money token (EMT)** classification under MiCA Title 
 | Art. 52(1): Holders must have a claim on the issuer for redemption at par value at any time | **Burn instruction** | Any holder can invoke burn (via Burner role delegation or direct authority action) to redeem tokens. The burn event + on-chain record provides proof of redemption request. |
 | Art. 52(3): No interest or benefit linked to holding period | **No yield mechanism** | SSS has no staking or interest distribution instruction. Compliant by design. |
 | Art. 52(4): Redemption may be subject to a fee, disclosed in white paper | **Burn with quota** | Burner role quota system allows issuers to enforce fee structures off-chain while the on-chain burn is the settlement layer. |
-| Art. 54(1): Reserve of assets — at least equal to aggregate claims | **Reserve Attestation** | `submit_attestation` instruction records `reserve_amount` and `supply_amount` with a proof URI. If `reserve_amount < supply_amount`, the protocol **auto-pauses** all transfers (Art. 54(5) operational resilience). |
+| Art. 54(1): Reserve of assets — at least equal to aggregate claims | **Reserve Attestation** | `attest_reserves` instruction records `reserve_amount` and `token_supply` with a proof URI. If `reserve_amount < token_supply`, the protocol **auto-pauses** all transfers (Art. 54(5) operational resilience). |
 | Art. 54(3): Reserve invested in secure, low-risk assets; segregated | **Attestation URI** | The URI field in ReserveAttestation PDA links to off-chain proof-of-reserve audits (e.g., third-party attestation reports). |
 | Art. 54(5): Robust governance, internal controls for reserve management | **Auto-pause on undercollateralization** | `paused_by_attestation` flag automatically halts transfers if reserves drop below 1:1. Separate from manual `paused` flag — cannot be silently overridden. |
 
@@ -65,7 +65,7 @@ SSS-2 tokens map to the **e-money token (EMT)** classification under MiCA Title 
 | MiCA Requirement | SSS Feature | Implementation |
 |---|---|---|
 | Art. 56: Additional requirements for significant EMTs (liquidity, wind-down plans) | **Pause + Registry** | Pause provides emergency halt capability for wind-down. Registry enables supervisors to enumerate all SSS tokens for systemic monitoring. |
-| Art. 58(1): EBA stress testing of reserve adequacy | **Reserve Attestation history** | Each `submit_attestation` call is an on-chain event. Supervisors can reconstruct the full attestation history via event logs for stress-test audits. |
+| Art. 58(1): EBA stress testing of reserve adequacy | **Reserve Attestation history** | Each `attest_reserves` call is an on-chain event. Supervisors can reconstruct the full attestation history via event logs for stress-test audits. |
 
 ### Title V — Authorisation and Operating Conditions for CASPs (Articles 59–74)
 
@@ -210,7 +210,7 @@ enables compliance-grade separation of duties:
   accounting firm.
 - Brazil BCB Res. 97: Periodic reporting as defined by BCB normative instructions.
 
-SSS's `submit_attestation` instruction supports arbitrary frequency. The `expiration`
+SSS's `attest_reserves` instruction supports arbitrary frequency. The `expiration`
 field on ReserveAttestation PDA enables enforcement of minimum attestation cadence —
 expired attestations can trigger auto-pause.
 
@@ -232,7 +232,7 @@ off-chain screening systems:
 |---|---|---|
 | **SSS-1** | Basic mint/burn, roles, pause, freeze, metadata | Simple payment tokens, lower regulatory scrutiny |
 | **SSS-2** | SSS-1 + blacklist, seize, transfer hook, reserve attestation, registry | EMTs under MiCA, US payment stablecoins, BCB-regulated tokens |
-| **SSS-3** | SSS-2 + oracle integration, advanced hooks | Algorithmic / hybrid collateral models (higher regulatory bar) |
+| **SSS-3** | Privacy-preserving compliance via ConfidentialTransfer + allowlist (experimental) | Privacy-sensitive use cases where transfer amounts must be encrypted |
 
 ---
 

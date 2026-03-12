@@ -1,4 +1,5 @@
 import { PublicKey, Keypair } from "@solana/web3.js";
+import type { Wallet } from "@coral-xyz/anchor";
 import BN from "bn.js";
 
 /** Must match on-chain RoleType repr(u8) */
@@ -64,7 +65,8 @@ export interface InitializeParams {
   symbol: string;
   uri?: string;
   decimals: number;
-  authority: Keypair;
+  /** Authority keypair or Anchor Wallet. Keypair is auto-wrapped in a Wallet. */
+  authority: Keypair | Wallet;
   preset?: Preset;
   enableTransferHook?: boolean;
   enablePermanentDelegate?: boolean;

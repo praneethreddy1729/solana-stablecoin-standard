@@ -11,51 +11,56 @@ export const auditLogCommand = new Command("audit-log")
   .option("--rpc-url <url>", "RPC URL")
   .option("--format <format>", "Output format: text or json", "text")
   .action(async (opts) => {
-    const connection = getConnection(opts.rpcUrl);
-    const limit = parseInt(opts.limit, 10);
+    try {
+      const connection = getConnection(opts.rpcUrl);
+      const limit = parseInt(opts.limit, 10);
 
-    // Derive the config PDA from the mint and query its signatures
-    const mintPubkey = new PublicKey(opts.mint);
-    const [configPda] = findConfigPda(mintPubkey, SSS_TOKEN_PROGRAM_ID);
-    const signatures = await connection.getSignaturesForAddress(
-      configPda,
-      { limit }
-    );
+      // Derive the config PDA from the mint and query its signatures
+      const mintPubkey = new PublicKey(opts.mint);
+      const [configPda] = findConfigPda(mintPubkey, SSS_TOKEN_PROGRAM_ID);
+      const signatures = await connection.getSignaturesForAddress(
+        configPda,
+        { limit }
+      );
 
-    const filtered = opts.action
-      ? signatures.filter((sig) => sig.memo?.toLowerCase().includes(opts.action.toLowerCase()))
-      : signatures;
+      const filtered = opts.action
+        ? signatures.filter((sig) => sig.memo?.toLowerCase().includes(opts.action.toLowerCase()))
+        : signatures;
 
-    if (opts.format === "json") {
-      console.log(JSON.stringify({
-        configPda: configPda.toBase58(),
-        count: filtered.length,
-        transactions: filtered.map((sig) => ({
-          signature: sig.signature,
-          blockTime: sig.blockTime ?? null,
-          timestamp: sig.blockTime ? new Date(sig.blockTime * 1000).toISOString() : null,
-          status: sig.err ? "FAILED" : "OK",
-          error: sig.err ?? null,
-          memo: sig.memo ?? null,
-        })),
-      }, null, 2));
-      return;
-    }
-
-    if (filtered.length === 0) {
-      console.log("No transactions found.");
-      return;
-    }
-
-    console.log(`=== Recent Transactions (${filtered.length}) ===`);
-    for (const sig of filtered) {
-      const time = sig.blockTime
-        ? new Date(sig.blockTime * 1000).toISOString()
-        : "unknown";
-      const status = sig.err ? "FAILED" : "OK";
-      console.log(`  ${time} | ${status} | ${sig.signature}`);
-      if (sig.memo) {
-        console.log(`    Memo: ${sig.memo}`);
+      if (opts.format === "json") {
+        console.log(JSON.stringify({
+          configPda: configPda.toBase58(),
+          count: filtered.length,
+          transactions: filtered.map((sig) => ({
+            signature: sig.signature,
+            blockTime: sig.blockTime ?? null,
+            timestamp: sig.blockTime ? new Date(sig.blockTime * 1000).toISOString() : null,
+            status: sig.err ? "FAILED" : "OK",
+            error: sig.err ?? null,
+            memo: sig.memo ?? null,
+          })),
+        }, null, 2));
+        return;
       }
+
+      if (filtered.length === 0) {
+        console.log("No transactions found.");
+        return;
+      }
+
+      console.log(`=== Recent Transactions (${filtered.length}) ===`);
+      for (const sig of filtered) {
+        const time = sig.blockTime
+          ? new Date(sig.blockTime * 1000).toISOString()
+          : "unknown";
+        const status = sig.err ? "FAILED" : "OK";
+        console.log(`  ${time} | ${status} | ${sig.signature}`);
+        if (sig.memo) {
+          console.log(`    Memo: ${sig.memo}`);
+        }
+      }
+    } catch (err: unknown) {
+      console.error(`Failed to fetch audit log: ${(err as Error).message}`);
+      process.exit(1);
     }
   });

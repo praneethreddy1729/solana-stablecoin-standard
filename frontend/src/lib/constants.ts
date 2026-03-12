@@ -36,12 +36,22 @@ export const ROLE_DESCRIPTIONS: Record<number, string> = {
 
 export const EXPLORER_BASE = "https://explorer.solana.com";
 
+function getCluster(): string {
+  const rpc = typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_RPC_URL ?? "")
+    : "";
+  if (rpc.includes("mainnet")) return "mainnet-beta";
+  if (rpc.includes("localhost") || rpc.includes("127.0.0.1")) return "custom&customUrl=http%3A%2F%2Flocalhost%3A8899";
+  return "devnet";
+}
+
 export function explorerUrl(
   addressOrSig: string,
   type: "address" | "tx" = "address",
-  cluster: string = "devnet"
+  cluster?: string
 ): string {
-  return `${EXPLORER_BASE}/${type}/${addressOrSig}?cluster=${cluster}`;
+  const resolvedCluster = cluster ?? getCluster();
+  return `${EXPLORER_BASE}/${type}/${addressOrSig}?cluster=${resolvedCluster}`;
 }
 
 export function shortenAddress(address: string, chars = 4): string {

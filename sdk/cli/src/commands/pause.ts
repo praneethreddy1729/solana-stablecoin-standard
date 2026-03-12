@@ -9,16 +9,21 @@ export const pauseCommand = new Command("pause")
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
   .action(async (opts) => {
-    const wallet = loadWallet(opts.keypair);
-    const stablecoin = await loadStablecoin(opts.mint, opts);
-    const pauser = opts.pauser
-      ? new PublicKey(opts.pauser)
-      : wallet.publicKey;
+    try {
+      const wallet = loadWallet(opts.keypair);
+      const stablecoin = await loadStablecoin(opts.mint, opts);
+      const pauser = opts.pauser
+        ? new PublicKey(opts.pauser)
+        : wallet.publicKey;
 
-    const txSig = await stablecoin.pause({ pauser });
+      const txSig = await stablecoin.pause({ pauser });
 
-    console.log(`Token paused`);
-    console.log(`Tx: ${txSig}`);
+      console.log(`Token paused`);
+      console.log(`Tx: ${txSig}`);
+    } catch (err: unknown) {
+      console.error(`Failed to pause token: ${(err as Error).message}`);
+      process.exit(1);
+    }
   });
 
 export const unpauseCommand = new Command("unpause")
@@ -28,14 +33,19 @@ export const unpauseCommand = new Command("unpause")
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
   .action(async (opts) => {
-    const wallet = loadWallet(opts.keypair);
-    const stablecoin = await loadStablecoin(opts.mint, opts);
-    const pauser = opts.pauser
-      ? new PublicKey(opts.pauser)
-      : wallet.publicKey;
+    try {
+      const wallet = loadWallet(opts.keypair);
+      const stablecoin = await loadStablecoin(opts.mint, opts);
+      const pauser = opts.pauser
+        ? new PublicKey(opts.pauser)
+        : wallet.publicKey;
 
-    const txSig = await stablecoin.unpause({ pauser });
+      const txSig = await stablecoin.unpause({ pauser });
 
-    console.log(`Token unpaused`);
-    console.log(`Tx: ${txSig}`);
+      console.log(`Token unpaused`);
+      console.log(`Tx: ${txSig}`);
+    } catch (err: unknown) {
+      console.error(`Failed to unpause token: ${(err as Error).message}`);
+      process.exit(1);
+    }
   });

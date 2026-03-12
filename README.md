@@ -225,7 +225,7 @@ Three independent security audits were performed covering all 23 instructions, r
 ### Treasury Protection
 
 - `freeze_account` rejects if the target is the **treasury account** (`CannotFreezeTreasury` error)
-- Seize requires `target_not_blacklisted` check -- prevents double-seize
+- Seize requires target owner to be blacklisted (`TargetNotBlacklisted` error if not)
 - Seized tokens must go to the **designated treasury** (`InvalidTreasury` error)
 
 ### Compilation Hardening

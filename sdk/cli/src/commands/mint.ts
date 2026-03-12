@@ -24,18 +24,23 @@ export const mintCommand = new Command("mint [recipient] [amount]")
       process.exit(1);
     }
 
-    const wallet = loadWallet(opts.keypair);
-    const stablecoin = await loadStablecoin(opts.mint, opts);
-    const minter = opts.minter
-      ? new PublicKey(opts.minter)
-      : wallet.publicKey;
+    try {
+      const wallet = loadWallet(opts.keypair);
+      const stablecoin = await loadStablecoin(opts.mint, opts);
+      const minter = opts.minter
+        ? new PublicKey(opts.minter)
+        : wallet.publicKey;
 
-    const txSig = await stablecoin.mint(
-      new PublicKey(recipientAddr),
-      new BN(mintAmount),
-      minter,
-    );
+      const txSig = await stablecoin.mint(
+        new PublicKey(recipientAddr),
+        new BN(mintAmount),
+        minter,
+      );
 
-    console.log(`Minted ${mintAmount} tokens to ${recipientAddr}`);
-    console.log(`Tx: ${txSig}`);
+      console.log(`Minted ${mintAmount} tokens to ${recipientAddr}`);
+      console.log(`Tx: ${txSig}`);
+    } catch (err: unknown) {
+      console.error(`Failed to mint: ${(err as Error).message}`);
+      process.exit(1);
+    }
   });

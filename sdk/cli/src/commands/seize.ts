@@ -21,13 +21,18 @@ export const seizeCommand = new Command("seize [address]")
       process.exit(1);
     }
 
-    const stablecoin = await loadStablecoin(opts.mint, opts);
+    try {
+      const stablecoin = await loadStablecoin(opts.mint, opts);
 
-    const txSig = await stablecoin.compliance.seize(
-      new PublicKey(fromAccount),
-      new PublicKey(opts.to),
-    );
+      const txSig = await stablecoin.compliance.seize(
+        new PublicKey(fromAccount),
+        new PublicKey(opts.to),
+      );
 
-    console.log(`Seized tokens from ${fromAccount} to ${opts.to}`);
-    console.log(`Tx: ${txSig}`);
+      console.log(`Seized tokens from ${fromAccount} to ${opts.to}`);
+      console.log(`Tx: ${txSig}`);
+    } catch (err: unknown) {
+      console.error(`Failed to seize tokens: ${(err as Error).message}`);
+      process.exit(1);
+    }
   });

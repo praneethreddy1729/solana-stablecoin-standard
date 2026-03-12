@@ -13,17 +13,17 @@ export interface ProgramEvent {
   slot: number;
   blockTime: number | null;
   logs: string[];
-  err: any;
+  err: object | string | null;
 }
 
 interface Logger {
   info(msg: string): void;
-  error(msg: string | object, ...args: any[]): void;
+  error(msg: string | object, ...args: unknown[]): void;
 }
 
 const defaultLogger: Logger = {
-  info: (msg) => {},
-  error: (msg) => {},
+  info: () => {},
+  error: () => {},
 };
 
 const DATA_DIR = path.resolve(process.cwd(), "data");

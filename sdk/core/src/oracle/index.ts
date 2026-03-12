@@ -102,6 +102,7 @@ export class OraclePriceGuard {
 
   /**
    * Set a callback function to receive depeg alerts in real-time.
+   * @param callback - Function invoked with each {@link DepegAlert} as it occurs.
    */
   onAlert(callback: (alert: DepegAlert) => void): void {
     this.alertCallback = callback;
@@ -110,6 +111,8 @@ export class OraclePriceGuard {
   /**
    * Fetch the current price from the configured Pyth feed.
    * Tries Hermes API first (if enabled), falls back to on-chain account.
+   * @returns Raw {@link PythPriceData} from Pyth.
+   * @throws If the Pyth API request fails, times out, or the on-chain account cannot be read.
    */
   async fetchPrice(): Promise<PythPriceData> {
     const feed = this.config.pythFeed;
@@ -248,6 +251,7 @@ export class OraclePriceGuard {
 
   /**
    * Get the full status of the Oracle Price Guard.
+   * @returns A snapshot of the guard's current state including config, history, and alerts.
    */
   getStatus(): OracleGuardStatus {
     return {
@@ -263,7 +267,8 @@ export class OraclePriceGuard {
   }
 
   /**
-   * Manually reset the circuit breaker. Use with caution.
+   * Manually reset the circuit breaker. Use with caution — only call this
+   * after verifying the underlying depeg condition has been resolved.
    */
   resetCircuitBreaker(): void {
     this.consecutiveDeviations = 0;
@@ -306,17 +311,35 @@ export class OraclePriceGuard {
   }
 
   /**
-   * Get price history entries.
+   * Get price history entries (defensive copy).
+   * @returns Array of {@link PriceHistoryEntry}, most recent last.
    */
   getPriceHistory(): PriceHistoryEntry[] {
     return [...this.priceHistory];
   }
 
   /**
-   * Get recent depeg alerts.
+   * Get recent depeg alerts (defensive copy).
+   * @returns Array of {@link DepegAlert}, most recent last.
    */
   getAlerts(): DepegAlert[] {
     return [...this.recentAlerts];
+  }
+
+  /**
+   * Stop monitoring and release all resources.
+   * Clears the monitoring interval, alert callback, price history, and alerts.
+   * After calling `destroy()`, this instance should not be reused.
+   */
+  destroy(): void {
+    this.stopMonitoring();
+    this.alertCallback = null;
+    this.priceHistory = [];
+    this.recentAlerts = [];
+    this.lastCheck = null;
+    this.consecutiveDeviations = 0;
+    this.circuitBreakerActive = false;
+    this.connection = null;
   }
 
   private emitAlert(

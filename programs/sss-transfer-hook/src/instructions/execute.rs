@@ -104,18 +104,21 @@ pub fn handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
         &ctx.accounts.mint.key(),
     )?;
 
-    // Check pause state from config (named constants for byte offsets)
+    // Check manual pause state from config
     let config_data = ctx.accounts.config.try_borrow_data()?;
     if config_data.len() > CONFIG_PAUSED_OFFSET && config_data[CONFIG_PAUSED_OFFSET] == 1 {
         return Err(HookError::TokenPaused.into());
     }
-    // Also check paused_by_attestation (undercollateralized reserves)
+    // Check attestation-triggered pause (undercollateralized reserves) separately
+    // so callers get a more specific error and can distinguish the two states
     if config_data.len() > CONFIG_PAUSED_BY_ATTESTATION_OFFSET && config_data[CONFIG_PAUSED_BY_ATTESTATION_OFFSET] == 1 {
-        return Err(HookError::TokenPaused.into());
+        return Err(HookError::TokenPausedByAttestation.into());
     }
     drop(config_data);
 
-    // Validate and check sender blacklist
+    // Validate ownership and check sender blacklist.
+    // A non-empty account owned by this program with a valid discriminator (>= 8 bytes)
+    // means the sender's wallet address has a BlacklistEntry PDA => blacklisted.
     validate_blacklist_account(&ctx.accounts.sender_blacklist.to_account_info())?;
     if !ctx.accounts.sender_blacklist.data_is_empty() {
         let data = ctx.accounts.sender_blacklist.try_borrow_data()?;
@@ -124,7 +127,7 @@ pub fn handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
         }
     }
 
-    // Validate and check receiver blacklist
+    // Validate ownership and check receiver blacklist (same logic as sender)
     validate_blacklist_account(&ctx.accounts.receiver_blacklist.to_account_info())?;
     if !ctx.accounts.receiver_blacklist.data_is_empty() {
         let data = ctx.accounts.receiver_blacklist.try_borrow_data()?;
@@ -168,13 +171,14 @@ pub fn fallback_execute<'info>(
     // Validate config account: owner + PDA derivation
     validate_config(config, &mint_info.key())?;
 
-    // Check pause state from config (named constants for byte offsets)
+    // Check manual pause state
     let config_data = config.try_borrow_data()?;
     if config_data.len() > CONFIG_PAUSED_OFFSET && config_data[CONFIG_PAUSED_OFFSET] == 1 {
         return Err(HookError::TokenPaused.into());
     }
+    // Check attestation-triggered pause separately for better diagnostics
     if config_data.len() > CONFIG_PAUSED_BY_ATTESTATION_OFFSET && config_data[CONFIG_PAUSED_BY_ATTESTATION_OFFSET] == 1 {
-        return Err(HookError::TokenPaused.into());
+        return Err(HookError::TokenPausedByAttestation.into());
     }
     drop(config_data);
 
@@ -200,27 +204,45 @@ pub fn fallback_execute<'info>(
 }
 
 /// Check if the owner/delegate matches the permanent delegate stored in the mint's extension data.
+///
+/// Token-2022 mint account layout:
+///   - 82 bytes: base Mint state (supply, decimals, authorities, etc.)
+///   - 83 bytes: padding to 165 bytes
+///   - 1 byte:   account type discriminator (= 2 for Mint)
+///   - Extensions start at byte 166 (MINT_EXTENSIONS_OFFSET)
+///
+/// Each extension is a TLV (Type-Length-Value) entry:
+///   - 2 bytes: extension type ID (little-endian u16)
+///   - 2 bytes: data length (little-endian u16)
+///   - N bytes: extension data
+///   - Padding to 4-byte alignment
+///
+/// PermanentDelegate (type 12): 32 bytes = the delegate's pubkey.
+/// If the transfer's owner_delegate matches, this is a seize via permanent delegate
+/// and we bypass blacklist checks so the issuer can recover funds.
 pub fn check_permanent_delegate(mint_data: &[u8], owner_delegate: &Pubkey) -> bool {
-    // Token-2022 mint: 82 bytes base + padding to 165 + 1 account type byte = 166
-    // Extensions follow at MINT_EXTENSIONS_OFFSET
-    // Each extension: 2 bytes type + 2 bytes length + data
-    // PermanentDelegate extension type = PERMANENT_DELEGATE_EXTENSION_TYPE, data = 32 bytes (delegate pubkey)
     if mint_data.len() < MINT_EXTENSIONS_OFFSET {
         return false;
     }
 
     let mut offset = MINT_EXTENSIONS_OFFSET;
-    while offset + 4 <= mint_data.len() {
+    while offset.checked_add(4).map_or(false, |end| end <= mint_data.len()) {
         let ext_type = u16::from_le_bytes([mint_data[offset], mint_data[offset + 1]]);
         let ext_len = u16::from_le_bytes([mint_data[offset + 2], mint_data[offset + 3]]) as usize;
 
-        if ext_type == PERMANENT_DELEGATE_EXTENSION_TYPE && ext_len >= 32 && offset + 4 + 32 <= mint_data.len() {
+        if ext_type == PERMANENT_DELEGATE_EXTENSION_TYPE
+            && ext_len >= 32
+            && offset.checked_add(4 + 32).map_or(false, |end| end <= mint_data.len())
+        {
             let delegate_bytes = &mint_data[offset + 4..offset + 4 + 32];
             return delegate_bytes == owner_delegate.as_ref();
         }
 
-        offset += 4 + ext_len;
-        offset = (offset + 3) & !3; // align to 4 bytes
+        // Advance past this TLV entry, aligned to 4 bytes
+        offset = match offset.checked_add(4).and_then(|v| v.checked_add(ext_len)) {
+            Some(next) => (next.checked_add(3).unwrap_or(next)) & !3,
+            None => break, // overflow — malformed data, stop scanning
+        };
     }
 
     false

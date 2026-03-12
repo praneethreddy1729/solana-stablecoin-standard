@@ -10,8 +10,14 @@ export function loadKeypair(keypairPath?: string): Keypair {
     keypairPath ||
     process.env.ANCHOR_WALLET ||
     path.join(os.homedir(), ".config", "solana", "id.json");
-  const raw = JSON.parse(fs.readFileSync(resolved, "utf-8"));
-  return Keypair.fromSecretKey(Uint8Array.from(raw));
+  try {
+    const raw = JSON.parse(fs.readFileSync(resolved, "utf-8"));
+    return Keypair.fromSecretKey(Uint8Array.from(raw));
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`Error: Failed to load keypair from ${resolved}: ${msg}`);
+    process.exit(1);
+  }
 }
 
 export function loadWallet(keypairPath?: string): Wallet {

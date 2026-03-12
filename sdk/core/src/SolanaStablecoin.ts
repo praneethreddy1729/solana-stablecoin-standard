@@ -34,6 +34,7 @@ import {
   UpdateMinterQuotaParams,
   AttestReservesParams,
 } from "./types";
+import { parseSSSError } from "./errors";
 
 import sssTokenIdl from "./idl/sss_token.json";
 import sssTransferHookIdl from "./idl/sss_transfer_hook.json";
@@ -41,6 +42,32 @@ import { SssToken } from "./types/sss_token";
 import { SssTransferHook } from "./types/sss_transfer_hook";
 import { OraclePriceGuard, PYTH_FEED_IDS } from "./oracle";
 import type { PriceGuardConfig } from "./oracle";
+
+/**
+ * Wrap an SDK operation with descriptive error handling.
+ * Attempts to parse on-chain program errors into human-readable messages.
+ */
+async function wrapError<T>(operation: string, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err: unknown) {
+    const parsed = parseSSSError(err);
+    if (parsed) {
+      throw new Error(`${operation} failed: ${parsed.name} — ${parsed.msg}`);
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`${operation} failed: ${msg}`);
+  }
+}
+
+/** Validate that a BN amount is positive (> 0). */
+function requirePositiveAmount(amount: BN, label: string): void {
+  // Use toString() comparison to handle cross-package BN instances
+  const val = new BN(amount.toString());
+  if (val.lten(0)) {
+    throw new Error(`${label} must be greater than zero`);
+  }
+}
 
 /**
  * @description Primary SDK class for interacting with the Solana Stablecoin Standard (SSS).
@@ -218,9 +245,20 @@ export class SolanaStablecoin {
     txSig: TransactionSignature;
     hookTxSig: TransactionSignature | null;
   }> {
-    const wallet = params.authority instanceof Keypair
-      ? new Wallet(params.authority)
-      : params.authority;
+    if (!params.name || params.name.trim().length === 0) {
+      throw new Error("initialize: name is required");
+    }
+    if (!params.symbol || params.symbol.trim().length === 0) {
+      throw new Error("initialize: symbol is required");
+    }
+    if (params.decimals < 0 || params.decimals > 18) {
+      throw new Error("initialize: decimals must be between 0 and 18");
+    }
+
+    // Duck-type check: Keypair has secretKey, Wallet has signTransaction
+    const wallet = "secretKey" in params.authority
+      ? new Wallet(params.authority as Keypair)
+      : (params.authority as Wallet);
 
     const { program, hookProgram } = SolanaStablecoin.buildPrograms(
       connection,
@@ -266,20 +304,22 @@ export class SolanaStablecoin {
       hookProgram: enableTransferHook ? hookProgramId : null,
     };
 
-    const txSig = await program.methods
-      .initialize({
-        name: params.name,
-        symbol: params.symbol,
-        uri: params.uri ?? "",
-        decimals: params.decimals,
-        enableTransferHook,
-        enablePermanentDelegate,
-        defaultAccountFrozen,
-        treasury: params.treasury ?? PublicKey.default,
-      } as any)
-      .accountsStrict(accounts as any)
-      .signers([mintKeypair])
-      .rpc();
+    const txSig = await wrapError("initialize", () =>
+      program.methods
+        .initialize({
+          name: params.name,
+          symbol: params.symbol,
+          uri: params.uri ?? "",
+          decimals: params.decimals,
+          enableTransferHook,
+          enablePermanentDelegate,
+          defaultAccountFrozen,
+          treasury: params.treasury ?? PublicKey.default,
+        } as any)
+        .accountsStrict(accounts as any)
+        .signers([mintKeypair])
+        .rpc()
+    );
 
     // For SSS-2 tokens with transfer hook enabled, automatically initialize
     // the ExtraAccountMetas PDA on the hook program. Without this, transfers
@@ -291,16 +331,18 @@ export class SolanaStablecoin {
         hookProgramId
       );
 
-      hookTxSig = await hookProgram.methods
-        .initializeExtraAccountMetas()
-        .accountsStrict({
-          payer: wallet.publicKey,
-          extraAccountMetas: extraAccountMetasPda,
-          mint: mintKeypair.publicKey,
-          config: configPda,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
+      hookTxSig = await wrapError("initializeExtraAccountMetas", () =>
+        hookProgram.methods
+          .initializeExtraAccountMetas()
+          .accountsStrict({
+            payer: wallet.publicKey,
+            extraAccountMetas: extraAccountMetasPda,
+            mint: mintKeypair.publicKey,
+            config: configPda,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc()
+      );
     }
 
     const stablecoin = new SolanaStablecoin(
@@ -376,16 +418,18 @@ export class SolanaStablecoin {
 
     const provider = this.hookProgram.provider as AnchorProvider;
 
-    return this.hookProgram.methods
-      .initializeExtraAccountMetas()
-      .accountsStrict({
-        payer: provider.wallet.publicKey,
-        extraAccountMetas: extraAccountMetasPda,
-        mint: this.mintAddress,
-        config: this.configPda,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc();
+    return wrapError("initializeExtraAccountMetas", () =>
+      this.hookProgram.methods
+        .initializeExtraAccountMetas()
+        .accountsStrict({
+          payer: provider.wallet.publicKey,
+          extraAccountMetas: extraAccountMetasPda,
+          mint: this.mintAddress,
+          config: this.configPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -394,13 +438,18 @@ export class SolanaStablecoin {
    * @throws If the mint account does not exist or cannot be fetched.
    */
   async getTotalSupply(): Promise<bigint> {
-    const mintInfo = await getMint(
-      this.connection,
-      this.mintAddress,
-      "confirmed",
-      TOKEN_2022_PROGRAM_ID
-    );
-    return mintInfo.supply;
+    try {
+      const mintInfo = await getMint(
+        this.connection,
+        this.mintAddress,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+      return mintInfo.supply;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(`getTotalSupply failed for mint ${this.mintAddress.toBase58()}: ${msg}`);
+    }
   }
 
   /**
@@ -410,9 +459,17 @@ export class SolanaStablecoin {
    * @throws If the config PDA does not exist (mint was not initialized via SSS).
    */
   async getConfig(): Promise<StablecoinConfig> {
-    return (await this.program.account.stablecoinConfig.fetch(
-      this.configPda
-    )) as unknown as StablecoinConfig;
+    try {
+      return (await this.program.account.stablecoinConfig.fetch(
+        this.configPda
+      )) as unknown as StablecoinConfig;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `getConfig failed: config PDA ${this.configPda.toBase58()} not found. ` +
+        `Was this mint initialized via SSS? ${msg}`
+      );
+    }
   }
 
   /**
@@ -445,15 +502,21 @@ export class SolanaStablecoin {
     let mintAmount: BN;
     let minterKey: PublicKey;
 
-    if (toOrParams instanceof PublicKey) {
-      to = toOrParams;
-      mintAmount = amount!;
-      minterKey = minter!;
+    // Duck-type: PublicKey has toBase58(), object params have .recipient
+    const isPositional = typeof (toOrParams as PublicKey).toBase58 === "function" && !("recipient" in toOrParams);
+    if (isPositional) {
+      if (!amount) throw new Error("mint: amount is required");
+      if (!minter) throw new Error("mint: minter is required");
+      to = toOrParams as PublicKey;
+      mintAmount = amount;
+      minterKey = minter;
     } else {
       to = toOrParams.recipient;
-      mintAmount = toOrParams.amount instanceof BN ? toOrParams.amount : new BN(toOrParams.amount);
+      mintAmount = typeof toOrParams.amount === "number" ? new BN(toOrParams.amount) : new BN(toOrParams.amount.toString());
       minterKey = toOrParams.minter;
     }
+
+    requirePositiveAmount(mintAmount, "mint amount");
 
     const [minterRole] = findRolePda(
       this.configPda,
@@ -462,17 +525,19 @@ export class SolanaStablecoin {
       this.programId
     );
 
-    return this.program.methods
-      .mint(mintAmount)
-      .accountsStrict({
-        minter: minterKey,
-        config: this.configPda,
-        minterRole,
-        mint: this.mintAddress,
-        to,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .rpc();
+    return wrapError("mint", () =>
+      this.program.methods
+        .mint(mintAmount)
+        .accountsStrict({
+          minter: minterKey,
+          config: this.configPda,
+          minterRole,
+          mint: this.mintAddress,
+          to,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -495,6 +560,8 @@ export class SolanaStablecoin {
    * ```
    */
   async burn(from: PublicKey, amount: BN, burner: PublicKey, fromAuthority?: PublicKey): Promise<TransactionSignature> {
+    requirePositiveAmount(amount, "burn amount");
+
     const [burnerRole] = findRolePda(
       this.configPda,
       RoleType.Burner,
@@ -502,18 +569,20 @@ export class SolanaStablecoin {
       this.programId
     );
 
-    return this.program.methods
-      .burn(amount)
-      .accountsStrict({
-        burner,
-        config: this.configPda,
-        burnerRole,
-        mint: this.mintAddress,
-        from,
-        fromAuthority: fromAuthority ?? burner,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .rpc();
+    return wrapError("burn", () =>
+      this.program.methods
+        .burn(amount)
+        .accountsStrict({
+          burner,
+          config: this.configPda,
+          burnerRole,
+          mint: this.mintAddress,
+          from,
+          fromAuthority: fromAuthority ?? burner,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -532,17 +601,19 @@ export class SolanaStablecoin {
       this.programId
     );
 
-    return this.program.methods
-      .freezeAccount()
-      .accountsStrict({
-        freezer: params.freezer,
-        config: this.configPda,
-        freezerRole,
-        mint: this.mintAddress,
-        tokenAccount: params.tokenAccount,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .rpc();
+    return wrapError("freeze", () =>
+      this.program.methods
+        .freezeAccount()
+        .accountsStrict({
+          freezer: params.freezer,
+          config: this.configPda,
+          freezerRole,
+          mint: this.mintAddress,
+          tokenAccount: params.tokenAccount,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -561,17 +632,19 @@ export class SolanaStablecoin {
       this.programId
     );
 
-    return this.program.methods
-      .thawAccount()
-      .accountsStrict({
-        freezer: params.freezer,
-        config: this.configPda,
-        freezerRole,
-        mint: this.mintAddress,
-        tokenAccount: params.tokenAccount,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .rpc();
+    return wrapError("thaw", () =>
+      this.program.methods
+        .thawAccount()
+        .accountsStrict({
+          freezer: params.freezer,
+          config: this.configPda,
+          freezerRole,
+          mint: this.mintAddress,
+          tokenAccount: params.tokenAccount,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -590,14 +663,16 @@ export class SolanaStablecoin {
       this.programId
     );
 
-    return this.program.methods
-      .pause()
-      .accountsStrict({
-        pauser: params.pauser,
-        config: this.configPda,
-        pauserRole,
-      })
-      .rpc();
+    return wrapError("pause", () =>
+      this.program.methods
+        .pause()
+        .accountsStrict({
+          pauser: params.pauser,
+          config: this.configPda,
+          pauserRole,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -616,14 +691,16 @@ export class SolanaStablecoin {
       this.programId
     );
 
-    return this.program.methods
-      .unpause()
-      .accountsStrict({
-        pauser: params.pauser,
-        config: this.configPda,
-        pauserRole,
-      })
-      .rpc();
+    return wrapError("unpause", () =>
+      this.program.methods
+        .unpause()
+        .accountsStrict({
+          pauser: params.pauser,
+          config: this.configPda,
+          pauserRole,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -643,15 +720,17 @@ export class SolanaStablecoin {
     );
     const provider = this.program.provider as AnchorProvider;
 
-    return this.program.methods
-      .updateRoles(params.roleType, params.assignee, params.isActive)
-      .accountsStrict({
-        authority: provider.wallet.publicKey,
-        config: this.configPda,
-        role: rolePda,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc();
+    return wrapError("updateRoles", () =>
+      this.program.methods
+        .updateRoles(params.roleType, params.assignee, params.isActive)
+        .accountsStrict({
+          authority: provider.wallet.publicKey,
+          config: this.configPda,
+          role: rolePda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -664,16 +743,19 @@ export class SolanaStablecoin {
   async updateMinterQuota(
     params: UpdateMinterQuotaParams
   ): Promise<TransactionSignature> {
+    requirePositiveAmount(params.newQuota, "minter quota");
     const provider = this.program.provider as AnchorProvider;
 
-    return this.program.methods
-      .updateMinter(params.newQuota)
-      .accountsStrict({
-        authority: provider.wallet.publicKey,
-        config: this.configPda,
-        minterRole: params.minterRole,
-      })
-      .rpc();
+    return wrapError("updateMinterQuota", () =>
+      this.program.methods
+        .updateMinter(params.newQuota)
+        .accountsStrict({
+          authority: provider.wallet.publicKey,
+          config: this.configPda,
+          minterRole: params.minterRole,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -687,15 +769,20 @@ export class SolanaStablecoin {
   async transferAuthority(
     newAuthority: PublicKey
   ): Promise<TransactionSignature> {
+    if (newAuthority.equals(PublicKey.default)) {
+      throw new Error("transferAuthority: newAuthority cannot be the default/zero public key");
+    }
     const provider = this.program.provider as AnchorProvider;
 
-    return this.program.methods
-      .transferAuthority(newAuthority)
-      .accountsStrict({
-        authority: provider.wallet.publicKey,
-        config: this.configPda,
-      })
-      .rpc();
+    return wrapError("transferAuthority", () =>
+      this.program.methods
+        .transferAuthority(newAuthority)
+        .accountsStrict({
+          authority: provider.wallet.publicKey,
+          config: this.configPda,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -708,13 +795,15 @@ export class SolanaStablecoin {
   async acceptAuthority(): Promise<TransactionSignature> {
     const provider = this.program.provider as AnchorProvider;
 
-    return this.program.methods
-      .acceptAuthority()
-      .accountsStrict({
-        newAuthority: provider.wallet.publicKey,
-        config: this.configPda,
-      })
-      .rpc();
+    return wrapError("acceptAuthority", () =>
+      this.program.methods
+        .acceptAuthority()
+        .accountsStrict({
+          newAuthority: provider.wallet.publicKey,
+          config: this.configPda,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -726,13 +815,15 @@ export class SolanaStablecoin {
   async cancelAuthorityTransfer(): Promise<TransactionSignature> {
     const provider = this.program.provider as AnchorProvider;
 
-    return this.program.methods
-      .cancelAuthorityTransfer()
-      .accountsStrict({
-        authority: provider.wallet.publicKey,
-        config: this.configPda,
-      })
-      .rpc();
+    return wrapError("cancelAuthorityTransfer", () =>
+      this.program.methods
+        .cancelAuthorityTransfer()
+        .accountsStrict({
+          authority: provider.wallet.publicKey,
+          config: this.configPda,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -743,15 +834,20 @@ export class SolanaStablecoin {
    * @throws If the signer is not the stablecoin authority.
    */
   async updateTreasury(newTreasury: PublicKey): Promise<TransactionSignature> {
+    if (newTreasury.equals(PublicKey.default)) {
+      throw new Error("updateTreasury: newTreasury cannot be the default/zero public key");
+    }
     const provider = this.program.provider as AnchorProvider;
 
-    return this.program.methods
-      .updateTreasury(newTreasury)
-      .accountsStrict({
-        authority: provider.wallet.publicKey,
-        config: this.configPda,
-      })
-      .rpc();
+    return wrapError("updateTreasury", () =>
+      this.program.methods
+        .updateTreasury(newTreasury)
+        .accountsStrict({
+          authority: provider.wallet.publicKey,
+          config: this.configPda,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -827,18 +923,20 @@ export class SolanaStablecoin {
       this.hookProgramId
     );
 
-    return this.program.methods
-      .addToBlacklist(address, reasonStr)
-      .accountsStrict({
-        blacklister: blacklisterKey,
-        config: this.configPda,
-        blacklisterRole,
-        hookProgram: this.hookProgramId,
-        blacklistEntry,
-        mint: this.mintAddress,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc();
+    return wrapError("blacklistAdd", () =>
+      this.program.methods
+        .addToBlacklist(address, reasonStr)
+        .accountsStrict({
+          blacklister: blacklisterKey,
+          config: this.configPda,
+          blacklisterRole,
+          hookProgram: this.hookProgramId,
+          blacklistEntry,
+          mint: this.mintAddress,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc()
+    );
   }
 
   private async _blacklistRemove(
@@ -857,17 +955,19 @@ export class SolanaStablecoin {
       this.hookProgramId
     );
 
-    return this.program.methods
-      .removeFromBlacklist(address)
-      .accountsStrict({
-        blacklister,
-        config: this.configPda,
-        blacklisterRole,
-        hookProgram: this.hookProgramId,
-        blacklistEntry,
-        mint: this.mintAddress,
-      })
-      .rpc();
+    return wrapError("blacklistRemove", () =>
+      this.program.methods
+        .removeFromBlacklist(address)
+        .accountsStrict({
+          blacklister,
+          config: this.configPda,
+          blacklisterRole,
+          hookProgram: this.hookProgramId,
+          blacklistEntry,
+          mint: this.mintAddress,
+        })
+        .rpc()
+    );
   }
 
   private async _seize(frozenAccount: PublicKey, treasury: PublicKey): Promise<TransactionSignature> {
@@ -886,27 +986,29 @@ export class SolanaStablecoin {
 
     const [seizerRole] = findRolePda(this.configPda, 5, provider.wallet.publicKey, this.program.programId);
 
-    return this.program.methods
-      .seize()
-      .accountsStrict({
-        authority: provider.wallet.publicKey,
-        config: this.configPda,
-        seizerRole,
-        mint: this.mintAddress,
-        from: frozenAccount,
-        to: treasury,
-        blacklistEntry: findBlacklistPda(this.mintAddress, fromOwnerKey, this.hookProgramId)[0],
-        fromOwner: fromOwnerKey,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-      } as any)
-      .remainingAccounts([
-        { pubkey: this.hookProgramId, isSigner: false, isWritable: false },
-        { pubkey: extraAccountMetasPda, isSigner: false, isWritable: false },
-        { pubkey: senderBlacklist, isSigner: false, isWritable: false },
-        { pubkey: receiverBlacklist, isSigner: false, isWritable: false },
-        { pubkey: this.configPda, isSigner: false, isWritable: false },
-      ])
-      .rpc();
+    return wrapError("seize", () =>
+      this.program.methods
+        .seize()
+        .accountsStrict({
+          authority: provider.wallet.publicKey,
+          config: this.configPda,
+          seizerRole,
+          mint: this.mintAddress,
+          from: frozenAccount,
+          to: treasury,
+          blacklistEntry: findBlacklistPda(this.mintAddress, fromOwnerKey, this.hookProgramId)[0],
+          fromOwner: fromOwnerKey,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        } as any)
+        .remainingAccounts([
+          { pubkey: this.hookProgramId, isSigner: false, isWritable: false },
+          { pubkey: extraAccountMetasPda, isSigner: false, isWritable: false },
+          { pubkey: senderBlacklist, isSigner: false, isWritable: false },
+          { pubkey: receiverBlacklist, isSigner: false, isWritable: false },
+          { pubkey: this.configPda, isSigner: false, isWritable: false },
+        ])
+        .rpc()
+    );
   }
 
   private async _isBlacklisted(user: PublicKey): Promise<boolean> {
@@ -947,6 +1049,11 @@ export class SolanaStablecoin {
    * ```
    */
   async attestReserves(params: AttestReservesParams): Promise<TransactionSignature> {
+    requirePositiveAmount(params.expiresInSeconds, "expiresInSeconds");
+    if (params.attestationUri.length > 256) {
+      throw new Error("attestReserves: attestationUri exceeds 256 bytes");
+    }
+
     const [attestorRole] = findRolePda(
       this.configPda,
       RoleType.Attestor,
@@ -955,17 +1062,19 @@ export class SolanaStablecoin {
     );
     const [attestationPda] = findAttestationPda(this.configPda, this.programId);
 
-    return this.program.methods
-      .attestReserves(params.reserveAmount, params.expiresInSeconds, params.attestationUri)
-      .accountsStrict({
-        attestor: params.attestor,
-        config: this.configPda,
-        attestorRole,
-        mint: this.mintAddress,
-        attestation: attestationPda,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc();
+    return wrapError("attestReserves", () =>
+      this.program.methods
+        .attestReserves(params.reserveAmount, params.expiresInSeconds, params.attestationUri)
+        .accountsStrict({
+          attestor: params.attestor,
+          config: this.configPda,
+          attestorRole,
+          mint: this.mintAddress,
+          attestation: attestationPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc()
+    );
   }
 
   /**
@@ -1030,7 +1139,12 @@ export class SolanaStablecoin {
       hookProgramId,
     );
 
-    const accounts = await (program.account as any).registryEntry.all();
-    return accounts.map((a: any) => a.account as RegistryEntry);
+    try {
+      const accounts = await (program.account as any).registryEntry.all();
+      return accounts.map((a: any) => a.account as RegistryEntry);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(`listAll failed: unable to fetch registry entries: ${msg}`);
+    }
   }
 }

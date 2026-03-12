@@ -10,61 +10,66 @@ export const holdersCommand = new Command("holders")
   .option("--rpc-url <url>", "RPC URL")
   .option("--format <format>", "Output format: text or json", "text")
   .action(async (opts) => {
-    const connection = getConnection(opts.rpcUrl);
-    const mint = new PublicKey(opts.mint);
+    try {
+      const connection = getConnection(opts.rpcUrl);
+      const mint = new PublicKey(opts.mint);
 
-    // Token-2022 accounts have variable size due to extensions, so we cannot
-    // use a dataSize filter. Instead, filter only by mint memcmp.
-    const accounts = await connection.getParsedProgramAccounts(
-      TOKEN_2022_PROGRAM_ID,
-      {
-        filters: [
-          { memcmp: { offset: 0, bytes: mint.toBase58() } },
-        ],
+      // Token-2022 accounts have variable size due to extensions, so we cannot
+      // use a dataSize filter. Instead, filter only by mint memcmp.
+      const accounts = await connection.getParsedProgramAccounts(
+        TOKEN_2022_PROGRAM_ID,
+        {
+          filters: [
+            { memcmp: { offset: 0, bytes: mint.toBase58() } },
+          ],
+        }
+      );
+
+      const minBalance = opts.minBalance ? BigInt(opts.minBalance) : BigInt(0);
+
+      const filtered = accounts.filter(({ account }) => {
+        const parsed = (account.data as any)?.parsed?.info;
+        if (!parsed) return false;
+        const amount = BigInt(parsed.tokenAmount?.amount ?? "0");
+        return amount >= minBalance;
+      });
+
+      if (opts.format === "json") {
+        console.log(JSON.stringify({
+          count: filtered.length,
+          holders: filtered.map(({ pubkey, account }) => {
+            const parsed = (account.data as any)?.parsed?.info;
+            return {
+              account: pubkey.toBase58(),
+              owner: parsed?.owner ?? null,
+              amount: parsed?.tokenAmount?.amount ?? "0",
+              state: parsed?.state ?? "unknown",
+            };
+          }),
+        }, null, 2));
+        return;
       }
-    );
 
-    const minBalance = opts.minBalance ? BigInt(opts.minBalance) : BigInt(0);
+      if (filtered.length === 0) {
+        console.log("No token holders found matching criteria.");
+        return;
+      }
 
-    const filtered = accounts.filter(({ account }) => {
-      const parsed = (account.data as any)?.parsed?.info;
-      if (!parsed) return false;
-      const amount = BigInt(parsed.tokenAmount?.amount ?? "0");
-      return amount >= minBalance;
-    });
+      console.log(`=== Token Holders (${filtered.length}) ===`);
+      for (const { pubkey, account } of filtered) {
+        const parsed = (account.data as any)?.parsed?.info;
+        if (!parsed) continue;
+        const owner = parsed.owner ?? "unknown";
+        const amount = parsed.tokenAmount?.amount ?? "0";
+        const stateStr = parsed.state ?? "unknown";
 
-    if (opts.format === "json") {
-      console.log(JSON.stringify({
-        count: filtered.length,
-        holders: filtered.map(({ pubkey, account }) => {
-          const parsed = (account.data as any)?.parsed?.info;
-          return {
-            account: pubkey.toBase58(),
-            owner: parsed?.owner ?? null,
-            amount: parsed?.tokenAmount?.amount ?? "0",
-            state: parsed?.state ?? "unknown",
-          };
-        }),
-      }, null, 2));
-      return;
-    }
-
-    if (filtered.length === 0) {
-      console.log("No token holders found matching criteria.");
-      return;
-    }
-
-    console.log(`=== Token Holders (${filtered.length}) ===`);
-    for (const { pubkey, account } of filtered) {
-      const parsed = (account.data as any)?.parsed?.info;
-      if (!parsed) continue;
-      const owner = parsed.owner ?? "unknown";
-      const amount = parsed.tokenAmount?.amount ?? "0";
-      const stateStr = parsed.state ?? "unknown";
-
-      console.log(`  Account: ${pubkey.toBase58()}`);
-      console.log(`    Owner:  ${owner}`);
-      console.log(`    Amount: ${amount}`);
-      console.log(`    State:  ${stateStr}`);
+        console.log(`  Account: ${pubkey.toBase58()}`);
+        console.log(`    Owner:  ${owner}`);
+        console.log(`    Amount: ${amount}`);
+        console.log(`    State:  ${stateStr}`);
+      }
+    } catch (err: unknown) {
+      console.error(`Failed to fetch holders: ${(err as Error).message}`);
+      process.exit(1);
     }
   });

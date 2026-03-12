@@ -274,4 +274,4 @@ Emitted by `update_treasury` when the treasury token account is changed.
 | `ReservesAttested` | `attest_reserves` | sss-token |
 | `TreasuryUpdated` | `update_treasury` | sss-token |
 
-**Total: 18 event types** (all in sss-token; the transfer hook program does not emit events directly)
+**Total: 18 event types** (all emitted by sss-token; the transfer hook program does not emit events directly)

@@ -7,6 +7,7 @@ use spl_tlv_account_resolution::{
 use spl_transfer_hook_interface::instruction::ExecuteInstruction;
 
 use crate::errors::HookError;
+use crate::events::ExtraAccountMetasInitialized;
 use crate::state::BLACKLIST_SEED;
 
 /// The sss-token program ID — used to verify config PDA derivation
@@ -131,6 +132,11 @@ pub fn handler(ctx: Context<InitializeExtraAccountMetas>) -> Result<()> {
     // Initialize the account data
     let mut data = ctx.accounts.extra_account_metas.try_borrow_mut_data()?;
     ExtraAccountMetaList::init::<ExecuteInstruction>(&mut data, &extra_account_metas)?;
+
+    emit!(ExtraAccountMetasInitialized {
+        mint: mint_key,
+        payer: ctx.accounts.payer.key(),
+    });
 
     Ok(())
 }

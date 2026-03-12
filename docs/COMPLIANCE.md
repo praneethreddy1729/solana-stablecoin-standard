@@ -82,7 +82,7 @@ Seizure is the process of forcibly transferring all tokens from an account using
 
 - **Who can seize**: Requires an active Seizer role assignment (RoleType 5)
 - **What is seized**: The entire balance of the target token account (`from.amount`)
-- **Where tokens go**: To any specified destination token account (typically a treasury)
+- **Where tokens go**: To the designated treasury token account (must match `config.treasury`; enforced via `InvalidTreasury` error)
 - **Hook bypass**: The permanent delegate transfer bypasses blacklist and pause checks
 - **Frozen accounts**: The permanent delegate can transfer from frozen accounts
 - **Implementation**: Uses `spl_token_2022::onchain::invoke_transfer_checked` which auto-resolves the transfer hook

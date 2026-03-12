@@ -6,23 +6,43 @@ import { PythPriceData } from "./types";
  */
 const DEFAULT_HERMES_URL = "https://hermes.pyth.network";
 
+/** Default timeout for Hermes HTTP requests (10 seconds). */
+const DEFAULT_TIMEOUT_MS = 10_000;
+
 /**
  * Fetch the latest price from the Pyth Hermes HTTP API.
  * This is the recommended approach — no on-chain account parsing needed.
  *
- * @param feedId - Pyth feed ID hex string (with or without 0x prefix)
- * @param hermesBaseUrl - Optional custom Hermes API URL
- * @returns Parsed PythPriceData
- * @throws If the API request fails or returns no data
+ * @param feedId - Pyth feed ID hex string (with or without 0x prefix).
+ * @param hermesBaseUrl - Optional custom Hermes API URL.
+ * @param timeoutMs - Request timeout in milliseconds (default: 10000).
+ * @returns Parsed PythPriceData.
+ * @throws If the API request fails, times out, or returns no data.
  */
 export async function fetchPythHermesPrice(
   feedId: string,
-  hermesBaseUrl: string = DEFAULT_HERMES_URL
+  hermesBaseUrl: string = DEFAULT_HERMES_URL,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<PythPriceData> {
   const cleanId = feedId.replace(/^0x/, "");
   const url = `${hermesBaseUrl}/v2/updates/price/latest?ids[]=${cleanId}&parsed=true`;
 
-  const response = await fetch(url);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch(url, { signal: controller.signal });
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(`Pyth Hermes API request timed out after ${timeoutMs}ms for feed ${cleanId}`);
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Pyth Hermes API network error for feed ${cleanId}: ${msg}`);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
   if (!response.ok) {
     throw new Error(`Pyth Hermes API error: ${response.status} ${response.statusText}`);
   }

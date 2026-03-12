@@ -25,74 +25,79 @@ export const initCommand = new Command("init")
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
   .action(async (opts) => {
-    const connection = getConnection(opts.rpcUrl);
-    const authority = loadKeypair(opts.keypair);
+    try {
+      const connection = getConnection(opts.rpcUrl);
+      const authority = loadKeypair(opts.keypair);
 
-    let name: string;
-    let symbol: string;
-    let uri: string;
-    let decimals: number;
-    let preset: Preset;
-    let enableTransferHook: boolean;
-    let enablePermanentDelegate: boolean;
-    let defaultAccountFrozen: boolean;
+      let name: string;
+      let symbol: string;
+      let uri: string;
+      let decimals: number;
+      let preset: Preset;
+      let enableTransferHook: boolean;
+      let enablePermanentDelegate: boolean;
+      let defaultAccountFrozen: boolean;
 
-    if (opts.custom) {
-      const config = parseConfigFile(opts.custom);
-      name = config.name;
-      symbol = config.symbol;
-      uri = config.uri ?? "";
-      decimals = config.decimals ?? 6;
-      const presetStr = config.preset?.toUpperCase() ?? "SSS_1";
-      preset = PRESET_MAP[presetStr] ?? Preset.Custom;
-      enableTransferHook = config.enableTransferHook ?? false;
-      enablePermanentDelegate = config.enablePermanentDelegate ?? false;
-      defaultAccountFrozen = config.defaultAccountFrozen ?? false;
-    } else {
-      const resolvedPreset = PRESET_MAP[opts.preset?.toUpperCase()] ?? Preset.SSS_1;
-      const isCustomPreset = resolvedPreset === Preset.Custom;
+      if (opts.custom) {
+        const config = parseConfigFile(opts.custom);
+        name = config.name;
+        symbol = config.symbol;
+        uri = config.uri ?? "";
+        decimals = config.decimals ?? 6;
+        const presetStr = config.preset?.toUpperCase() ?? "SSS_1";
+        preset = PRESET_MAP[presetStr] ?? Preset.Custom;
+        enableTransferHook = config.enableTransferHook ?? false;
+        enablePermanentDelegate = config.enablePermanentDelegate ?? false;
+        defaultAccountFrozen = config.defaultAccountFrozen ?? false;
+      } else {
+        const resolvedPreset = PRESET_MAP[opts.preset?.toUpperCase()] ?? Preset.SSS_1;
+        const isCustomPreset = resolvedPreset === Preset.Custom;
 
-      if (isCustomPreset && (!opts.name || !opts.symbol)) {
-        console.error("Error: --name and --symbol are required for CUSTOM preset (or use --custom <config-file>)");
-        process.exit(1);
+        if (isCustomPreset && (!opts.name || !opts.symbol)) {
+          console.error("Error: --name and --symbol are required for CUSTOM preset (or use --custom <config-file>)");
+          process.exit(1);
+        }
+
+        // Apply sensible defaults for named presets when name/symbol not provided
+        const presetDefaults: Record<string, { name: string; symbol: string }> = {
+          [Preset.SSS_1]: { name: "SSS-1 Stablecoin", symbol: "SSS1" },
+          [Preset.SSS_2]: { name: "SSS-2 Stablecoin", symbol: "SSS2" },
+        };
+        const defaults = presetDefaults[resolvedPreset as string] ?? { name: "", symbol: "" };
+
+        name = opts.name ?? defaults.name;
+        symbol = opts.symbol ?? defaults.symbol;
+        uri = opts.uri;
+        decimals = parseInt(opts.decimals, 10);
+        preset = resolvedPreset;
+        enableTransferHook = opts.transferHook ?? false;
+        enablePermanentDelegate = opts.permanentDelegate ?? false;
+        defaultAccountFrozen = opts.defaultFrozen ?? false;
       }
 
-      // Apply sensible defaults for named presets when name/symbol not provided
-      const presetDefaults: Record<string, { name: string; symbol: string }> = {
-        [Preset.SSS_1]: { name: "SSS-1 Stablecoin", symbol: "SSS1" },
-        [Preset.SSS_2]: { name: "SSS-2 Stablecoin", symbol: "SSS2" },
-      };
-      const defaults = presetDefaults[resolvedPreset as string] ?? { name: "", symbol: "" };
+      console.log(`Creating stablecoin: ${name} (${symbol})`);
+      console.log(`Preset: ${preset}`);
 
-      name = opts.name ?? defaults.name;
-      symbol = opts.symbol ?? defaults.symbol;
-      uri = opts.uri;
-      decimals = parseInt(opts.decimals, 10);
-      preset = resolvedPreset;
-      enableTransferHook = opts.transferHook ?? false;
-      enablePermanentDelegate = opts.permanentDelegate ?? false;
-      defaultAccountFrozen = opts.defaultFrozen ?? false;
+      const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(
+        connection,
+        {
+          name,
+          symbol,
+          uri,
+          decimals,
+          preset,
+          enableTransferHook,
+          enablePermanentDelegate,
+          defaultAccountFrozen,
+          authority,
+        }
+      );
+
+      console.log(`Mint: ${mintKeypair.publicKey.toBase58()}`);
+      console.log(`Config PDA: ${stablecoin.configPda.toBase58()}`);
+      console.log(`Tx: ${txSig}`);
+    } catch (err: unknown) {
+      console.error(`Failed to initialize stablecoin: ${(err as Error).message}`);
+      process.exit(1);
     }
-
-    console.log(`Creating stablecoin: ${name} (${symbol})`);
-    console.log(`Preset: ${preset}`);
-
-    const { stablecoin, mintKeypair, txSig } = await SolanaStablecoin.create(
-      connection,
-      {
-        name,
-        symbol,
-        uri,
-        decimals,
-        preset,
-        enableTransferHook,
-        enablePermanentDelegate,
-        defaultAccountFrozen,
-        authority,
-      }
-    );
-
-    console.log(`Mint: ${mintKeypair.publicKey.toBase58()}`);
-    console.log(`Config PDA: ${stablecoin.configPda.toBase58()}`);
-    console.log(`Tx: ${txSig}`);
   });

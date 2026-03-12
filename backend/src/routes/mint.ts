@@ -89,7 +89,7 @@ export async function mintRoutes(app: FastifyInstance): Promise<void> {
       });
 
       sendWebhook("mint", { signature, mint: mintAddress, to, amount }).catch(
-        (err: unknown) => console.warn('Webhook delivery failed:', err instanceof Error ? err.message : String(err))
+        (err: unknown) => app.log.warn(`Webhook delivery failed: ${err instanceof Error ? err.message : String(err)}`)
       );
 
       return reply.status(200).send({

@@ -126,7 +126,7 @@ export function RoleManager({
   return (
     <div className="space-y-4">
       {/* Role Overview */}
-      <Card title="Role Types" subtitle="6 role types control different stablecoin operations">
+      <Card title="Role Types" subtitle="7 role types control different stablecoin operations">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {Object.entries(ROLE_NAMES).map(([type, name]) => (
             <div

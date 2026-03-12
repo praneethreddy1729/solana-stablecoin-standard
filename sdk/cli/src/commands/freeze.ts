@@ -17,19 +17,24 @@ export const freezeCommand = new Command("freeze [address]")
       process.exit(1);
     }
 
-    const wallet = loadWallet(opts.keypair);
-    const stablecoin = await loadStablecoin(opts.mint, opts);
-    const freezer = opts.freezer
-      ? new PublicKey(opts.freezer)
-      : wallet.publicKey;
+    try {
+      const wallet = loadWallet(opts.keypair);
+      const stablecoin = await loadStablecoin(opts.mint, opts);
+      const freezer = opts.freezer
+        ? new PublicKey(opts.freezer)
+        : wallet.publicKey;
 
-    const txSig = await stablecoin.freeze({
-      tokenAccount: new PublicKey(tokenAccount),
-      freezer,
-    });
+      const txSig = await stablecoin.freeze({
+        tokenAccount: new PublicKey(tokenAccount),
+        freezer,
+      });
 
-    console.log(`Frozen account: ${tokenAccount}`);
-    console.log(`Tx: ${txSig}`);
+      console.log(`Frozen account: ${tokenAccount}`);
+      console.log(`Tx: ${txSig}`);
+    } catch (err: unknown) {
+      console.error(`Failed to freeze account: ${(err as Error).message}`);
+      process.exit(1);
+    }
   });
 
 export const thawCommand = new Command("thaw [address]")
@@ -47,17 +52,22 @@ export const thawCommand = new Command("thaw [address]")
       process.exit(1);
     }
 
-    const wallet = loadWallet(opts.keypair);
-    const stablecoin = await loadStablecoin(opts.mint, opts);
-    const freezer = opts.freezer
-      ? new PublicKey(opts.freezer)
-      : wallet.publicKey;
+    try {
+      const wallet = loadWallet(opts.keypair);
+      const stablecoin = await loadStablecoin(opts.mint, opts);
+      const freezer = opts.freezer
+        ? new PublicKey(opts.freezer)
+        : wallet.publicKey;
 
-    const txSig = await stablecoin.thaw({
-      tokenAccount: new PublicKey(tokenAccount),
-      freezer,
-    });
+      const txSig = await stablecoin.thaw({
+        tokenAccount: new PublicKey(tokenAccount),
+        freezer,
+      });
 
-    console.log(`Thawed account: ${tokenAccount}`);
-    console.log(`Tx: ${txSig}`);
+      console.log(`Thawed account: ${tokenAccount}`);
+      console.log(`Tx: ${txSig}`);
+    } catch (err: unknown) {
+      console.error(`Failed to thaw account: ${(err as Error).message}`);
+      process.exit(1);
+    }
   });

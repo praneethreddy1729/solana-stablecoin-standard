@@ -135,8 +135,19 @@ pub fn handler<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Resul
         )?;
     }
 
+    // ---------- Permanent delegate transfer ----------
     // Use spl_token_2022::onchain::invoke_transfer_checked which automatically
-    // handles transfer hook resolution from the mint's extension data.
+    // resolves the transfer hook from the mint's TransferHook extension data.
+    //
+    // The config PDA acts as both:
+    //   (a) The permanent delegate (set during initialize), allowing us to move
+    //       tokens from any account without the owner's signature; and
+    //   (b) The transfer authority (signer_seeds), so Token-2022 accepts the CPI.
+    //
+    // The transfer hook's execute handler detects that the owner_delegate is the
+    // permanent delegate and BYPASSES blacklist checks. Without this bypass, the
+    // transfer would be rejected because the sender IS blacklisted.
+    //
     // For SSS-2 tokens, the client must pass remaining accounts:
     // [hook_program, extra_account_metas, sender_blacklist, receiver_blacklist, config]
     spl_token_2022::onchain::invoke_transfer_checked(

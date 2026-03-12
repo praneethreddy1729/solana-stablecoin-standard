@@ -157,9 +157,9 @@ sequenceDiagram
 
 **Instruction**: `seize()`
 **Required**: Seizer role (RoleType 5)
-**Checks**: `require_role_active(seizer_role, RoleType::Seizer)`, `require_permanent_delegate_enabled()`, `from.amount > 0` (ZeroAmount)
+**Checks**: `require_role_active(seizer_role, RoleType::Seizer)`, `require_permanent_delegate_enabled()`, `from.amount > 0` (ZeroAmount), destination must match `config.treasury` (InvalidTreasury), target owner must be blacklisted (TargetNotBlacklisted)
 
-The seize operation transfers **all tokens** from a target account to a destination account. The Config PDA, set as permanent delegate during initialization, signs the transfer.
+The seize operation transfers **all tokens** from a target account to the designated treasury account. The Config PDA, set as permanent delegate during initialization, signs the transfer.
 
 Implementation (`programs/sss-token/src/instructions/seize.rs`):
 - Uses `spl_token_2022::onchain::invoke_transfer_checked` which automatically resolves the transfer hook from mint extension data

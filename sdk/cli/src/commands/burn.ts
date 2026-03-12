@@ -21,32 +21,37 @@ export const burnCommand = new Command("burn [amount]")
       process.exit(1);
     }
 
-    const wallet = loadWallet(opts.keypair);
-    const stablecoin = await loadStablecoin(opts.mint, opts);
-    const burner = opts.burner
-      ? new PublicKey(opts.burner)
-      : wallet.publicKey;
-    const fromAuthority = opts.fromAuthority
-      ? new PublicKey(opts.fromAuthority)
-      : wallet.publicKey;
+    try {
+      const wallet = loadWallet(opts.keypair);
+      const stablecoin = await loadStablecoin(opts.mint, opts);
+      const burner = opts.burner
+        ? new PublicKey(opts.burner)
+        : wallet.publicKey;
+      const fromAuthority = opts.fromAuthority
+        ? new PublicKey(opts.fromAuthority)
+        : wallet.publicKey;
 
-    // Default --from to the authority's ATA derived from mint + TOKEN_2022_PROGRAM_ID
-    const fromAccount = opts.from
-      ? new PublicKey(opts.from)
-      : getAssociatedTokenAddressSync(
-          new PublicKey(opts.mint),
-          fromAuthority,
-          false,
-          TOKEN_2022_PROGRAM_ID
-        );
+      // Default --from to the authority's ATA derived from mint + TOKEN_2022_PROGRAM_ID
+      const fromAccount = opts.from
+        ? new PublicKey(opts.from)
+        : getAssociatedTokenAddressSync(
+            new PublicKey(opts.mint),
+            fromAuthority,
+            false,
+            TOKEN_2022_PROGRAM_ID
+          );
 
-    const txSig = await stablecoin.burn(
-      fromAccount,
-      new BN(burnAmount),
-      burner,
-      fromAuthority,
-    );
+      const txSig = await stablecoin.burn(
+        fromAccount,
+        new BN(burnAmount),
+        burner,
+        fromAuthority,
+      );
 
-    console.log(`Burned ${burnAmount} tokens from ${fromAccount.toBase58()}`);
-    console.log(`Tx: ${txSig}`);
+      console.log(`Burned ${burnAmount} tokens from ${fromAccount.toBase58()}`);
+      console.log(`Tx: ${txSig}`);
+    } catch (err: unknown) {
+      console.error(`Failed to burn: ${(err as Error).message}`);
+      process.exit(1);
+    }
   });

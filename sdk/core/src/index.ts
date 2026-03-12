@@ -57,5 +57,5 @@ export {
   type PriceHistoryEntry,
   type PythPriceData,
 } from "./oracle";
-export { BN } from "@coral-xyz/anchor";
-export { PublicKey } from "@solana/web3.js";
+export { BN, Wallet } from "@coral-xyz/anchor";
+export { PublicKey, Keypair } from "@solana/web3.js";

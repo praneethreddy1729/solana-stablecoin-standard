@@ -265,12 +265,12 @@ await stablecoin.compliance.blacklistRemove(
 
 #### `compliance.seize(frozenAccount, treasury)`
 
-Seize all tokens from an account using permanent delegate (requires Seizer role).
+Seize all tokens from an account using permanent delegate (requires Seizer role). The destination must match `config.treasury` (set via `updateTreasury`). The target account owner must be blacklisted.
 
 ```typescript
 await stablecoin.compliance.seize(
   sanctionedTokenAccount,  // PublicKey of source token account
-  treasuryTokenAccount,    // PublicKey of destination token account
+  treasuryTokenAccount,    // PublicKey of destination (must match config.treasury)
 );
 ```
 
@@ -451,7 +451,7 @@ interface AttestReservesParams { reserveAmount: BN; expiresInSeconds: BN; attest
 ```typescript
 import { SSS_TOKEN_ERRORS, SSS_TRANSFER_HOOK_ERRORS, parseSSSError } from "@stbr/sss-token";
 
-// SSS Token Program errors (6000-6033)
+// SSS Token Program errors (6000-6034)
 SSS_TOKEN_ERRORS[6003]
 // { code: 6003, name: "TokenPaused", msg: "Token is paused" }
 
@@ -481,7 +481,7 @@ The parser extracts error codes from:
 - `error.message` matching `"Error Number: NNNN"`
 - `error.logs[]` matching `"Error Number: NNNN"`
 
-### SSS Token Program Error Codes (6000-6033)
+### SSS Token Program Error Codes (6000-6034)
 
 | Code | Name | Message |
 |------|------|---------|
@@ -519,6 +519,7 @@ The parser extracts error codes from:
 | 6031 | InvalidExpiration | Invalid expiration: must be positive |
 | 6032 | Undercollateralized | Undercollateralized: reserves are below token supply |
 | 6033 | CannotFreezeTreasury | Cannot freeze the treasury account |
+| 6034 | InvalidTokenProgram | Invalid token program: must be Token-2022 |
 
 ### SSS Transfer Hook Error Codes (6000-6006)
 

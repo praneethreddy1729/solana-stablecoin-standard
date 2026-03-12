@@ -58,6 +58,7 @@ ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 ANCHOR_WALLET=~/.config/solana/id.json
 - BlacklistEntry: [b"blacklist", mint, user] (hook program)
 - ExtraAccountMetas: [b"extra-account-metas", mint] (hook program)
 - ReserveAttestation: [b"attestation", config] (main program)
+- RegistryEntry: [b"registry", mint] (main program)
 
 ## Cargo Dependency Notes
 - blake3 pinned to 1.5.5 (1.8+ requires edition2024, incompatible with platform-tools cargo 1.84)
@@ -70,6 +71,7 @@ ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 ANCHOR_WALLET=~/.config/solana/id.json
 - 6031: InvalidExpiration (must be positive)
 - 6032: Undercollateralized (reserves < supply, auto-pauses)
 - 6033: CannotFreezeTreasury (cannot freeze the treasury account)
+- 6034: InvalidTokenProgram (must be Token-2022)
 
 ## Security Design
 - Blacklister CPI: sss-token uses `invoke_signed` with config PDA signer seeds; hook checks `config.is_signer` (any Blacklister role holder can blacklist)

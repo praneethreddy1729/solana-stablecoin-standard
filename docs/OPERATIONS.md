@@ -101,9 +101,10 @@ After initializing an SSS-2 token, set up the ExtraAccountMetas on the hook prog
 await hookProgram.methods
   .initializeExtraAccountMetas()
   .accountsStrict({
-    authority: authority.publicKey,
+    payer: authority.publicKey,
     mint: mintKeypair.publicKey,
     extraAccountMetas: extraAccountMetasPda,
+    config: configPda,
     systemProgram: SystemProgram.programId,
   })
   .rpc();

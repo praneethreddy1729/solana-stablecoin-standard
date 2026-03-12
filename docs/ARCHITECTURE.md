@@ -5,14 +5,14 @@
 The Solana Stablecoin Standard is a two-program architecture built on Token-2022 (SPL Token Extensions). The main program (`sss-token`) handles all stablecoin lifecycle operations, while the hook program (`sss-transfer-hook`) provides on-chain transfer compliance checks.
 
 ```
-sss-token (main program)              sss-transfer-hook (hook program)
-  17 instructions:                       5 instructions + fallback:
-  - initialize                           - initialize_extra_account_metas
-  - mint                          - update_extra_account_metas
-  - burn                          - execute (blacklist + pause check)
-  - freeze_account                       - add_to_blacklist (via CPI)
-  - thaw_account                         - remove_from_blacklist (via CPI)
-  - pause / unpause                      - fallback (SPL Transfer Hook Execute)
+sss-token (main program)                sss-transfer-hook (hook program)
+  17 instructions:                         5 instructions + fallback:
+  - initialize                             - initialize_extra_account_metas
+  - mint                                   - update_extra_account_metas
+  - burn                                   - execute (blacklist + pause check)
+  - freeze_account                         - add_to_blacklist (via CPI)
+  - thaw_account                           - remove_from_blacklist (via CPI)
+  - pause / unpause                        - fallback (SPL Transfer Hook Execute)
   - update_roles
   - update_minter
   - transfer_authority
@@ -138,7 +138,7 @@ The hook program also has a `fallback` handler that routes SPL Transfer Hook Exe
 ### StablecoinConfig PDA
 
 Seeds: `[b"config", mint.key()]`
-Size: 247 bytes (8 discriminator + 175 fields + 64 reserved)
+Size: 214 bytes (8 discriminator + 175 fields + 31 reserved)
 
 ```
 Offset  Size  Field
@@ -194,6 +194,13 @@ Seeds: `[b"attestation", config.key()]`
 Size: Variable
 
 Stores the latest reserve attestation data including reserve amount, token supply, expiration, attestation URI, and validity flag. Created or updated by the `attest_reserves` instruction. If reserves are below token supply, the config's `paused_by_attestation` flag is set to `true`, auto-pausing the token.
+
+### RegistryEntry PDA
+
+Seeds: `[b"registry", mint.key()]`
+Size: Variable (8 discriminator + 32 mint + 32 issuer + 1 compliance_level + 8 created_at + (4+name_len) + (4+symbol_len) + 1 decimals + 1 bump + 32 reserved)
+
+Created during `initialize` alongside the StablecoinConfig. Stores the mint address, issuer, compliance level (1 = SSS-1, 2 = SSS-2), creation timestamp, token name, symbol, and decimals. Enables auto-discovery of all SSS stablecoins via a single `getProgramAccounts` call with the RegistryEntry discriminator filter.
 
 ### ExtraAccountMetas PDA (Hook Program)
 

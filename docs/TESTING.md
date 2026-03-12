@@ -4,7 +4,7 @@
 
 The test suite validates all SSS-1 and SSS-2 functionality through Anchor integration tests. Tests run against a local Solana validator with both programs deployed.
 
-**Total: 395 integration and unit tests** across 16 files covering all instructions, role checks, compliance flows, and edge cases.
+**Total: 503 tests** (383 integration + 73 SDK unit + 47 property-based) across 16 integration test files + SDK unit tests + property-based fuzz tests covering all instructions, role checks, compliance flows, and edge cases.
 
 ## Running Tests
 
@@ -59,6 +59,7 @@ tests/
   token-ops-extended.ts     -- Extended token operations (40 tests)
   sdk-integration.ts        -- SDK integration tests (26 tests)
   reserve-attestation.ts    -- Reserve attestation tests (11 tests)
+  registry.ts               -- Stablecoin registry tests
   e2e-sss1.ts               -- End-to-end SSS-1 lifecycle (1 test)
   e2e-sss2.ts               -- End-to-end SSS-2 lifecycle (1 test)
 ```

@@ -77,7 +77,8 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
     let mint_key = ctx.accounts.mint.key();
     let token_program_id = ctx.accounts.token_program.key();
 
-    // Determine which extensions to enable
+    // ---------- Extension set ----------
+    // MetadataPointer is always enabled; optional extensions are added based on args.
     let mut extensions: Vec<ExtensionType> = vec![ExtensionType::MetadataPointer];
 
     if args.enable_permanent_delegate {
@@ -90,23 +91,46 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
         extensions.push(ExtensionType::DefaultAccountState);
     }
 
-    // Calculate space for the mint account (extensions only).
+    // ---------- Space calculation ----------
+    // Extension-only space (no metadata yet — Token-2022 auto-reallocs on metadata init).
     let extension_space =
         ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&extensions)
             .map_err(|_| SSSError::ArithmeticOverflow)?;
 
-    // Token-2022 metadata TLV: TYPE_SIZE(2) + LENGTH_SIZE(2) + packed data
-    // Packed: 32 update_authority + 32 mint + 4+name + 4+symbol + 4+uri + 4 (additional_metadata vec)
-    let metadata_inner =
-        32 + 32 + (4 + args.name.len()) + (4 + args.symbol.len()) + (4 + args.uri.len()) + 4;
-    let metadata_space = 2 + 2 + metadata_inner;
-    let full_space = extension_space + metadata_space;
+    // Token-2022 metadata TLV layout:
+    //   TYPE_SIZE(2) + LENGTH_SIZE(2) + packed data
+    // Packed data:
+    //   32 update_authority + 32 mint + 4+name + 4+symbol + 4+uri + 4 (additional_metadata vec len)
+    let metadata_inner = 32usize
+        .checked_add(32)
+        .and_then(|v| v.checked_add(4))
+        .and_then(|v| v.checked_add(args.name.len()))
+        .and_then(|v| v.checked_add(4))
+        .and_then(|v| v.checked_add(args.symbol.len()))
+        .and_then(|v| v.checked_add(4))
+        .and_then(|v| v.checked_add(args.uri.len()))
+        .and_then(|v| v.checked_add(4))
+        .ok_or(SSSError::ArithmeticOverflow)?;
+    let metadata_space = 2usize
+        .checked_add(2)
+        .and_then(|v| v.checked_add(metadata_inner))
+        .ok_or(SSSError::ArithmeticOverflow)?;
+    let full_space = extension_space
+        .checked_add(metadata_space)
+        .ok_or(SSSError::ArithmeticOverflow)?;
 
     let rent = &ctx.accounts.rent;
     let lamports = rent.minimum_balance(full_space);
 
-    // Create with extension-only space but lamports for full size.
-    // Token-2022 will auto-realloc when initialize_token_metadata is called.
+    // ---------- Raw CPI sequence ----------
+    // Token-2022 requires extensions to be initialized BEFORE initializeMint.
+    // Metadata (via MetadataPointer) is initialized AFTER initializeMint.
+    // Order: 1. createAccount  2. PermanentDelegate  3. TransferHook
+    //        4. DefaultAccountState  5. MetadataPointer  6. initializeMint2
+    //        7. initializeTokenMetadata (requires mint authority signer = config PDA)
+    //
+    // We allocate extension-only space but fund lamports for the full size.
+    // Token-2022 auto-reallocs when initialize_token_metadata is called.
     system_program::create_account(
         CpiContext::new(
             ctx.accounts.system_program.to_account_info(),

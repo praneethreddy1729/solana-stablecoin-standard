@@ -15,23 +15,28 @@ blacklistCommand
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
   .action(async (address: string, opts) => {
-    const wallet = loadWallet(opts.keypair);
-    const stablecoin = await loadStablecoin(opts.mint, opts);
-    const blacklister = opts.blacklister
-      ? new PublicKey(opts.blacklister)
-      : wallet.publicKey;
-    const user = new PublicKey(address);
+    try {
+      const wallet = loadWallet(opts.keypair);
+      const stablecoin = await loadStablecoin(opts.mint, opts);
+      const blacklister = opts.blacklister
+        ? new PublicKey(opts.blacklister)
+        : wallet.publicKey;
+      const user = new PublicKey(address);
 
-    const txSig = await stablecoin.compliance.blacklistAdd(
-      user,
-      blacklister,
-      opts.reason,
-    );
-    console.log(`Added ${address} to blacklist`);
-    if (opts.reason) {
-      console.log(`Reason: ${opts.reason}`);
+      const txSig = await stablecoin.compliance.blacklistAdd(
+        user,
+        blacklister,
+        opts.reason,
+      );
+      console.log(`Added ${address} to blacklist`);
+      if (opts.reason) {
+        console.log(`Reason: ${opts.reason}`);
+      }
+      console.log(`Tx: ${txSig}`);
+    } catch (err: unknown) {
+      console.error(`Failed to add to blacklist: ${(err as Error).message}`);
+      process.exit(1);
     }
-    console.log(`Tx: ${txSig}`);
   });
 
 blacklistCommand
@@ -43,19 +48,24 @@ blacklistCommand
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
   .action(async (address: string, opts) => {
-    const wallet = loadWallet(opts.keypair);
-    const stablecoin = await loadStablecoin(opts.mint, opts);
-    const blacklister = opts.blacklister
-      ? new PublicKey(opts.blacklister)
-      : wallet.publicKey;
-    const user = new PublicKey(address);
+    try {
+      const wallet = loadWallet(opts.keypair);
+      const stablecoin = await loadStablecoin(opts.mint, opts);
+      const blacklister = opts.blacklister
+        ? new PublicKey(opts.blacklister)
+        : wallet.publicKey;
+      const user = new PublicKey(address);
 
-    const txSig = await stablecoin.compliance.blacklistRemove(
-      user,
-      blacklister,
-    );
-    console.log(`Removed ${address} from blacklist`);
-    console.log(`Tx: ${txSig}`);
+      const txSig = await stablecoin.compliance.blacklistRemove(
+        user,
+        blacklister,
+      );
+      console.log(`Removed ${address} from blacklist`);
+      console.log(`Tx: ${txSig}`);
+    } catch (err: unknown) {
+      console.error(`Failed to remove from blacklist: ${(err as Error).message}`);
+      process.exit(1);
+    }
   });
 
 blacklistCommand

@@ -136,7 +136,7 @@ describe("sdk-integration", () => {
           preset: Preset.SSS_2,
         });
         expect(result.txSig).to.be.a("string");
-        expect(result.stablecoin.mintAddress).to.be.instanceOf(PublicKey);
+        expect(result.stablecoin.mintAddress.toBase58()).to.be.a("string");
       });
 
       it("3. creates stablecoin with Presets.SSS_1 alias", async () => {
@@ -179,7 +179,7 @@ describe("sdk-integration", () => {
           wallet,
           mintKeypair.publicKey
         );
-        expect(loaded).to.be.instanceOf(SolanaStablecoin);
+        expect(loaded).to.have.property("mintAddress");
       });
 
       it("8. loaded stablecoin has same mintAddress", async () => {

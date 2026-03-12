@@ -19,49 +19,54 @@ mintersCommand
   .option("--keypair <path>", "Keypair file path")
   .option("--format <format>", "Output format: text or json", "text")
   .action(async (opts) => {
-    const stablecoin = await loadStablecoin(opts.mint, opts);
+    try {
+      const stablecoin = await loadStablecoin(opts.mint, opts);
 
-    const accounts = await stablecoin.program.account.roleAssignment.all([
-      {
-        memcmp: {
-          offset: 8,
-          bytes: stablecoin.configPda.toBase58(),
+      const accounts = await stablecoin.program.account.roleAssignment.all([
+        {
+          memcmp: {
+            offset: 8,
+            bytes: stablecoin.configPda.toBase58(),
+          },
         },
-      },
-    ]);
+      ]);
 
-    const minters = accounts.filter(
-      (a: any) => a.account.roleType === RoleType.Minter
-    );
+      const minters = accounts.filter(
+        (a: any) => a.account.roleType === RoleType.Minter
+      );
 
-    if (opts.format === "json") {
-      console.log(JSON.stringify({
-        count: minters.length,
-        minters: minters.map((m) => {
-          const acct = m.account as any;
-          return {
-            address: acct.assignee.toBase58(),
-            active: acct.isActive,
-            quota: acct.minterQuota.toString(),
-            minted: acct.mintedAmount.toString(),
-          };
-        }),
-      }, null, 2));
-      return;
-    }
+      if (opts.format === "json") {
+        console.log(JSON.stringify({
+          count: minters.length,
+          minters: minters.map((m) => {
+            const acct = m.account as any;
+            return {
+              address: acct.assignee.toBase58(),
+              active: acct.isActive,
+              quota: acct.minterQuota.toString(),
+              minted: acct.mintedAmount.toString(),
+            };
+          }),
+        }, null, 2));
+        return;
+      }
 
-    if (minters.length === 0) {
-      console.log("No minters found.");
-      return;
-    }
+      if (minters.length === 0) {
+        console.log("No minters found.");
+        return;
+      }
 
-    console.log("=== Minters ===");
-    for (const m of minters) {
-      const acct = m.account as any;
-      console.log(`  ${acct.assignee.toBase58()}`);
-      console.log(`    Active: ${acct.isActive}`);
-      console.log(`    Quota:  ${acct.minterQuota.toString()}`);
-      console.log(`    Minted: ${acct.mintedAmount.toString()}`);
+      console.log("=== Minters ===");
+      for (const m of minters) {
+        const acct = m.account as any;
+        console.log(`  ${acct.assignee.toBase58()}`);
+        console.log(`    Active: ${acct.isActive}`);
+        console.log(`    Quota:  ${acct.minterQuota.toString()}`);
+        console.log(`    Minted: ${acct.mintedAmount.toString()}`);
+      }
+    } catch (err: unknown) {
+      console.error(`Failed to list minters: ${(err as Error).message}`);
+      process.exit(1);
     }
   });
 
@@ -74,30 +79,35 @@ mintersCommand
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
   .action(async (address: string, opts) => {
-    const stablecoin = await loadStablecoin(opts.mint, opts);
-    const assignee = new PublicKey(address);
+    try {
+      const stablecoin = await loadStablecoin(opts.mint, opts);
+      const assignee = new PublicKey(address);
 
-    const txSig = await stablecoin.updateRoles({
-      roleType: RoleType.Minter,
-      assignee,
-      isActive: true,
-    });
-    console.log(`Added minter role for ${address}`);
-    console.log(`Tx: ${txSig}`);
-
-    if (opts.quota) {
-      const [minterRole] = findRolePda(
-        stablecoin.configPda,
-        RoleType.Minter,
+      const txSig = await stablecoin.updateRoles({
+        roleType: RoleType.Minter,
         assignee,
-        SSS_TOKEN_PROGRAM_ID
-      );
-      const txSig2 = await stablecoin.updateMinterQuota({
-        minterRole,
-        newQuota: new BN(opts.quota),
+        isActive: true,
       });
-      console.log(`Set quota to ${opts.quota}`);
-      console.log(`Tx: ${txSig2}`);
+      console.log(`Added minter role for ${address}`);
+      console.log(`Tx: ${txSig}`);
+
+      if (opts.quota) {
+        const [minterRole] = findRolePda(
+          stablecoin.configPda,
+          RoleType.Minter,
+          assignee,
+          SSS_TOKEN_PROGRAM_ID
+        );
+        const txSig2 = await stablecoin.updateMinterQuota({
+          minterRole,
+          newQuota: new BN(opts.quota),
+        });
+        console.log(`Set quota to ${opts.quota}`);
+        console.log(`Tx: ${txSig2}`);
+      }
+    } catch (err: unknown) {
+      console.error(`Failed to add minter: ${(err as Error).message}`);
+      process.exit(1);
     }
   });
 
@@ -109,13 +119,18 @@ mintersCommand
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
   .action(async (address: string, opts) => {
-    const stablecoin = await loadStablecoin(opts.mint, opts);
+    try {
+      const stablecoin = await loadStablecoin(opts.mint, opts);
 
-    const txSig = await stablecoin.updateRoles({
-      roleType: RoleType.Minter,
-      assignee: new PublicKey(address),
-      isActive: false,
-    });
-    console.log(`Removed minter role for ${address}`);
-    console.log(`Tx: ${txSig}`);
+      const txSig = await stablecoin.updateRoles({
+        roleType: RoleType.Minter,
+        assignee: new PublicKey(address),
+        isActive: false,
+      });
+      console.log(`Removed minter role for ${address}`);
+      console.log(`Tx: ${txSig}`);
+    } catch (err: unknown) {
+      console.error(`Failed to remove minter: ${(err as Error).message}`);
+      process.exit(1);
+    }
   });
