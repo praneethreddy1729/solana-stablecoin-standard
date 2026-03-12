@@ -147,10 +147,10 @@ export function Attestation({
               Reserve Attestation
             </p>
             <p className="text-text-muted text-xs max-w-sm mx-auto">
-              Attestation functions will be available once the on-chain program is connected.
+              Connect your wallet and load a stablecoin mint to enable reserve attestation.
               This feature enables proof-of-reserves verification for stablecoin backing.
             </p>
-            <Badge variant="info" className="mt-4">Coming Soon</Badge>
+            <Badge variant="info" className="mt-4">Requires Connection</Badge>
           </div>
         ) : fetchLoading ? (
           <div className="flex items-center justify-center py-8">

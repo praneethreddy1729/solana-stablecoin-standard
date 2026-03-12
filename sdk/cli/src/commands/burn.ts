@@ -1,22 +1,22 @@
 import { Command } from "commander";
 import { PublicKey } from "@solana/web3.js";
 import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
-import BN from "bn.js";
-import { loadStablecoin, loadWallet } from "../helpers";
+import { loadStablecoin, loadWallet, parseAmount } from "../helpers";
 
 export const burnCommand = new Command("burn [amount]")
   .description("Burn tokens")
   .requiredOption("--mint <address>", "Mint address")
   .option("--from <address>", "Source token account (defaults to authority ATA)")
-  .option("--amount <amount>", "Amount to burn (raw units)")
+  .option("--amount <amount>", "Amount to burn (e.g. 1.5 for human-readable or 1500000 for raw units)")
+  .option("--decimals <number>", "Token decimals for human-readable amounts", "6")
   .option("--from-authority <address>", "Token account authority (defaults to wallet)")
   .option("--burner <address>", "Burner pubkey (defaults to wallet)")
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
   .action(async (amount, opts) => {
-    const burnAmount = amount || opts.amount;
+    const burnAmountStr = amount || opts.amount;
 
-    if (!burnAmount) {
+    if (!burnAmountStr) {
       console.error("Error: amount is required (positional arg or --amount)");
       process.exit(1);
     }
@@ -41,14 +41,17 @@ export const burnCommand = new Command("burn [amount]")
             TOKEN_2022_PROGRAM_ID
           );
 
+      const decimals = parseInt(opts.decimals, 10);
+      const parsedAmount = parseAmount(burnAmountStr, decimals);
+
       const txSig = await stablecoin.burn(
         fromAccount,
-        new BN(burnAmount),
+        parsedAmount,
         burner,
         fromAuthority,
       );
 
-      console.log(`Burned ${burnAmount} tokens from ${fromAccount.toBase58()}`);
+      console.log(`Burned ${burnAmountStr} tokens (${parsedAmount.toString()} base units) from ${fromAccount.toBase58()}`);
       console.log(`Tx: ${txSig}`);
     } catch (err: unknown) {
       console.error(`Failed to burn: ${(err as Error).message}`);

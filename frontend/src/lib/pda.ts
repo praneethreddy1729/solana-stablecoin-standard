@@ -7,6 +7,7 @@ import {
   BLACKLIST_SEED,
   EXTRA_ACCOUNT_METAS_SEED,
   ATTESTATION_SEED,
+  REGISTRY_SEED,
 } from "./constants";
 
 export function findConfigPda(
@@ -58,6 +59,16 @@ export function findAttestationPda(
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [ATTESTATION_SEED, config.toBuffer()],
+    programId
+  );
+}
+
+export function findRegistryEntryPda(
+  mint: PublicKey,
+  programId: PublicKey = SSS_TOKEN_PROGRAM_ID
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [REGISTRY_SEED, mint.toBuffer()],
     programId
   );
 }

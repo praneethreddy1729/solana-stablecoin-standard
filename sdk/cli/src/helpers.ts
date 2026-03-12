@@ -1,9 +1,29 @@
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { Wallet } from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { SolanaStablecoin } from "../../core/src";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+
+/**
+ * Parse a human-readable or raw amount string into base units.
+ * - If the input contains '.', treat as human-readable (e.g. "1.5" with 6 decimals → 1500000)
+ * - Otherwise treat as raw base units (e.g. "1500000" → 1500000)
+ */
+export function parseAmount(input: string, decimals: number): BN {
+  if (input.includes(".")) {
+    const [whole, frac = ""] = input.split(".");
+    if (frac.length > decimals) {
+      throw new Error(
+        `Too many decimal places: ${frac.length} (max ${decimals} for this token)`
+      );
+    }
+    const paddedFrac = frac.padEnd(decimals, "0");
+    return new BN(whole + paddedFrac);
+  }
+  return new BN(input);
+}
 
 export function loadKeypair(keypairPath?: string): Keypair {
   const resolved =

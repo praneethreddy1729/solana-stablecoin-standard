@@ -1,25 +1,25 @@
 import { Command } from "commander";
 import { PublicKey } from "@solana/web3.js";
-import BN from "bn.js";
-import { loadStablecoin, loadWallet } from "../helpers";
+import { loadStablecoin, loadWallet, parseAmount } from "../helpers";
 
 export const mintCommand = new Command("mint [recipient] [amount]")
   .description("Mint tokens")
   .requiredOption("--mint <address>", "Mint address")
   .option("--to <address>", "Recipient token account")
-  .option("--amount <amount>", "Amount to mint (raw units)")
+  .option("--amount <amount>", "Amount to mint (e.g. 1.5 for human-readable or 1500000 for raw units)")
+  .option("--decimals <number>", "Token decimals for human-readable amounts", "6")
   .option("--minter <address>", "Minter pubkey (defaults to wallet)")
   .option("--rpc-url <url>", "RPC URL")
   .option("--keypair <path>", "Keypair file path")
   .action(async (recipient, amount, opts) => {
     const recipientAddr = recipient || opts.to;
-    const mintAmount = amount || opts.amount;
+    const mintAmountStr = amount || opts.amount;
 
     if (!recipientAddr) {
       console.error("Error: recipient address is required (positional arg or --to)");
       process.exit(1);
     }
-    if (!mintAmount) {
+    if (!mintAmountStr) {
       console.error("Error: amount is required (positional arg or --amount)");
       process.exit(1);
     }
@@ -31,13 +31,16 @@ export const mintCommand = new Command("mint [recipient] [amount]")
         ? new PublicKey(opts.minter)
         : wallet.publicKey;
 
+      const decimals = parseInt(opts.decimals, 10);
+      const parsedAmount = parseAmount(mintAmountStr, decimals);
+
       const txSig = await stablecoin.mint(
         new PublicKey(recipientAddr),
-        new BN(mintAmount),
+        parsedAmount,
         minter,
       );
 
-      console.log(`Minted ${mintAmount} tokens to ${recipientAddr}`);
+      console.log(`Minted ${mintAmountStr} tokens (${parsedAmount.toString()} base units) to ${recipientAddr}`);
       console.log(`Tx: ${txSig}`);
     } catch (err: unknown) {
       console.error(`Failed to mint: ${(err as Error).message}`);

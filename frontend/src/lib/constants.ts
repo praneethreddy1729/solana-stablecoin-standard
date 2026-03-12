@@ -13,6 +13,7 @@ export const ROLE_SEED = Buffer.from("role");
 export const BLACKLIST_SEED = Buffer.from("blacklist");
 export const EXTRA_ACCOUNT_METAS_SEED = Buffer.from("extra-account-metas");
 export const ATTESTATION_SEED = Buffer.from("attestation");
+export const REGISTRY_SEED = Buffer.from("registry");
 
 export const ROLE_NAMES: Record<number, string> = {
   0: "Minter",
@@ -30,7 +31,7 @@ export const ROLE_DESCRIPTIONS: Record<number, string> = {
   2: "Can pause/unpause all token operations",
   3: "Can freeze/thaw individual token accounts",
   4: "Can add/remove addresses from the blacklist",
-  5: "Can seize tokens from frozen accounts",
+  5: "Can seize tokens from blacklisted accounts to treasury",
   6: "Can submit reserve attestations for proof-of-reserves",
 };
 
