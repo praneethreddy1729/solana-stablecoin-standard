@@ -1,6 +1,7 @@
 {
   "name": "@stbr/sss-backend",
   "version": "0.1.0",
+  "description": "Fastify REST API for SSS stablecoin operations and compliance",
   "scripts": {
     "start": "ts-node src/index.ts",
     "dev": "ts-node-dev src/index.ts"

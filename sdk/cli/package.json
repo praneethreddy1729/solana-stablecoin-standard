@@ -1,6 +1,7 @@
 {
   "name": "@stbr/sss-cli",
   "version": "0.1.0",
+  "description": "CLI tool for managing SSS stablecoins on Solana",
   "main": "dist/cli/src/index.js",
   "bin": {
     "sss-token": "./dist/cli/src/index.js"

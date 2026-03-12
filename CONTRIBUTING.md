@@ -254,7 +254,7 @@ Add tests to the relevant existing test file or create a new dedicated file. Eve
 - Use `describe/it` nesting: `describe(feature) > describe(scenario) > it(expected behavior)`.
 - Test names follow: `"verb + noun + expected outcome"` — e.g., `"rejects mint with zero amount"`.
 - For expected-failure tests, use `try/catch` + `expect.fail()` rather than `.should.be.rejected`.
-- The full suite must pass before opening a PR. The suite currently has 606 tests (386 integration + 173 SDK unit + 47 property-based) across 24 files.
+- The full suite must pass before opening a PR. The suite currently has 606 tests (386 integration + 173 SDK unit + 47 property-based) across 23 files.
 
 ---
 

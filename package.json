@@ -1,6 +1,7 @@
 {
   "name": "solana-stablecoin-standard",
   "version": "0.1.0",
+  "description": "Two-tier stablecoin specification for Solana built on Token-2022",
   "license": "MIT",
   "private": true,
   "workspaces": ["sdk/core", "sdk/cli", "sdk/tui"],

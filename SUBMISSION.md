@@ -14,7 +14,7 @@ compliance enforcement, and ecosystem-wide token discovery.
 - CLI with 20 commands
 - Next.js management dashboard
 - Fastify REST API with sanctions screening
-- 606 tests across 24 files (386 integration + 173 SDK unit + 47 property-based)
+- 606 tests across 23 files (386 integration + 173 SDK unit + 47 property-based)
 - Internal security review with 12 findings, all resolved
 
 ## Evaluation Criteria Mapping

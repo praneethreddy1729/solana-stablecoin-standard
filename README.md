@@ -6,7 +6,7 @@ A production-grade, two-tier stablecoin specification for Solana built on Token-
 |--------|------:|
 | On-chain instructions | **23** (17 sss-token + 5 instructions + fallback in hook) |
 | Role types | **7** (Minter, Burner, Pauser, Freezer, Blacklister, Seizer, Attestor) |
-| Tests | **606** (386 integration + 173 SDK unit + 47 property-based) across 24 files |
+| Tests | **606** (386 integration + 173 SDK unit + 47 property-based) across 23 files |
 | Error variants | **43** (35 sss-token + 8 hook) |
 | Anchor events | **20** (every state-changing instruction) |
 | CLI commands | **20** |
@@ -801,7 +801,7 @@ cargo test --manifest-path trident-tests/Cargo.toml
 | **Subtotal (SDK unit)** | **173** | **6 files** |
 | Property-based fuzz tests | 47 | `fuzz_sss_token.rs` |
 | **Subtotal (property)** | **47** | **1 file** |
-| **Total** | **606** | **24 files** |
+| **Total** | **606** | **23 files** |
 
 ### What Tests Verify
 
