@@ -48,28 +48,22 @@ pub fn handler(
     expires_in_seconds: i64,
     attestation_uri: String,
 ) -> Result<()> {
-    // Validate inputs
     require!(expires_in_seconds > 0, SSSError::InvalidExpiration);
     require!(
         attestation_uri.len() <= MAX_ATTESTATION_URI_LEN,
         SSSError::AttestationUriTooLong
     );
 
-    // Verify attestor role is active
     require_role_active(&ctx.accounts.attestor_role, RoleType::Attestor)?;
 
-    // Read current token supply from mint
     let token_supply = ctx.accounts.mint.supply;
-
-    // Get current timestamp
     let clock = Clock::get()?;
     let timestamp = clock.unix_timestamp;
     let expires_at = timestamp
         .checked_add(expires_in_seconds)
         .ok_or(SSSError::ArithmeticOverflow)?;
 
-    // Calculate collateralization ratio in basis points (10000 = 100%)
-    // Use u128 intermediary to prevent overflow for high-supply tokens
+    // Basis points (10000 = 100%), u128 intermediary to prevent overflow
     let collateralization_ratio_bps = if token_supply == 0 {
         10_000u64 // 100% if no tokens minted
     } else {
@@ -86,14 +80,10 @@ pub fn handler(
         }
     };
 
-    // Auto-pause/unpause based on collateralization.
-    // Uses separate `paused_by_attestation` flag so attestor cannot override
-    // a manual pause by the Pauser, and Pauser unpause doesn't silently clear
-    // an attestation-triggered pause.
+    // Separate flag so attestor cannot override manual pause and vice versa
     let auto_paused = reserve_amount < token_supply;
     ctx.accounts.config.paused_by_attestation = auto_paused;
 
-    // Write attestation
     let attestation = &mut ctx.accounts.attestation;
     attestation.config = ctx.accounts.config.key();
     attestation.attestor = ctx.accounts.attestor.key();

@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_2022;
 
-/// Mint tokens using config PDA as mint authority
 pub fn mint_tokens<'info>(
     token_program: &AccountInfo<'info>,
     mint: &AccountInfo<'info>,
@@ -20,7 +19,6 @@ pub fn mint_tokens<'info>(
     token_2022::mint_to(cpi_ctx, amount)
 }
 
-/// Freeze a token account using config PDA as freeze authority
 pub fn freeze_token_account<'info>(
     token_program: &AccountInfo<'info>,
     account: &AccountInfo<'info>,
@@ -38,7 +36,6 @@ pub fn freeze_token_account<'info>(
     token_2022::freeze_account(cpi_ctx)
 }
 
-/// Thaw a token account using config PDA as freeze authority
 pub fn thaw_token_account<'info>(
     token_program: &AccountInfo<'info>,
     account: &AccountInfo<'info>,

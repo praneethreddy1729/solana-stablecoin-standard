@@ -69,24 +69,14 @@ pub fn handler<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Resul
     require_role_active(&ctx.accounts.seizer_role, RoleType::Seizer)?;
     require_permanent_delegate_enabled(&ctx.accounts.config)?;
 
-    // ---------------------------------------------------------------
-    // SECURITY: Seize is an enforcement action and intentionally works
-    // even when the token is paused. A paused token should not prevent
-    // the issuer from seizing assets from sanctioned/blacklisted users.
-    // freeze_account and thaw_account also operate while paused for the
-    // same reason — enforcement actions must not be blockable.
-    // ---------------------------------------------------------------
-
-    // --- Validate from_owner matches the actual owner of the `from` token account ---
+    // SECURITY: Enforcement actions (seize, freeze, thaw) intentionally
+    // work even when the token is paused — must not be blockable.
     require!(
         ctx.accounts.from.owner == ctx.accounts.from_owner.key(),
         SSSError::InvalidFromOwner
     );
 
-    // --- Verify the target account owner is blacklisted ---
-    // The BlacklistEntry PDA is owned by the hook program with seeds:
-    //   [b"blacklist", mint.key(), from_owner.key()]
-    // We derive the expected PDA and compare against the provided account.
+    // Verify the target is blacklisted by checking the hook program's BlacklistEntry PDA
     let hook_program_id = ctx.accounts.config.hook_program_id;
     require!(
         hook_program_id != Pubkey::default(),
@@ -106,8 +96,7 @@ pub fn handler<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Resul
         SSSError::InvalidBlacklistEntry
     );
 
-    // The PDA must actually exist (have data) and be owned by the hook program.
-    // If the account doesn't exist or is owned by system program, the user is NOT blacklisted.
+    // Must be owned by hook program (not system program) to confirm blacklist exists
     require!(
         ctx.accounts.blacklist_entry.owner == &hook_program_id,
         SSSError::TargetNotBlacklisted
@@ -120,9 +109,7 @@ pub fn handler<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Resul
     let bump = ctx.accounts.config.bump;
     let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, mint_key.as_ref(), &[bump]]];
 
-    // If the account is frozen (common for blacklisted accounts), thaw it first.
-    // Token-2022 rejects transfer_checked on frozen accounts even when using
-    // permanent delegate. Config PDA is the freeze authority so we can thaw.
+    // Token-2022 rejects transfer_checked on frozen accounts even with permanent delegate
     if ctx.accounts.from.is_frozen() {
         thaw_token_account(
             &ctx.accounts.token_program.to_account_info(),
@@ -133,21 +120,9 @@ pub fn handler<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Resul
         )?;
     }
 
-    // ---------- Permanent delegate transfer ----------
-    // Use spl_token_2022::onchain::invoke_transfer_checked which automatically
-    // resolves the transfer hook from the mint's TransferHook extension data.
-    //
-    // The config PDA acts as both:
-    //   (a) The permanent delegate (set during initialize), allowing us to move
-    //       tokens from any account without the owner's signature; and
-    //   (b) The transfer authority (signer_seeds), so Token-2022 accepts the CPI.
-    //
-    // The transfer hook's execute handler detects that the owner_delegate is the
-    // permanent delegate and BYPASSES blacklist checks. Without this bypass, the
-    // transfer would be rejected because the sender IS blacklisted.
-    //
-    // For SSS-2 tokens, the client must pass remaining accounts:
-    // [hook_program, extra_account_metas, sender_blacklist, receiver_blacklist, config]
+    // Config PDA is both permanent delegate and transfer authority.
+    // The hook's execute handler detects the permanent delegate and bypasses
+    // blacklist checks, allowing seizure from blacklisted accounts.
     spl_token_2022::onchain::invoke_transfer_checked(
         &ctx.accounts.token_program.key(),
         ctx.accounts.from.to_account_info(),

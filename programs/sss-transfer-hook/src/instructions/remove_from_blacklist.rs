@@ -29,7 +29,6 @@ pub struct RemoveFromBlacklist<'info> {
 }
 
 pub fn handler(ctx: Context<RemoveFromBlacklist>, user: Pubkey) -> Result<()> {
-    // Validate the config PDA is derived from the correct program and mint
     let (expected_config, _) = Pubkey::find_program_address(
         &[b"config", ctx.accounts.mint.key().as_ref()],
         &SSS_TOKEN_PROGRAM_ID,
@@ -39,15 +38,12 @@ pub fn handler(ctx: Context<RemoveFromBlacklist>, user: Pubkey) -> Result<()> {
         HookError::Unauthorized
     );
 
-    // Verify config is owned by the sss-token program (defense in depth)
     require!(
         ctx.accounts.config.owner == &SSS_TOKEN_PROGRAM_ID,
         HookError::Unauthorized
     );
 
-    // Verify the CPI came from the sss-token program by checking that the config
-    // PDA was passed as a signer. Only the sss-token program can sign for this PDA
-    // via invoke_signed, so this proves the call is authorized.
+    // Config PDA as signer proves CPI from sss-token (only it can invoke_signed)
     require!(ctx.accounts.config.is_signer, HookError::Unauthorized);
 
     msg!("Unblacklisted address: {}", user);

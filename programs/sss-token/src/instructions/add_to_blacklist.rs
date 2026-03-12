@@ -48,16 +48,12 @@ pub fn handler(ctx: Context<AddToBlacklist>, user: Pubkey, reason: String) -> Re
     // compliance_enabled already checked at the account constraint level
     require_role_active(&ctx.accounts.blacklister_role, RoleType::Blacklister)?;
 
-    // Reason must be at most 64 bytes
     require!(reason.len() <= 64, SSSError::ReasonTooLong);
 
     let mint_key = ctx.accounts.config.mint;
     let bump = ctx.accounts.config.bump;
 
-    // CPI into hook program to create BlacklistEntry PDA
-    // We use invoke_signed with the config PDA as a signer to prove this CPI
-    // originates from the sss-token program. The hook verifies config.is_signer
-    // instead of checking payer == authority, so any authorized Blacklister can call this.
+    // CPI into hook program; config PDA as signer proves authorization
     let ix = anchor_lang::solana_program::instruction::Instruction {
         program_id: ctx.accounts.hook_program.key(),
         accounts: vec![

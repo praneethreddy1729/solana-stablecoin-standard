@@ -48,7 +48,6 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     require_not_paused(&ctx.accounts.config)?;
     require_role_active(&ctx.accounts.minter_role, RoleType::Minter)?;
 
-    // Check minter quota
     let role = &mut ctx.accounts.minter_role;
     let new_minted = role
         .minted_amount
@@ -84,7 +83,6 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
         )?;
     }
 
-    // Mint tokens
     mint_tokens(
         &ctx.accounts.token_program.to_account_info(),
         &ctx.accounts.mint.to_account_info(),

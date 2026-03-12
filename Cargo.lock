@@ -2985,6 +2985,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "solana-security-txt",
  "spl-pod 0.4.0",
  "spl-token-2022 7.0.0",
  "spl-token-metadata-interface 0.5.1",
@@ -2997,6 +2998,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "solana-security-txt",
  "spl-discriminator 0.3.0",
  "spl-pod 0.4.0",
  "spl-tlv-account-resolution 0.8.1",

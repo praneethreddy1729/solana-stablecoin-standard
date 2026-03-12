@@ -1,8 +1,6 @@
-/// PDA seeds
 pub const CONFIG_SEED: &[u8] = b"config";
 pub const ROLE_SEED: &[u8] = b"role";
 
-/// Account sizes (with reserved space for future upgrades)
 pub const STABLECOIN_CONFIG_SIZE: usize = 8 // discriminator
     + 32  // authority
     + 32  // pending_authority
@@ -24,19 +22,14 @@ pub const ROLE_ASSIGNMENT_SIZE: usize = 8 // discriminator
     + 1  // bump
     + 64; // _reserved
 
-/// Anchor instruction discriminators for CPI into hook program
 /// sha256("global:add_to_blacklist")[..8]
 pub const HOOK_ADD_BLACKLIST_DISC: [u8; 8] = [90, 115, 98, 231, 173, 119, 117, 176];
 /// sha256("global:remove_from_blacklist")[..8]
 pub const HOOK_REMOVE_BLACKLIST_DISC: [u8; 8] = [47, 105, 20, 10, 165, 168, 203, 219];
 
-/// Attestation PDA seed
 pub const ATTESTATION_SEED: &[u8] = b"attestation";
-
-/// Max attestation URI length
 pub const MAX_ATTESTATION_URI_LEN: usize = 256;
 
-/// Reserve attestation account size (discriminator + fixed fields + max string + vec overhead)
 pub const RESERVE_ATTESTATION_SIZE: usize = 8  // discriminator
     + 32  // config
     + 32  // attestor
@@ -49,10 +42,8 @@ pub const RESERVE_ATTESTATION_SIZE: usize = 8  // discriminator
     + 1   // bump
     + 32; // _reserved
 
-/// Registry PDA seed
 pub const REGISTRY_SEED: &[u8] = b"registry";
 
-/// Registry entry account size
 pub const REGISTRY_ENTRY_SIZE: usize = 8  // discriminator
     + 32  // mint
     + 32  // issuer
@@ -64,7 +55,6 @@ pub const REGISTRY_ENTRY_SIZE: usize = 8  // discriminator
     + 1   // bump
     + 32; // _reserved
 
-/// Max name/symbol lengths for token metadata
 pub const MAX_NAME_LEN: usize = 32;
 pub const MAX_SYMBOL_LEN: usize = 10;
 pub const MAX_URI_LEN: usize = 200;

@@ -11,46 +11,52 @@ use instructions::*;
 
 declare_id!("tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz");
 
+#[cfg(not(feature = "no-entrypoint"))]
+use solana_security_txt::security_txt;
+
+#[cfg(not(feature = "no-entrypoint"))]
+security_txt! {
+    name: "SSS Token Program",
+    project_url: "https://github.com/solanabr/solana-stablecoin-standard",
+    contacts: "link:https://github.com/solanabr/solana-stablecoin-standard/issues",
+    policy: "https://github.com/solanabr/solana-stablecoin-standard/blob/main/docs/SECURITY.md",
+    preferred_languages: "en",
+    source_code: "https://github.com/solanabr/solana-stablecoin-standard",
+    auditors: "N/A"
+}
+
 #[program]
 pub mod sss_token {
     use super::*;
 
-    /// Initialize a new stablecoin with Token-2022 extensions
     pub fn initialize(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
         instructions::initialize::handler(ctx, args)
     }
 
-    /// Mint tokens (requires Minter role, checks pause + quota)
     pub fn mint(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
         instructions::mint::handler(ctx, amount)
     }
 
-    /// Burn tokens (requires Burner role, checks pause)
     pub fn burn(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
         instructions::burn::handler(ctx, amount)
     }
 
-    /// Freeze a token account (requires Freezer role)
     pub fn freeze_account(ctx: Context<FreezeTokenAccount>) -> Result<()> {
         instructions::freeze_account::handler(ctx)
     }
 
-    /// Thaw a frozen token account (requires Freezer role)
     pub fn thaw_account(ctx: Context<ThawTokenAccount>) -> Result<()> {
         instructions::thaw_account::handler(ctx)
     }
 
-    /// Pause the token (requires Pauser role)
     pub fn pause(ctx: Context<Pause>) -> Result<()> {
         instructions::pause::handler(ctx)
     }
 
-    /// Unpause the token (requires Pauser role)
     pub fn unpause(ctx: Context<Unpause>) -> Result<()> {
         instructions::unpause::handler(ctx)
     }
 
-    /// Create or update a role assignment (authority only)
     pub fn update_roles(
         ctx: Context<UpdateRoles>,
         role_type: u8,
@@ -60,12 +66,10 @@ pub mod sss_token {
         instructions::update_roles::handler(ctx, role_type, assignee, is_active)
     }
 
-    /// Update minter quota (authority only)
     pub fn update_minter(ctx: Context<UpdateMinterQuota>, new_quota: u64) -> Result<()> {
         instructions::update_minter_quota::handler(ctx, new_quota)
     }
 
-    /// Initiate authority transfer (current authority only)
     pub fn transfer_authority(
         ctx: Context<TransferAuthority>,
         new_authority: Pubkey,
@@ -73,17 +77,14 @@ pub mod sss_token {
         instructions::transfer_authority::handler(ctx, new_authority)
     }
 
-    /// Accept authority transfer (pending authority only)
     pub fn accept_authority(ctx: Context<AcceptAuthority>) -> Result<()> {
         instructions::accept_authority::handler(ctx)
     }
 
-    /// Cancel pending authority transfer (current authority only)
     pub fn cancel_authority_transfer(ctx: Context<CancelAuthorityTransfer>) -> Result<()> {
         instructions::cancel_authority_transfer::handler(ctx)
     }
 
-    /// Add address to blacklist via CPI to hook program (SSS-2, requires Blacklister role)
     pub fn add_to_blacklist(
         ctx: Context<AddToBlacklist>,
         user: Pubkey,
@@ -92,23 +93,19 @@ pub mod sss_token {
         instructions::add_to_blacklist::handler(ctx, user, reason)
     }
 
-    /// Remove address from blacklist via CPI to hook program (SSS-2, requires Blacklister role)
     pub fn remove_from_blacklist(ctx: Context<RemoveFromBlacklist>, user: Pubkey) -> Result<()> {
         instructions::remove_from_blacklist::handler(ctx, user)
     }
 
-    /// Seize tokens from a blacklisted account using permanent delegate (SSS-2, requires Seizer role)
     pub fn seize<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Result<()> {
         instructions::seize::handler(ctx)
     }
 
-    /// Update the treasury address where seized tokens are sent (authority only)
     pub fn update_treasury(ctx: Context<UpdateTreasury>, new_treasury: Pubkey) -> Result<()> {
         instructions::update_treasury::handler(ctx, new_treasury)
     }
 
-    /// Submit a reserve attestation proving the stablecoin is fully backed.
-    /// Auto-pauses minting if reserves < token supply (undercollateralized).
+    /// Auto-pauses minting if reserves < token supply
     pub fn attest_reserves(
         ctx: Context<AttestReserves>,
         reserve_amount: u64,

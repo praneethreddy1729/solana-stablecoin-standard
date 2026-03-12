@@ -18,18 +18,11 @@ pub struct UpdateTreasury<'info> {
     pub config: Account<'info, StablecoinConfig>,
 }
 
-/// Update the treasury token account where seized tokens are sent.
-/// Authority-only operation.
 pub fn handler(ctx: Context<UpdateTreasury>, new_treasury: Pubkey) -> Result<()> {
-    // Treasury must not be zero address — seize would fail
     require!(new_treasury != Pubkey::default(), SSSError::InvalidTreasury);
 
-    // Note: We validate the treasury is not the zero address. Full ATA validation
-    // (checking it's an initialized Token-2022 account for this mint) would require
-    // passing the token account as an Account<TokenAccount> with has_one = mint.
-    // We accept the current design since only the authority can update the treasury,
-    // and an invalid treasury would only cause seize operations to fail (self-DOS).
-
+    // No full ATA validation: only authority can update, and an invalid treasury
+    // would only cause seize to fail (self-DOS, not exploitable).
     let config = &mut ctx.accounts.config;
     let old_treasury = config.treasury;
     config.treasury = new_treasury;

@@ -43,10 +43,7 @@ pub struct ThawTokenAccount<'info> {
 pub fn handler(ctx: Context<ThawTokenAccount>) -> Result<()> {
     require_role_active(&ctx.accounts.freezer_role, RoleType::Freezer)?;
 
-    // SECURITY NOTE: thaw_account intentionally does NOT check pause status.
-    // Thawing is an enforcement action (e.g., clearing a wrongly-frozen account).
-    // Enforcement operations must work even when the token is paused.
-    // Same rationale applies to freeze_account and seize.
+    // Enforcement actions skip pause checks (see freeze_account.rs)
 
     require!(
         ctx.accounts.token_account.is_frozen(),

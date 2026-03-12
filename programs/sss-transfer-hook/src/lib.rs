@@ -9,6 +9,20 @@ use instructions::*;
 
 declare_id!("A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB");
 
+#[cfg(not(feature = "no-entrypoint"))]
+use solana_security_txt::security_txt;
+
+#[cfg(not(feature = "no-entrypoint"))]
+security_txt! {
+    name: "SSS Transfer Hook Program",
+    project_url: "https://github.com/solanabr/solana-stablecoin-standard",
+    contacts: "link:https://github.com/solanabr/solana-stablecoin-standard/issues",
+    policy: "https://github.com/solanabr/solana-stablecoin-standard/blob/main/docs/SECURITY.md",
+    preferred_languages: "en",
+    source_code: "https://github.com/solanabr/solana-stablecoin-standard",
+    auditors: "N/A"
+}
+
 #[program]
 pub mod sss_transfer_hook {
     use super::*;

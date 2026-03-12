@@ -3,73 +3,73 @@ use anchor_lang::prelude::*;
 #[error_code]
 pub enum SSSError {
     #[msg("Unauthorized: signer is not the authority")]
-    Unauthorized, // 6000
+    Unauthorized,
     #[msg("Invalid role type")]
-    InvalidRoleType, // 6001
+    InvalidRoleType,
     #[msg("Role is not active")]
-    RoleNotActive, // 6002
+    RoleNotActive,
     #[msg("Token is paused")]
-    TokenPaused, // 6003
+    TokenPaused,
     #[msg("Token is not paused")]
-    TokenNotPaused, // 6004
+    TokenNotPaused,
     #[msg("Minter quota exceeded")]
-    MinterQuotaExceeded, // 6005
+    MinterQuotaExceeded,
     #[msg("Invalid mint")]
-    InvalidMint, // 6006
+    InvalidMint,
     #[msg("Invalid config")]
-    InvalidConfig, // 6007
+    InvalidConfig,
     #[msg("Authority transfer not pending")]
-    AuthorityTransferNotPending, // 6008
+    AuthorityTransferNotPending,
     #[msg("Authority transfer already pending")]
-    AuthorityTransferAlreadyPending, // 6009
+    AuthorityTransferAlreadyPending,
     #[msg("Invalid pending authority")]
-    InvalidPendingAuthority, // 6010
+    InvalidPendingAuthority,
     #[msg("Account is already frozen")]
-    AccountAlreadyFrozen, // 6011
+    AccountAlreadyFrozen,
     #[msg("Account is not frozen")]
-    AccountNotFrozen, // 6012
+    AccountNotFrozen,
     #[msg("Arithmetic overflow")]
-    ArithmeticOverflow, // 6013
+    ArithmeticOverflow,
     #[msg("Invalid decimals: must be between 0 and 18")]
-    InvalidDecimals, // 6014
+    InvalidDecimals,
     #[msg("Name too long")]
-    NameTooLong, // 6015
+    NameTooLong,
     #[msg("Symbol too long")]
-    SymbolTooLong, // 6016
+    SymbolTooLong,
     #[msg("URI too long")]
-    UriTooLong, // 6017
+    UriTooLong,
     #[msg("Account is blacklisted")]
-    AccountBlacklisted, // 6018
+    AccountBlacklisted,
     #[msg("Account is not blacklisted")]
-    AccountNotBlacklisted, // 6019
+    AccountNotBlacklisted,
     #[msg("Invalid hook program")]
-    InvalidHookProgram, // 6020
+    InvalidHookProgram,
     #[msg("Mint amount must be greater than zero")]
-    ZeroAmount, // 6021
+    ZeroAmount,
     #[msg("Compliance module not enabled for this token")]
-    ComplianceNotEnabled, // 6022
+    ComplianceNotEnabled,
     #[msg("Permanent delegate not enabled for this token")]
-    PermanentDelegateNotEnabled, // 6023
+    PermanentDelegateNotEnabled,
     #[msg("Blacklist reason too long (max 64 bytes)")]
-    ReasonTooLong, // 6024
+    ReasonTooLong,
     #[msg("Seized tokens must go to the designated treasury")]
-    InvalidTreasury, // 6025
+    InvalidTreasury,
     #[msg("Target account owner is not blacklisted")]
-    TargetNotBlacklisted, // 6026
+    TargetNotBlacklisted,
     #[msg("Account is deliberately frozen and cannot be auto-thawed")]
-    AccountDeliberatelyFrozen, // 6027
+    AccountDeliberatelyFrozen,
     #[msg("Invalid blacklist entry PDA")]
-    InvalidBlacklistEntry, // 6028
+    InvalidBlacklistEntry,
     #[msg("Invalid from account owner")]
-    InvalidFromOwner, // 6029
+    InvalidFromOwner,
     #[msg("Attestation URI too long (max 256 bytes)")]
-    AttestationUriTooLong, // 6030
+    AttestationUriTooLong,
     #[msg("Invalid expiration: must be positive")]
-    InvalidExpiration, // 6031
+    InvalidExpiration,
     #[msg("Undercollateralized: reserves are below token supply")]
-    Undercollateralized, // 6032
+    Undercollateralized,
     #[msg("Cannot freeze the treasury account")]
-    CannotFreezeTreasury, // 6033
+    CannotFreezeTreasury,
     #[msg("Invalid token program: must be Token-2022")]
-    InvalidTokenProgram, // 6034
+    InvalidTokenProgram,
 }

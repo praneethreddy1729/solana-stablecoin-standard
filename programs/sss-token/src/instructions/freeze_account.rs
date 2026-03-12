@@ -43,18 +43,15 @@ pub struct FreezeTokenAccount<'info> {
 pub fn handler(ctx: Context<FreezeTokenAccount>) -> Result<()> {
     require_role_active(&ctx.accounts.freezer_role, RoleType::Freezer)?;
 
-    // SECURITY NOTE: freeze_account intentionally does NOT check pause status.
-    // Freezing is an enforcement action (e.g., responding to fraud, sanctions).
-    // Enforcement operations must work even when the token is paused, otherwise
-    // pausing could shield bad actors from compliance actions.
-    // Same rationale applies to thaw_account and seize.
+    // Enforcement actions (freeze, thaw, seize) intentionally skip pause checks —
+    // pausing must not shield bad actors from compliance actions.
 
     require!(
         !ctx.accounts.token_account.is_frozen(),
         SSSError::AccountAlreadyFrozen
     );
 
-    // Prevent freezing the treasury account — would block seize operations
+    // Freezing the treasury would block seize operations
     require!(
         ctx.accounts.token_account.key() != ctx.accounts.config.treasury,
         SSSError::CannotFreezeTreasury

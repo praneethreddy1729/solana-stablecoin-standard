@@ -38,7 +38,6 @@ pub fn handler(
 ) -> Result<()> {
     require_authority(&ctx.accounts.config, &ctx.accounts.authority.key())?;
 
-    // Validate role type
     RoleType::from_u8(role_type).ok_or(SSSError::InvalidRoleType)?;
 
     let role = &mut ctx.accounts.role;

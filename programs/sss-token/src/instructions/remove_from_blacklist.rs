@@ -49,8 +49,6 @@ pub fn handler(ctx: Context<RemoveFromBlacklist>, user: Pubkey) -> Result<()> {
     let mint_key = ctx.accounts.config.mint;
     let bump = ctx.accounts.config.bump;
 
-    // CPI into hook program to close BlacklistEntry PDA
-    // invoke_signed with config PDA proves CPI from sss-token program
     let ix = anchor_lang::solana_program::instruction::Instruction {
         program_id: ctx.accounts.hook_program.key(),
         accounts: vec![

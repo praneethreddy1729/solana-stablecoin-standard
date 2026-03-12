@@ -77,8 +77,6 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
     let mint_key = ctx.accounts.mint.key();
     let token_program_id = ctx.accounts.token_program.key();
 
-    // ---------- Extension set ----------
-    // MetadataPointer is always enabled; optional extensions are added based on args.
     let mut extensions: Vec<ExtensionType> = vec![ExtensionType::MetadataPointer];
 
     if args.enable_permanent_delegate {
@@ -91,8 +89,7 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
         extensions.push(ExtensionType::DefaultAccountState);
     }
 
-    // ---------- Space calculation ----------
-    // Extension-only space (no metadata yet — Token-2022 auto-reallocs on metadata init).
+    // Extension-only space; Token-2022 auto-reallocs when metadata is initialized.
     let extension_space =
         ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&extensions)
             .map_err(|_| SSSError::ArithmeticOverflow)?;
@@ -122,15 +119,8 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
     let rent = &ctx.accounts.rent;
     let lamports = rent.minimum_balance(full_space);
 
-    // ---------- Raw CPI sequence ----------
-    // Token-2022 requires extensions to be initialized BEFORE initializeMint.
-    // Metadata (via MetadataPointer) is initialized AFTER initializeMint.
-    // Order: 1. createAccount  2. PermanentDelegate  3. TransferHook
-    //        4. DefaultAccountState  5. MetadataPointer  6. initializeMint2
-    //        7. initializeTokenMetadata (requires mint authority signer = config PDA)
-    //
-    // We allocate extension-only space but fund lamports for the full size.
-    // Token-2022 auto-reallocs when initialize_token_metadata is called.
+    // Token-2022 extension init order: extensions BEFORE initializeMint,
+    // metadata AFTER. Allocate extension-only space but fund for full size.
     system_program::create_account(
         CpiContext::new(
             ctx.accounts.system_program.to_account_info(),
@@ -144,7 +134,6 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
         &token_program_id,
     )?;
 
-    // Step 2: Initialize PermanentDelegate (if enabled)
     if args.enable_permanent_delegate {
         let ix = initialize_permanent_delegate(&token_program_id, &mint_key, &config_key)
             .map_err(|_| SSSError::ArithmeticOverflow)?;
@@ -152,7 +141,6 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
         anchor_lang::solana_program::program::invoke(&ix, &[ctx.accounts.mint.to_account_info()])?;
     }
 
-    // Step 3: Initialize TransferHook (if enabled)
     if args.enable_transfer_hook {
         let hook_program = ctx
             .accounts
@@ -172,7 +160,6 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
         anchor_lang::solana_program::program::invoke(&ix, &[ctx.accounts.mint.to_account_info()])?;
     }
 
-    // Step 4: Initialize DefaultAccountState (if enabled)
     if args.default_account_frozen {
         let ix =
             initialize_default_account_state(&token_program_id, &mint_key, &AccountState::Frozen)
@@ -181,7 +168,6 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
         anchor_lang::solana_program::program::invoke(&ix, &[ctx.accounts.mint.to_account_info()])?;
     }
 
-    // Step 5: Initialize MetadataPointer (point to self)
     let ix = initialize_metadata_pointer(
         &token_program_id,
         &mint_key,
@@ -192,7 +178,6 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
 
     anchor_lang::solana_program::program::invoke(&ix, &[ctx.accounts.mint.to_account_info()])?;
 
-    // Step 6: Initialize Mint (config PDA as both mint authority and freeze authority)
     let ix = initialize_mint2(
         &token_program_id,
         &mint_key,
@@ -204,7 +189,7 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
 
     anchor_lang::solana_program::program::invoke(&ix, &[ctx.accounts.mint.to_account_info()])?;
 
-    // Step 7: Initialize Token Metadata (AFTER mint init — uses config PDA as update authority)
+    // Metadata must be initialized AFTER mint init; config PDA signs as update authority
     let bump = ctx.bumps.config;
     let signer_seeds: &[&[u8]] = &[CONFIG_SEED, mint_key.as_ref(), &[bump]];
 
@@ -228,7 +213,6 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
         &[signer_seeds],
     )?;
 
-    // Set config state
     let hook_program_id = if args.enable_transfer_hook {
         ctx.accounts
             .hook_program
@@ -255,7 +239,6 @@ pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
     config.paused_by_attestation = false;
     config._reserved = [0u8; 31];
 
-    // Populate registry entry
     let registry = &mut ctx.accounts.registry_entry;
     registry.mint = mint_key;
     registry.issuer = ctx.accounts.authority.key();

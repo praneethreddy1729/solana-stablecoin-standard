@@ -28,6 +28,7 @@ spl-discriminator = "0.3"
 spl-tlv-account-resolution = "0.8"
 spl-pod = "0.4"
 spl-type-length-value = "0.6"
+solana-security-txt = "1.1.1"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

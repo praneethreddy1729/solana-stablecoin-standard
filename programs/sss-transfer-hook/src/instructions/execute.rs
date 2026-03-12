@@ -22,18 +22,14 @@ const MINT_EXTENSIONS_OFFSET: usize = 166;
 /// Bypasses blacklist check if the transfer is initiated by the permanent delegate (seize).
 #[derive(Accounts)]
 pub struct Execute<'info> {
-    /// Source token account
     /// CHECK: Validated by Token-2022
     pub source: UncheckedAccount<'info>,
 
-    /// The mint
     pub mint: InterfaceAccount<'info, Mint>,
 
-    /// Destination token account
     /// CHECK: Validated by Token-2022
     pub destination: UncheckedAccount<'info>,
 
-    /// Owner or delegate of source
     /// CHECK: Validated by Token-2022
     pub owner_delegate: UncheckedAccount<'info>,
 
@@ -95,19 +91,16 @@ pub fn handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
         return Ok(());
     }
 
-    // Validate config account: owner + PDA derivation
     validate_config(
         &ctx.accounts.config.to_account_info(),
         &ctx.accounts.mint.key(),
     )?;
 
-    // Check manual pause state from config
     let config_data = ctx.accounts.config.try_borrow_data()?;
     if config_data.len() > CONFIG_PAUSED_OFFSET && config_data[CONFIG_PAUSED_OFFSET] == 1 {
         return Err(HookError::TokenPaused.into());
     }
-    // Check attestation-triggered pause (undercollateralized reserves) separately
-    // so callers get a more specific error and can distinguish the two states
+    // Separate error for attestation pause vs manual pause
     if config_data.len() > CONFIG_PAUSED_BY_ATTESTATION_OFFSET
         && config_data[CONFIG_PAUSED_BY_ATTESTATION_OFFSET] == 1
     {
@@ -115,9 +108,6 @@ pub fn handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
     }
     drop(config_data);
 
-    // Validate ownership and check sender blacklist.
-    // A non-empty account owned by this program with a valid discriminator (>= 8 bytes)
-    // means the sender's wallet address has a BlacklistEntry PDA => blacklisted.
     validate_blacklist_account(&ctx.accounts.sender_blacklist.to_account_info())?;
     if !ctx.accounts.sender_blacklist.data_is_empty() {
         let data = ctx.accounts.sender_blacklist.try_borrow_data()?;
@@ -126,7 +116,6 @@ pub fn handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
         }
     }
 
-    // Validate ownership and check receiver blacklist (same logic as sender)
     validate_blacklist_account(&ctx.accounts.receiver_blacklist.to_account_info())?;
     if !ctx.accounts.receiver_blacklist.data_is_empty() {
         let data = ctx.accounts.receiver_blacklist.try_borrow_data()?;
@@ -167,15 +156,12 @@ pub fn fallback_execute<'info>(
         return Ok(());
     }
 
-    // Validate config account: owner + PDA derivation
     validate_config(config, &mint_info.key())?;
 
-    // Check manual pause state
     let config_data = config.try_borrow_data()?;
     if config_data.len() > CONFIG_PAUSED_OFFSET && config_data[CONFIG_PAUSED_OFFSET] == 1 {
         return Err(HookError::TokenPaused.into());
     }
-    // Check attestation-triggered pause separately for better diagnostics
     if config_data.len() > CONFIG_PAUSED_BY_ATTESTATION_OFFSET
         && config_data[CONFIG_PAUSED_BY_ATTESTATION_OFFSET] == 1
     {
@@ -183,7 +169,6 @@ pub fn fallback_execute<'info>(
     }
     drop(config_data);
 
-    // Validate and check sender blacklist
     validate_blacklist_account(sender_blacklist)?;
     if !sender_blacklist.data_is_empty() {
         let data = sender_blacklist.try_borrow_data()?;
@@ -192,7 +177,6 @@ pub fn fallback_execute<'info>(
         }
     }
 
-    // Validate and check receiver blacklist
     validate_blacklist_account(receiver_blacklist)?;
     if !receiver_blacklist.data_is_empty() {
         let data = receiver_blacklist.try_borrow_data()?;

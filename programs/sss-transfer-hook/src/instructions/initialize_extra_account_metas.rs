@@ -46,7 +46,6 @@ pub fn handler(ctx: Context<InitializeExtraAccountMetas>) -> Result<()> {
         HookError::Unauthorized
     );
 
-    // Verify config is owned by the sss-token program (defense in depth)
     require!(
         ctx.accounts.config.owner == &SSS_TOKEN_PROGRAM_ID,
         HookError::Unauthorized
@@ -107,14 +106,12 @@ pub fn handler(ctx: Context<InitializeExtraAccountMetas>) -> Result<()> {
         ExtraAccountMeta::new_with_pubkey(&ctx.accounts.config.key(), false, false)?,
     ];
 
-    // Calculate space needed
     let account_size = ExtraAccountMetaList::size_of(extra_account_metas.len())?;
     let lamports = Rent::get()?.minimum_balance(account_size);
 
     let bump = ctx.bumps.extra_account_metas;
     let signer_seeds: &[&[u8]] = &[b"extra-account-metas", mint_key.as_ref(), &[bump]];
 
-    // Create the ExtraAccountMetaList account
     system_program::create_account(
         CpiContext::new_with_signer(
             ctx.accounts.system_program.to_account_info(),
@@ -129,7 +126,6 @@ pub fn handler(ctx: Context<InitializeExtraAccountMetas>) -> Result<()> {
         &hook_program_id,
     )?;
 
-    // Initialize the account data
     let mut data = ctx.accounts.extra_account_metas.try_borrow_mut_data()?;
     ExtraAccountMetaList::init::<ExecuteInstruction>(&mut data, &extra_account_metas)?;
 
