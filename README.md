@@ -1,12 +1,12 @@
 # Solana Stablecoin Standard (SSS)
 
-A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 503 tests, 17 documentation files (4,159 lines), and a full-stack operational toolkit.**
+A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 603 tests, 17 documentation files (4,159 lines), and a full-stack operational toolkit.**
 
 | Metric | Count |
 |--------|------:|
 | On-chain instructions | **23** (17 sss-token + 6 hook) |
 | Role types | **7** (Minter, Burner, Pauser, Freezer, Blacklister, Seizer, Attestor) |
-| Tests | **503** (383 integration + 73 SDK unit + 47 property-based) across 20 files |
+| Tests | **603** (383 integration + 173 SDK unit + 47 property-based) across 24 files |
 | Error variants | **42** (35 sss-token + 7 hook) |
 | Anchor events | **17** (every state-changing instruction) |
 | CLI commands | **18** |
@@ -38,7 +38,7 @@ yarn install
 # 2. Build both programs
 anchor build
 
-# 3. Run all 503 tests (starts local validator automatically)
+# 3. Run all 603 tests (starts local validator automatically)
 anchor test
 
 # 4. Create an SSS-1 stablecoin via CLI
@@ -344,7 +344,7 @@ The script performs the following operations against the deployed programs:
 
 All six transactions are signed and submitted to devnet, with explorer links printed for each.
 
-> **Note:** Devnet currently runs Agave 3.0.x which has a known SIMD-0219 bug affecting Token-2022 metadata reallocation ([anza-xyz/agave#9799](https://github.com/anza-xyz/agave/issues/9799)). The `initialize` instruction uses Token-2022's `token_metadata_initialize` which triggers a metadata realloc that fails under SIMD-0219. This feature is deactivated in the local test validator via `Anchor.toml`, but cannot be deactivated on devnet. The programs themselves are deployed and verified as shown above; all 503 tests pass on localnet with the feature deactivated.
+> **Note:** Devnet currently runs Agave 3.0.x which has a known SIMD-0219 bug affecting Token-2022 metadata reallocation ([anza-xyz/agave#9799](https://github.com/anza-xyz/agave/issues/9799)). The `initialize` instruction uses Token-2022's `token_metadata_initialize` which triggers a metadata realloc that fails under SIMD-0219. This feature is deactivated in the local test validator via `Anchor.toml`, but cannot be deactivated on devnet. The programs themselves are deployed and verified as shown above; all 603 tests pass on localnet with the feature deactivated.
 
 ---
 
@@ -793,11 +793,15 @@ cargo test --manifest-path trident-tests/Cargo.toml
 | Registry | 2 | `registry.ts` |
 | **Subtotal (integration)** | **383** | **16 files** |
 | SDK unit tests | 48 | `sdk.test.ts` |
+| PDA derivation tests | 36 | `pda.test.ts` |
+| Error parsing tests | 26 | `errors.test.ts` |
 | Oracle unit tests | 25 | `oracle.test.ts` |
-| **Subtotal (SDK unit)** | **73** | **2 files** |
+| Type/enum tests | 20 | `types.test.ts` |
+| Constants tests | 18 | `constants.test.ts` |
+| **Subtotal (SDK unit)** | **173** | **6 files** |
 | Property-based fuzz tests | 47 | `fuzz_sss_token.rs` |
 | **Subtotal (property)** | **47** | **1 file** |
-| **Total** | **503** | **20 files** |
+| **Total** | **603** | **24 files** |
 
 ### What Tests Verify
 
