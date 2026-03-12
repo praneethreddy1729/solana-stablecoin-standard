@@ -33,3 +33,7 @@ backend/yarn.lock
 
 # Vercel
 .vercel/
+
+# Claude Code
+CLAUDE.md
+.claude/

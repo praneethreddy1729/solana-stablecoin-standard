@@ -13,7 +13,7 @@ A production-grade, two-tier stablecoin specification for Solana built on Token-
 | Backend API endpoints | **11** |
 | Frontend components | **19** React/Next.js components |
 | Documentation files | **20** (4,957 lines) |
-| Rust LoC (programs) | **2,854** |
+| Rust LoC (programs) | **2,792** |
 | TypeScript LoC (SDK/CLI/backend/frontend) | **6,477** |
 | Devnet programs deployed | **2** |
 

@@ -72,7 +72,7 @@ sdk/
   cli/                    # Admin CLI tool (Anchor + Commander)
 frontend/                 # Next.js management dashboard
 backend/                  # Fastify REST API
-tests/                    # Integration tests (15 files, 395 tests)
+tests/                    # Integration tests (16 files, 386 tests)
 docs/                     # Specifications and guides (11 files)
 trident-tests/            # Fuzz test scaffolds (not yet implemented)
 scripts/                  # Utility and deployment scripts
@@ -89,7 +89,7 @@ migrations/               # Anchor migration scripts
 | SSS-1 | Regulated stablecoin with mint/burn roles, pause, freeze, blacklist |
 | SSS-2 | SSS-1 + seize (permanent delegate), reserve attestation, auto-pause |
 
-The 17 instructions span: `initialize`, `update_authority`, `assign_role`, `revoke_role`, `mint`, `burn`, `pause`, `unpause`, `freeze_account`, `thaw_account`, `seize`, `add_to_blacklist`, `remove_from_blacklist`, `update_transfer_hook`, `register_reserve_attestation`, `update_reserve_attestation`, `deregister_reserve_attestation`.
+The 17 instructions span: `initialize`, `mint`, `burn`, `pause`, `unpause`, `freeze_account`, `thaw_account`, `update_roles`, `update_minter`, `update_treasury`, `transfer_authority`, `accept_authority`, `cancel_authority_transfer`, `add_to_blacklist`, `remove_from_blacklist`, `seize`, `attest_reserves`.
 
 **`programs/sss-transfer-hook/`** is invoked automatically by Token-2022 on every transfer. It checks both sender and receiver against `BlacklistEntry` PDAs and blocks the transfer if either is blacklisted.
 
@@ -254,7 +254,7 @@ Add tests to the relevant existing test file or create a new dedicated file. Eve
 - Use `describe/it` nesting: `describe(feature) > describe(scenario) > it(expected behavior)`.
 - Test names follow: `"verb + noun + expected outcome"` — e.g., `"rejects mint with zero amount"`.
 - For expected-failure tests, use `try/catch` + `expect.fail()` rather than `.should.be.rejected`.
-- The full suite must pass before opening a PR. The suite currently has 395 tests across 15 files.
+- The full suite must pass before opening a PR. The suite currently has 606 tests (386 integration + 173 SDK unit + 47 property-based) across 24 files.
 
 ---
 
@@ -314,7 +314,7 @@ The `paused` and `paused_by_attestation` flags are independent. `require_not_pau
 
 1. **Branch** from `main` using the naming convention above.
 2. **Build and lint** — `anchor build`, `cargo fmt --all`, `cargo clippy --all-targets` must all pass cleanly.
-3. **Test** — the full 395-test suite must pass. Add new tests for your changes.
+3. **Test** — the full 606-test suite must pass. Add new tests for your changes.
 4. **Update CHANGELOG.md** under the `[Unreleased]` section.
 5. **Open a PR** against `main`. The PR description must include:
    - What the change does and why.

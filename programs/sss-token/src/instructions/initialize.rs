@@ -62,6 +62,7 @@ pub struct Initialize<'info> {
     /// CHECK: Transfer hook program, validated if transfer hook is enabled
     pub hook_program: Option<UncheckedAccount<'info>>,
 
+    #[account(constraint = token_program.key() == anchor_spl::token_2022::ID @ SSSError::InvalidTokenProgram)]
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
