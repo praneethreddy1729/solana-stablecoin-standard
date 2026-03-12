@@ -23,6 +23,31 @@ declare module "fastify" {
   }
 }
 
+// ---------------------------------------------------------------------------
+// In-memory rate limiter (per IP)
+// ---------------------------------------------------------------------------
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX || "100", 10);
+const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || "60000", 10);
+
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+
+// Purge expired entries every 5 minutes to avoid unbounded growth
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+const cleanupTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap) {
+    if (now >= entry.resetAt) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, CLEANUP_INTERVAL_MS);
+cleanupTimer.unref(); // don't keep the process alive just for cleanup
+
 async function main() {
   const rpcUrl = process.env.SOLANA_RPC_URL || "http://127.0.0.1:8899";
   const port = parseInt(process.env.PORT || "3001", 10);
@@ -87,6 +112,38 @@ async function main() {
     reply.header("Vary", "Origin");
     if (req.method === "OPTIONS") {
       reply.status(204).send();
+    }
+  });
+
+  // Rate limiting (skip GET /health)
+  app.addHook("preHandler", async (req, reply) => {
+    if (req.method === "GET" && req.url === "/health") return;
+
+    const ip = req.ip;
+    const now = Date.now();
+    let entry = rateLimitMap.get(ip);
+
+    if (!entry || now >= entry.resetAt) {
+      entry = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
+      rateLimitMap.set(ip, entry);
+    }
+
+    entry.count++;
+
+    // Always set informational headers
+    reply.header("X-RateLimit-Limit", RATE_LIMIT_MAX);
+    reply.header("X-RateLimit-Remaining", Math.max(0, RATE_LIMIT_MAX - entry.count));
+    reply.header("X-RateLimit-Reset", Math.ceil(entry.resetAt / 1000));
+
+    if (entry.count > RATE_LIMIT_MAX) {
+      const retryAfterSec = Math.ceil((entry.resetAt - now) / 1000);
+      reply.header("Retry-After", retryAfterSec);
+      reply.status(429).send({
+        error: "Too Many Requests",
+        message: `Rate limit of ${RATE_LIMIT_MAX} requests per ${RATE_LIMIT_WINDOW_MS / 1000}s exceeded`,
+        retryAfter: retryAfterSec,
+      });
+      return;
     }
   });
 

@@ -6,7 +6,7 @@ node_modules
 test-ledger
 .yarn
 *.log
-dist/
+# dist/ — committed for bounty reviewers
 devnet-deployer.json
 *-keypair.json
 *.pem

@@ -511,9 +511,10 @@ export class SolanaStablecoin {
       mintAmount = amount;
       minterKey = minter;
     } else {
-      to = toOrParams.recipient;
-      mintAmount = typeof toOrParams.amount === "number" ? new BN(toOrParams.amount) : new BN(toOrParams.amount.toString());
-      minterKey = toOrParams.minter;
+      const p = toOrParams as { recipient: PublicKey; amount: BN | number; minter: PublicKey };
+      to = p.recipient;
+      mintAmount = typeof p.amount === "number" ? new BN(p.amount) : new BN(p.amount.toString());
+      minterKey = p.minter;
     }
 
     requirePositiveAmount(mintAmount, "mint amount");

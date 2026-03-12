@@ -1,10 +1,12 @@
 {
   "name": "@stbr/sss-cli",
   "version": "0.1.0",
+  "main": "dist/cli/src/index.js",
   "bin": {
-    "sss-token": "./src/index.ts"
+    "sss-token": "./dist/cli/src/index.js"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "start": "ts-node src/index.ts"
   },
   "dependencies": {
