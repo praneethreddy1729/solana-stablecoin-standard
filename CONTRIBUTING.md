@@ -73,7 +73,7 @@ sdk/
 frontend/                 # Next.js management dashboard
 backend/                  # Fastify REST API
 tests/                    # Integration tests (16 files, 395 tests)
-docs/                     # Specifications and guides (20 files)
+docs/                     # Specifications and guides (16 files)
 trident-tests/            # Property-based fuzz tests (47 tests)
 scripts/                  # Utility and deployment scripts
 examples/                 # Usage examples

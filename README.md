@@ -12,7 +12,7 @@ A production-grade, two-tier stablecoin specification for Solana built on Token-
 | CLI commands | **20** |
 | Backend API endpoints | **11** |
 | Frontend components | **17** React/Next.js components |
-| Documentation files | **20** (5,119 lines) |
+| Documentation files | **16** (4,501 lines) |
 | Rust LoC (programs) | **2,792** |
 | TypeScript LoC (SDK/CLI/backend/frontend) | **6,477** |
 | Devnet programs deployed | **2** |
@@ -955,7 +955,7 @@ solana-stablecoin-standard/
 
 ---
 
-## Documentation (20 Files, 5,119 Lines)
+## Documentation (16 Files, 4,501 Lines)
 
 | Document | Description |
 |----------|-------------|

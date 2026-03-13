@@ -6,6 +6,7 @@ import {
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
   TransactionSignature,
+  ParsedAccountData,
 } from "@solana/web3.js";
 import { TOKEN_2022_PROGRAM_ID, getMint } from "@solana/spl-token";
 import BN from "bn.js";
@@ -710,12 +711,16 @@ export class SolanaStablecoin {
     const [extraAccountMetasPda] = findExtraAccountMetasPda(this.mintAddress, this.hookProgramId);
     // Derive blacklist PDAs for the from/to token account owners.
     // These may not exist on-chain (non-blacklisted) but must be passed for the hook.
-    const fromOwner = (await this.connection.getParsedAccountInfo(frozenAccount))
-      ?.value?.data as any;
-    const toOwner = (await this.connection.getParsedAccountInfo(treasury))
-      ?.value?.data as any;
-    const fromOwnerKey = new PublicKey(fromOwner?.parsed?.info?.owner ?? PublicKey.default);
-    const toOwnerKey = new PublicKey(toOwner?.parsed?.info?.owner ?? PublicKey.default);
+    const fromAccountInfo = await this.connection.getParsedAccountInfo(frozenAccount);
+    const toAccountInfo = await this.connection.getParsedAccountInfo(treasury);
+    const fromData = fromAccountInfo?.value?.data;
+    const toData = toAccountInfo?.value?.data;
+    const fromOwnerKey = new PublicKey(
+      (fromData instanceof Buffer ? undefined : (fromData as ParsedAccountData)?.parsed?.info?.owner) ?? PublicKey.default
+    );
+    const toOwnerKey = new PublicKey(
+      (toData instanceof Buffer ? undefined : (toData as ParsedAccountData)?.parsed?.info?.owner) ?? PublicKey.default
+    );
     const [senderBlacklist] = findBlacklistPda(this.mintAddress, fromOwnerKey, this.hookProgramId);
     const [receiverBlacklist] = findBlacklistPda(this.mintAddress, toOwnerKey, this.hookProgramId);
 
