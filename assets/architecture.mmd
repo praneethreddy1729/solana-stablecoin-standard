@@ -1,0 +1,39 @@
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e1e2e', 'primaryTextColor': '#cdd6f4', 'primaryBorderColor': '#89b4fa', 'lineColor': '#89b4fa', 'secondaryColor': '#181825', 'tertiaryColor': '#313244', 'fontFamily': 'monospace', 'fontSize': '13px'}, 'flowchart': {'rankSpacing': 50, 'nodeSpacing': 30, 'curve': 'basis'}}}%%
+
+flowchart TD
+    CLIENT["<b>SDK · CLI · Frontend · Backend</b>"]
+
+    subgraph ON_CHAIN[" "]
+        direction TB
+
+        MAIN["<b>sss-token</b> — 17 instructions<br/><br/>initialize · mint · burn · freeze · thaw · pause · unpause<br/>update_roles · update_minter · transfer/accept/cancel_authority<br/>add/remove_blacklist · seize · update_treasury · attest_reserves"]
+
+        HOOK["<b>sss-transfer-hook</b> — 5 instructions + fallback<br/><br/>execute · add/remove_blacklist · init/update_extra_account_metas"]
+
+        T22["<b>Token-2022</b> — MetadataPointer · TransferHook · PermanentDelegate · DefaultAccountState"]
+    end
+
+    subgraph PDAS["PDA Accounts"]
+        direction LR
+        P1["<b>Config</b><br/>mint + freeze + delegate authority"]
+        P2["<b>RoleAssignment</b><br/>7 roles · minter quotas"]
+        P3["<b>RegistryEntry</b><br/>ecosystem discovery"]
+        P4["<b>Attestation</b><br/>reserves · auto-pause"]
+        P5["<b>BlacklistEntry</b><br/>hook-owned"]
+        P6["<b>ExtraAccountMetas</b><br/>hook resolution"]
+    end
+
+    CLIENT -->|"Anchor RPC"| MAIN
+    MAIN -->|"CPI"| HOOK
+    MAIN -->|"invoke_signed"| T22
+    T22 -->|"auto on every transfer"| HOOK
+
+    MAIN -.-> P1 & P2 & P3 & P4
+    HOOK -.-> P5 & P6
+
+    style ON_CHAIN fill:#1e1e2e,stroke:#89b4fa,stroke-width:2px
+    style PDAS fill:#1e1e2e,stroke:#585b70,stroke-width:1px,stroke-dasharray: 5 5
+    style CLIENT fill:#313244,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4
+    style MAIN fill:#313244,stroke:#89b4fa,stroke-width:2px
+    style HOOK fill:#313244,stroke:#f38ba8,stroke-width:2px
+    style T22 fill:#313244,stroke:#a6adc8,stroke-width:1px
