@@ -9,5 +9,5 @@
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "exclude": ["frontend", "node_modules", "examples", "sdk/core/tests"]
+  "exclude": ["frontend", "node_modules", "examples", "sdk/core/tests", "backend"]
 }

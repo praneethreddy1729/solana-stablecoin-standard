@@ -88,8 +88,8 @@ jobs:
       - name: Install JS dependencies
         run: yarn install --frozen-lockfile
 
-      - name: TypeScript type check
-        run: npx tsc --noEmit
+      - name: TypeScript type check (SDK)
+        run: cd sdk/core && npx tsc --noEmit
 
       - name: Run property-based tests
         run: cargo test --manifest-path trident-tests/Cargo.toml

@@ -744,7 +744,9 @@ export class SolanaStablecoin {
   async updateMinterQuota(
     params: UpdateMinterQuotaParams
   ): Promise<TransactionSignature> {
-    requirePositiveAmount(params.newQuota, "minter quota");
+    if (params.newQuota === undefined || params.newQuota === null) {
+      throw new Error("minter quota is required");
+    }
     const provider = this.program.provider as AnchorProvider;
 
     return wrapError("updateMinterQuota", () =>
@@ -1087,8 +1089,12 @@ export class SolanaStablecoin {
     try {
       const account = await this.program.account.reserveAttestation.fetch(attestationPda);
       return account as unknown as ReserveAttestation;
-    } catch {
-      return null;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("Account does not exist") || msg.includes("could not find account")) {
+        return null;
+      }
+      throw new Error(`getAttestation failed: ${msg}`);
     }
   }
 
