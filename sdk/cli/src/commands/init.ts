@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { SolanaStablecoin, Preset, Presets } from "../../../core/src";
+import { SolanaStablecoin, Preset } from "../../../core/src";
 import { loadKeypair, getConnection } from "../helpers";
 import { parseConfigFile } from "../config-parser";
 
