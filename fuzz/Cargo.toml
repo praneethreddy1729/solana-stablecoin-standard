@@ -1,0 +1,47 @@
+[package]
+name = "sss-fuzz"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+anchor-lang = "0.32.1"
+solana-program = "2"
+
+# Import program crate as library (no-entrypoint avoids BPF-only code)
+sss-token = { path = "../programs/sss-token", features = ["no-entrypoint"] }
+
+[workspace]
+members = ["."]
+
+# --- Fuzz targets ---
+
+[[bin]]
+name = "fuzz_mint_arithmetic"
+path = "fuzz_targets/fuzz_mint_arithmetic.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_validation"
+path = "fuzz_targets/fuzz_validation.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_attestation_math"
+path = "fuzz_targets/fuzz_attestation_math.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_state_machine"
+path = "fuzz_targets/fuzz_state_machine.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_ix_data"
+path = "fuzz_targets/fuzz_ix_data.rs"
+doc = false

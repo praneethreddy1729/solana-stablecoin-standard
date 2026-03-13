@@ -7,6 +7,9 @@ pub mod state;
 
 use instructions::*;
 
+/// The sss-token program ID — used by all instructions to verify config PDA derivation
+pub const SSS_TOKEN_PROGRAM_ID: Pubkey = pubkey!("tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz");
+
 declare_id!("A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB");
 
 #[cfg(not(feature = "no-entrypoint"))]

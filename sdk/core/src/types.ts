@@ -80,16 +80,16 @@ export interface InitializeParams {
 }
 
 export interface MintParams {
-  amount: BN;
-  to: PublicKey;
+  recipient: PublicKey;
+  amount: BN | number;
   minter: PublicKey;
 }
 
 export interface BurnParams {
-  amount: BN;
   from: PublicKey;
-  fromAuthority: PublicKey;
+  amount: BN;
   burner: PublicKey;
+  fromAuthority?: PublicKey;
 }
 
 export interface FreezeThawParams {
@@ -103,13 +103,13 @@ export interface PauseParams {
 
 export interface BlacklistParams {
   user: PublicKey;
-  blacklister: PublicKey;
+  blacklister?: PublicKey;
   reason?: string;
 }
 
 export interface SeizeParams {
-  from: PublicKey;
-  to: PublicKey;
+  frozenAccount: PublicKey;
+  treasury: PublicKey;
 }
 
 export interface UpdateRolesParams {

@@ -8,7 +8,12 @@ import {
   TransactionSignature,
   ParsedAccountData,
 } from "@solana/web3.js";
-import { TOKEN_2022_PROGRAM_ID, getMint } from "@solana/spl-token";
+import {
+  TOKEN_2022_PROGRAM_ID,
+  getMint,
+  getAccount,
+  getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
 import BN from "bn.js";
 import {
   SSS_TOKEN_PROGRAM_ID,
@@ -44,13 +49,38 @@ import { SssTransferHook } from "./types/sss_transfer_hook";
 import { OraclePriceGuard, PYTH_FEED_IDS } from "./oracle";
 import type { PriceGuardConfig } from "./oracle";
 
+/** Maps operation names to the role required, for richer error messages */
+const OPERATION_ROLES: Record<string, string> = {
+  mint: "Minter",
+  burn: "Burner",
+  freeze: "Freezer",
+  thaw: "Freezer",
+  pause: "Pauser",
+  unpause: "Pauser",
+  blacklistAdd: "Blacklister",
+  blacklistRemove: "Blacklister",
+  seize: "Seizer",
+  attestReserves: "Attestor",
+  updateRoles: "Authority",
+  transferAuthority: "Authority",
+  acceptAuthority: "Pending Authority",
+  cancelAuthorityTransfer: "Authority",
+  updateTreasury: "Authority",
+  updateMinterQuota: "Authority",
+  initialize: "Authority",
+};
+
 async function wrapError<T>(operation: string, fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } catch (err: unknown) {
     const parsed = parseSSSError(err);
     if (parsed) {
-      throw new Error(`${operation} failed: ${parsed.name} — ${parsed.msg}`);
+      const role = OPERATION_ROLES[operation];
+      const roleHint = (parsed.name === "Unauthorized" || parsed.name === "RoleNotActive") && role
+        ? ` (requires ${role} role)`
+        : "";
+      throw new Error(`${operation} failed: ${parsed.name} — ${parsed.msg}${roleHint}`);
     }
     const msg = err instanceof Error ? err.message : String(err);
     throw new Error(`${operation} failed: ${msg}`);
@@ -851,5 +881,103 @@ export class SolanaStablecoin {
       const msg = err instanceof Error ? err.message : String(err);
       throw new Error(`listAll failed: unable to fetch registry entries: ${msg}`);
     }
+  }
+
+  // --- Convenience methods ---
+
+  /** Alias for getTotalSupply(). */
+  async getSupply(): Promise<bigint> {
+    return this.getTotalSupply();
+  }
+
+  /** Get the token balance for a wallet owner. Returns 0n if the ATA doesn't exist. */
+  async getBalance(owner: PublicKey): Promise<bigint> {
+    const ata = getAssociatedTokenAddressSync(
+      this.mintAddress,
+      owner,
+      true,
+      TOKEN_2022_PROGRAM_ID
+    );
+    try {
+      const account = await getAccount(this.connection, ata, "confirmed", TOKEN_2022_PROGRAM_ID);
+      return account.amount;
+    } catch {
+      // ATA doesn't exist — balance is zero
+      return 0n;
+    }
+  }
+
+  /** Check if an address is blacklisted. Top-level shortcut for compliance.isBlacklisted(). */
+  async isBlacklisted(address: PublicKey): Promise<boolean> {
+    return this.compliance.isBlacklisted(address);
+  }
+
+  /** Create a fluent builder for deploying a new stablecoin. */
+  static builder(connection: Connection): StablecoinBuilder {
+    return new StablecoinBuilder(connection);
+  }
+}
+
+/** Fluent builder for deploying a new SSS stablecoin. Wraps SolanaStablecoin.create(). */
+export class StablecoinBuilder {
+  private readonly _connection: Connection;
+  private _name = "";
+  private _symbol = "";
+  private _uri = "";
+  private _decimals = 6;
+  private _preset?: Preset;
+  private _authority?: Keypair | Wallet;
+  private _treasury?: PublicKey;
+  private _enableTransferHook?: boolean;
+  private _enablePermanentDelegate?: boolean;
+  private _defaultAccountFrozen?: boolean;
+  private _programId = SSS_TOKEN_PROGRAM_ID;
+  private _hookProgramId = SSS_TRANSFER_HOOK_PROGRAM_ID;
+
+  constructor(connection: Connection) {
+    this._connection = connection;
+  }
+
+  name(v: string): this { this._name = v; return this; }
+  symbol(v: string): this { this._symbol = v; return this; }
+  uri(v: string): this { this._uri = v; return this; }
+  decimals(v: number): this { this._decimals = v; return this; }
+  preset(v: Preset): this { this._preset = v; return this; }
+  authority(v: Keypair | Wallet): this { this._authority = v; return this; }
+  treasury(v: PublicKey): this { this._treasury = v; return this; }
+  transferHook(v: boolean): this { this._enableTransferHook = v; return this; }
+  permanentDelegate(v: boolean): this { this._enablePermanentDelegate = v; return this; }
+  defaultAccountFrozen(v: boolean): this { this._defaultAccountFrozen = v; return this; }
+  programId(v: PublicKey): this { this._programId = v; return this; }
+  hookProgramId(v: PublicKey): this { this._hookProgramId = v; return this; }
+
+  /** Deploy the stablecoin on-chain. */
+  async build(): Promise<{
+    stablecoin: SolanaStablecoin;
+    mintKeypair: Keypair;
+    txSig: TransactionSignature;
+    hookTxSig: TransactionSignature | null;
+  }> {
+    if (!this._authority) throw new Error("StablecoinBuilder: authority is required");
+    if (!this._name) throw new Error("StablecoinBuilder: name is required");
+    if (!this._symbol) throw new Error("StablecoinBuilder: symbol is required");
+
+    return SolanaStablecoin.create(
+      this._connection,
+      {
+        name: this._name,
+        symbol: this._symbol,
+        uri: this._uri || undefined,
+        decimals: this._decimals,
+        authority: this._authority,
+        preset: this._preset,
+        enableTransferHook: this._enableTransferHook,
+        enablePermanentDelegate: this._enablePermanentDelegate,
+        defaultAccountFrozen: this._defaultAccountFrozen,
+        treasury: this._treasury,
+      },
+      this._programId,
+      this._hookProgramId
+    );
   }
 }

@@ -38,10 +38,6 @@ pub enum SSSError {
     SymbolTooLong,
     #[msg("URI too long")]
     UriTooLong,
-    #[msg("Account is blacklisted")]
-    AccountBlacklisted,
-    #[msg("Account is not blacklisted")]
-    AccountNotBlacklisted,
     #[msg("Invalid hook program")]
     InvalidHookProgram,
     #[msg("Mint amount must be greater than zero")]

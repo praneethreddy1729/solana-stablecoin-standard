@@ -9,9 +9,7 @@ use spl_transfer_hook_interface::instruction::ExecuteInstruction;
 use crate::errors::HookError;
 use crate::events::ExtraAccountMetasInitialized;
 use crate::state::BLACKLIST_SEED;
-
-/// The sss-token program ID — used to verify config PDA derivation
-const SSS_TOKEN_PROGRAM_ID: Pubkey = pubkey!("tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz");
+use crate::SSS_TOKEN_PROGRAM_ID;
 
 #[derive(Accounts)]
 pub struct InitializeExtraAccountMetas<'info> {

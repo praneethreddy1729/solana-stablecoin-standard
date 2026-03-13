@@ -133,21 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Testing
 
-- 395 integration and unit tests across 16 files
-- 34 sss-token tests covering all instructions and error paths
-- 5 transfer-hook tests covering blacklist enforcement
-- 15 admin-roles tests for role management edge cases
-- 30 authority-pause tests
-- 35 compliance-flows tests
-- 17 edge-case tests (zero amounts, boundary values, reason validation)
-- 15 multi-user tests (concurrent role holders, independent quotas)
-- 11 invariant tests (PDA derivation, config immutability)
-- 8 full-lifecycle tests (SSS-1 and SSS-2 feature combinations)
-- 47 role-matrix tests (comprehensive role permission coverage)
-- 40 token-ops-edge tests
-- 26 SDK integration tests
-- 11 reserve-attestation tests
-- 2 end-to-end lifecycle tests (SSS-1 and SSS-2)
+- 395 integration and unit tests across 16 files covering all instructions, role-permission matrix, edge cases, compliance flows, and SSS-1/SSS-2 lifecycle scenarios
 
 #### Documentation
 

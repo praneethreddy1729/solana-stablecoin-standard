@@ -1,4 +1,4 @@
-export { SolanaStablecoin } from "./SolanaStablecoin";
+export { SolanaStablecoin, StablecoinBuilder } from "./SolanaStablecoin";
 export {
   SSS_TOKEN_PROGRAM_ID,
   SSS_TRANSFER_HOOK_PROGRAM_ID,
@@ -58,4 +58,4 @@ export {
   type PythPriceData,
 } from "./oracle";
 export { BN, Wallet } from "@coral-xyz/anchor";
-export { PublicKey, Keypair } from "@solana/web3.js";
+export { PublicKey, Keypair, Connection } from "@solana/web3.js";

@@ -14,7 +14,7 @@ compliance enforcement, and ecosystem-wide token discovery.
 - CLI with 20 commands
 - Next.js management dashboard
 - Fastify REST API with sanctions screening
-- 615 tests across 23 files (395 integration + 173 SDK unit + 47 property-based)
+- 577 tests across 21 files (395 integration + 135 SDK unit + 47 property-based)
 - Internal security review with 12 findings, all resolved
 
 ## Evaluation Criteria Mapping
@@ -25,7 +25,7 @@ compliance enforcement, and ecosystem-wide token discovery.
 | Code Quality (20%) | Zero unwrap(), strict TypeScript, self-audit with 12 findings resolved | programs/, sdk/ |
 | Security (15%) | TOKEN_2022 pin, blacklist enforcement, role RBAC, 2-step authority | docs/SECURITY-AUDIT.md |
 | Authority (20%) | Token-2022 extensions, Anchor best practices, SPL Transfer Hook Interface | Programs follow Solana conventions |
-| Documentation (5%) | 16 doc files, architecture, compliance, operations guides | docs/, README, CONTRIBUTING |
+| Documentation (5%) | 15 doc files, architecture, compliance, operations guides | docs/, README, CONTRIBUTING |
 
 ## Demo
 - Devnet programs: See README for explorer links

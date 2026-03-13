@@ -16,7 +16,7 @@ This self-audit was conducted through:
 2. **Grep audit** -- Automated pattern scanning for `unwrap()`, `panic!`, `unsafe`, unchecked arithmetic operators (`[^_]+ `, `[^_]- `, `[^_]* `), and missing error variants.
 3. **Property-based testing** -- 47 property tests exercising invariants (e.g., "seize always sends to treasury", "blacklisted accounts cannot transfer", "paused token blocks all non-enforcement operations").
 4. **Integration testing** -- 395 integration tests covering every instruction path, error branch, and cross-program interaction.
-5. **SDK unit testing** -- 173 unit tests validating client-side input sanitization and PDA derivation.
+5. **SDK unit testing** -- 135 unit tests validating client-side input sanitization and PDA derivation.
 
 **Tools used:** `cargo clippy` (zero warnings), `cargo fmt` (enforced), custom grep patterns via ripgrep, Anchor test framework on local validator with SIMD-0219 feature deactivated.
 
@@ -25,9 +25,9 @@ This self-audit was conducted through:
 | Tier | Count | Description |
 |------|-------|-------------|
 | Integration tests | 395 | Full instruction lifecycle on local validator |
-| SDK unit tests | 173 | Input validation, PDA derivation, error mapping |
+| SDK unit tests | 135 | Input validation, PDA derivation, error mapping |
 | Property tests | 47 | Invariant checks across randomized inputs |
-| **Total** | **615** | |
+| **Total** | **577** | |
 
 ---
 

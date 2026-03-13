@@ -2,9 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::Mint;
 
 use crate::errors::HookError;
-
-/// The sss-token program ID — used to verify config PDA derivation
-const SSS_TOKEN_PROGRAM_ID: Pubkey = pubkey!("tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz");
+use crate::SSS_TOKEN_PROGRAM_ID;
 
 /// Byte offset of `paused` field in StablecoinConfig (cross-program raw read)
 /// Layout: 8 discriminator + 32 authority + 32 pending_authority + 8 transfer_initiated_at + 32 mint + 32 hook_program_id + 1 decimals = 145
@@ -188,23 +186,9 @@ pub fn fallback_execute<'info>(
     Ok(())
 }
 
-/// Check if the owner/delegate matches the permanent delegate stored in the mint's extension data.
-///
-/// Token-2022 mint account layout:
-///   - 82 bytes: base Mint state (supply, decimals, authorities, etc.)
-///   - 83 bytes: padding to 165 bytes
-///   - 1 byte:   account type discriminator (= 2 for Mint)
-///   - Extensions start at byte 166 (MINT_EXTENSIONS_OFFSET)
-///
-/// Each extension is a TLV (Type-Length-Value) entry:
-///   - 2 bytes: extension type ID (little-endian u16)
-///   - 2 bytes: data length (little-endian u16)
-///   - N bytes: extension data
-///   - Padding to 4-byte alignment
-///
-/// PermanentDelegate (type 12): 32 bytes = the delegate's pubkey.
-/// If the transfer's owner_delegate matches, this is a seize via permanent delegate
-/// and we bypass blacklist checks so the issuer can recover funds.
+/// Check if the owner/delegate matches the permanent delegate stored in the mint's TLV extension data.
+/// Token-2022 extensions begin at byte 166; PermanentDelegate is type 12 (32-byte pubkey).
+/// Returns true if this is a seize via permanent delegate — blacklist checks are bypassed.
 pub fn check_permanent_delegate(mint_data: &[u8], owner_delegate: &Pubkey) -> bool {
     if mint_data.len() < MINT_EXTENSIONS_OFFSET {
         return false;
