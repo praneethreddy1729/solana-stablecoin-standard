@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { Card } from "./ui/Card";

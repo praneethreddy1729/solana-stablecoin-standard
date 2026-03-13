@@ -90,7 +90,12 @@ export function Attestation({
     }
     setLoading(true);
     try {
-      const rawAmount = new BN(parseFloat(reserveAmount) * Math.pow(10, decimals));
+      // Use string-based conversion to avoid floating-point precision loss
+      const parts = reserveAmount.split(".");
+      const whole = parts[0] || "0";
+      let frac = parts[1] || "";
+      frac = frac.padEnd(decimals, "0").slice(0, decimals);
+      const rawAmount = new BN(whole + frac);
       const expiryTs = new BN(Math.floor(Date.now() / 1000) + parseInt(expiryHours) * 3600);
       const sig = await attestReserves(rawAmount, expiryTs, uri);
       toast.success("Reserve attestation submitted", sig);
