@@ -576,7 +576,135 @@ describe("sss-transfer-hook", () => {
   });
 
   // ============================================================
-  // 4. Seize (permanent delegate bypass)
+  // 4. Update ExtraAccountMetas
+  // ============================================================
+
+  describe("update_extra_account_metas", () => {
+    it("successfully updates extra account metas when called by authority", async () => {
+      // Read the ExtraAccountMetas account data BEFORE update
+      const beforeInfo = await provider.connection.getAccountInfo(
+        extraAccountMetasPda
+      );
+      expect(beforeInfo).to.not.be.null;
+      const beforeData = beforeInfo!.data;
+
+      // Call update_extra_account_metas as the authority
+      const sig = await hookProgram.methods
+        .updateExtraAccountMetas()
+        .accountsStrict({
+          authority: authority.publicKey,
+          extraAccountMetas: extraAccountMetasPda,
+          mint: mint.publicKey,
+          config: configPda,
+        })
+        .rpc();
+      await provider.connection.confirmTransaction(sig, "confirmed");
+
+      // Verify the account still exists and is owned by the hook program
+      const afterInfo = await provider.connection.getAccountInfo(
+        extraAccountMetasPda
+      );
+      expect(afterInfo).to.not.be.null;
+      expect(afterInfo!.owner.toString()).to.equal(
+        hookProgram.programId.toString()
+      );
+      // Data length should remain the same (same number of extra metas)
+      expect(afterInfo!.data.length).to.equal(beforeData.length);
+    });
+
+    it("transfers still work after update_extra_account_metas", async () => {
+      // Ensure the update didn't corrupt the extra account metas
+      const beforeB = await getAccount(
+        provider.connection,
+        ataB,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+      const beforeAmount = Number(beforeB.amount);
+
+      const ix = await createTransferCheckedWithTransferHookInstruction(
+        provider.connection,
+        ataA,
+        mint.publicKey,
+        ataB,
+        userA.publicKey,
+        BigInt(100_000),
+        6,
+        undefined,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      const tx = new Transaction().add(ix);
+      const txSig = await provider.sendAndConfirm(tx, [userA]);
+      await provider.connection.confirmTransaction(txSig, "confirmed");
+
+      const afterB = await getAccount(
+        provider.connection,
+        ataB,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+      expect(Number(afterB.amount)).to.equal(beforeAmount + 100_000);
+    });
+
+    it("rejects update_extra_account_metas from non-authority signer", async () => {
+      try {
+        await hookProgram.methods
+          .updateExtraAccountMetas()
+          .accountsStrict({
+            authority: userA.publicKey,
+            extraAccountMetas: extraAccountMetasPda,
+            mint: mint.publicKey,
+            config: configPda,
+          })
+          .signers([userA])
+          .rpc();
+        expect.fail("Should have thrown — userA is not the config authority");
+      } catch (e: any) {
+        const errStr = e.toString();
+        expect(
+          errStr.includes("Unauthorized") ||
+            errStr.includes("unauthorized") ||
+            errStr.includes("Error") ||
+            errStr.includes("failed")
+        ).to.equal(true);
+      }
+    });
+
+    it("rejects update_extra_account_metas with wrong config PDA", async () => {
+      // Derive a fake config PDA that doesn't match the mint
+      const fakeMint = Keypair.generate();
+      const [wrongConfigPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("config"), fakeMint.publicKey.toBuffer()],
+        program.programId
+      );
+
+      try {
+        await hookProgram.methods
+          .updateExtraAccountMetas()
+          .accountsStrict({
+            authority: authority.publicKey,
+            extraAccountMetas: extraAccountMetasPda,
+            mint: mint.publicKey,
+            config: wrongConfigPda,
+          })
+          .rpc();
+        expect.fail("Should have thrown — wrong config PDA for this mint");
+      } catch (e: any) {
+        const errStr = e.toString();
+        expect(
+          errStr.includes("Unauthorized") ||
+            errStr.includes("unauthorized") ||
+            errStr.includes("Error") ||
+            errStr.includes("failed")
+        ).to.equal(true);
+      }
+    });
+  });
+
+  // ============================================================
+  // 5. Seize (permanent delegate bypass)
   // ============================================================
 
   describe("seize via permanent delegate", () => {

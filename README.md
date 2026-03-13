@@ -1,12 +1,12 @@
 # Solana Stablecoin Standard (SSS)
 
-A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 606 tests, 20 documentation files (5,119 lines), and a full-stack operational toolkit.**
+A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 615 tests, 20 documentation files (5,119 lines), and a full-stack operational toolkit.**
 
 | Metric | Count |
 |--------|------:|
 | On-chain instructions | **23** (17 sss-token + 5 instructions + fallback in hook) |
 | Role types | **7** (Minter, Burner, Pauser, Freezer, Blacklister, Seizer, Attestor) |
-| Tests | **606** (386 integration + 173 SDK unit + 47 property-based) across 23 files |
+| Tests | **615** (395 integration + 173 SDK unit + 47 property-based) across 23 files |
 | Error variants | **43** (35 sss-token + 8 hook) |
 | Anchor events | **20** (every state-changing instruction) |
 | CLI commands | **20** |

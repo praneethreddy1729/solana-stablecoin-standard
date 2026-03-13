@@ -4,7 +4,7 @@
 
 The test suite validates all SSS-1 and SSS-2 functionality through Anchor integration tests. Tests run against a local Solana validator with both programs deployed.
 
-**Total: 606 tests** (386 integration + 173 SDK unit + 47 property-based) across 16 integration test files + SDK unit tests + property-based fuzz tests covering all instructions, role checks, compliance flows, and edge cases.
+**Total: 615 tests** (395 integration + 173 SDK unit + 47 property-based) across 16 integration test files + SDK unit tests + property-based fuzz tests covering all instructions, role checks, compliance flows, and edge cases.
 
 ## Running Tests
 
@@ -47,7 +47,7 @@ Tests are located in the `tests/` directory:
 ```
 tests/
   sss-token.ts              -- Main test suite (34 tests)
-  sss-transfer-hook.ts      -- Transfer hook tests (11 tests)
+  sss-transfer-hook.ts      -- Transfer hook tests (15 tests)
   admin-extended.ts         -- Extended admin/role tests (15 tests)
   authority-pause-extended.ts -- Authority & pause tests (30 tests)
   compliance-extended.ts    -- Compliance flow tests (38 tests)
@@ -55,7 +55,7 @@ tests/
   multi-user.ts             -- Multi-user scenarios (15 tests)
   invariants.ts             -- Invariant checks (11 tests)
   full-lifecycle.ts         -- Full lifecycle scenarios (8 tests)
-  role-matrix.ts            -- Role permission matrix (98 tests, dynamically generated)
+  role-matrix.ts            -- Role permission matrix (103 tests, dynamically generated)
   token-ops-extended.ts     -- Extended token operations (40 tests)
   sdk-integration.ts        -- SDK integration tests (26 tests)
   reserve-attestation.ts    -- Reserve attestation tests (11 tests)
@@ -122,17 +122,33 @@ Tests organized by describe block:
 **seize (SSS-2 on SSS-1)** (1 test)
 - Rejects seize on SSS-1 token (PermanentDelegateNotEnabled)
 
-### sss-transfer-hook.ts (11 tests)
+### sss-transfer-hook.ts (15 tests)
 
 Runs against a full SSS-2 token (transfer hook + permanent delegate enabled).
 
 **initialize_extra_account_metas** (1 test)
 - ExtraAccountMetas account was created
 
+**blacklist entry management** (5 tests)
+- Create blacklist entry with reason
+- Create blacklist entry with max-length reason (64 bytes)
+- Reject blacklist entry with reason too long (>64 bytes)
+- Reject double-blacklisting same user (account already exists)
+- Reject removing non-existent blacklist entry
+
 **transfers** (4 tests)
 - Transfer succeeds for non-blacklisted accounts
 - Transfer fails for blacklisted sender
 - Transfer fails for blacklisted receiver
+- Verify hook allows transfer when neither party blacklisted
+
+**update_extra_account_metas** (4 tests)
+- Successfully updates extra account metas when called by authority
+- Transfers still work after update_extra_account_metas
+- Rejects update_extra_account_metas from non-authority signer
+- Rejects update_extra_account_metas with wrong config PDA
+
+**seize via permanent delegate** (1 test)
 - Seize bypasses blacklist via permanent delegate
 
 ### admin-extended.ts (15 tests)
@@ -163,7 +179,7 @@ Extended coverage for authority transfer edge cases and pause/unpause interactio
 
 Comprehensive compliance testing including blacklist reason validation, CPI flow edge cases, and seize permission checks.
 
-### role-matrix.ts (98 tests, dynamically generated)
+### role-matrix.ts (103 tests, dynamically generated)
 
 Full role permission matrix ensuring every instruction correctly accepts authorized roles and rejects unauthorized ones. Uses `for` loops to generate per-role rejection tests dynamically.
 
