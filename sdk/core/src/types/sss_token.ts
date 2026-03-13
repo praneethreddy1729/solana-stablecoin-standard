@@ -1522,6 +1522,16 @@ export type SssToken = {
       "code": 6032,
       "name": "undercollateralized",
       "msg": "Undercollateralized: reserves are below token supply"
+    },
+    {
+      "code": 6033,
+      "name": "cannotFreezeTreasury",
+      "msg": "Cannot freeze the treasury account"
+    },
+    {
+      "code": 6034,
+      "name": "invalidTokenProgram",
+      "msg": "Invalid token program: must be Token-2022"
     }
   ],
   "types": [

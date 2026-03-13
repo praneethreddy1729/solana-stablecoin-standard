@@ -50,6 +50,7 @@ export const SSS_TRANSFER_HOOK_ERRORS: Record<number, SSSErrorInfo> = {
   6004: { code: 6004, name: "AlreadyBlacklisted", msg: "Already blacklisted" },
   6005: { code: 6005, name: "NotBlacklisted", msg: "Not blacklisted" },
   6006: { code: 6006, name: "Unauthorized", msg: "Unauthorized" },
+  6007: { code: 6007, name: "TokenPausedByAttestation", msg: "Token is paused by attestation — reserves are undercollateralized" },
 };
 
 /** Parse an Anchor program error into an SSSErrorInfo, or null if unrecognized. */

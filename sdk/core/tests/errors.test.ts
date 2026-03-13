@@ -50,8 +50,8 @@ describe("SSS_TOKEN_ERRORS", () => {
 // ---------------------------------------------------------------------------
 
 describe("SSS_TRANSFER_HOOK_ERRORS", () => {
-  it("has entries for codes 6000-6006", () => {
-    for (let code = 6000; code <= 6006; code++) {
+  it("has entries for codes 6000-6007", () => {
+    for (let code = 6000; code <= 6007; code++) {
       expect(SSS_TRANSFER_HOOK_ERRORS[code], `missing hook error code ${code}`).to.exist;
     }
   });

@@ -420,6 +420,11 @@ export type SssTransferHook = {
       "code": 6006,
       "name": "unauthorized",
       "msg": "unauthorized"
+    },
+    {
+      "code": 6007,
+      "name": "tokenPausedByAttestation",
+      "msg": "Token is paused by attestation — reserves are undercollateralized"
     }
   ],
   "types": [

@@ -61,8 +61,9 @@ Program ID: `A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB`
 | 6004 | `AlreadyBlacklisted` | Already blacklisted |
 | 6005 | `NotBlacklisted` | Not blacklisted |
 | 6006 | `Unauthorized` | Unauthorized |
+| 6007 | `TokenPausedByAttestation` | Token is paused by attestation — reserves are undercollateralized |
 
-**Total: 7 error variants (6000–6006)**
+**Total: 8 error variants (6000–6007)**
 
 ---
 
