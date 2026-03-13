@@ -47,13 +47,16 @@ export async function fetchPythHermesPrice(
     throw new Error(`Pyth Hermes API error: ${response.status} ${response.statusText}`);
   }
 
-  const data = await response.json() as Record<string, unknown>;
-  const parsed = data?.parsed as unknown[] | undefined;
+  const data = await response.json() as { parsed?: Array<{
+    price: { price: string; conf: string; expo: number; publish_time: number };
+    ema_price: { price: string; conf: string };
+  }> };
+  const parsed = data?.parsed;
   if (!parsed || parsed.length === 0) {
     throw new Error(`No price data returned for feed ${cleanId}`);
   }
 
-  const priceFeed = parsed[0] as Record<string, Record<string, unknown>>;
+  const priceFeed = parsed[0];
   const priceObj = priceFeed.price;
   const emaObj = priceFeed.ema_price;
 
