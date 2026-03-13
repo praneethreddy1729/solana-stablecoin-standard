@@ -133,9 +133,6 @@ await stablecoin.compliance.seize(
 | [Security](./SECURITY.md) | Security model and threat analysis |
 | [Testing](./TESTING.md) | Test suite documentation |
 | [CLI Reference](./CLI.md) | Full CLI command reference (18 commands) |
-| [Privacy](./PRIVACY.md) | ConfidentialTransfer incompatibility analysis |
-| [SSS-3 Specification](./SSS-3.md) | Private stablecoin spec (experimental) |
 | [Oracle Price Guard](./ORACLE.md) | Pyth-based oracle integration and circuit breaker |
 | [Regulatory](./REGULATORY.md) | MiCA, US, Brazil regulatory compliance mapping |
 | [Error Codes](./ERRORS.md) | All error codes from both programs |
-| [Events](./EVENTS.md) | All events emitted by sss-token |

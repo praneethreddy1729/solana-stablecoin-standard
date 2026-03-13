@@ -1,6 +1,6 @@
 # Solana Stablecoin Standard (SSS)
 
-A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 615 tests, 20 documentation files (5,119 lines), and a full-stack operational toolkit.**
+A production-grade, two-tier stablecoin specification for Solana built on Token-2022 with role-based access control, compliance enforcement, reserve attestation, and asset recovery. **2 Anchor programs, 23 on-chain instructions, 7 role types, 615 tests, 16 documentation files, and a full-stack operational toolkit.**
 
 | Metric | Count |
 |--------|------:|
@@ -38,7 +38,7 @@ yarn install
 # 2. Build both programs
 anchor build
 
-# 3. Run all 606 tests (starts local validator automatically)
+# 3. Run all 615 tests (starts local validator automatically)
 anchor test
 
 # 4. Create an SSS-1 stablecoin via CLI
@@ -344,7 +344,7 @@ The script performs the following operations against the deployed programs:
 
 All six transactions are signed and submitted to devnet, with explorer links printed for each.
 
-> **Note:** Devnet currently runs Agave 3.0.x which has a known SIMD-0219 bug affecting Token-2022 metadata reallocation ([anza-xyz/agave#9799](https://github.com/anza-xyz/agave/issues/9799)). The `initialize` instruction uses Token-2022's `token_metadata_initialize` which triggers a metadata realloc that fails under SIMD-0219. This feature is deactivated in the local test validator via `Anchor.toml`, but cannot be deactivated on devnet. The programs themselves are deployed and verified as shown above; all 606 tests pass on localnet with the feature deactivated.
+> **Note:** Devnet currently runs Agave 3.0.x which has a known SIMD-0219 bug affecting Token-2022 metadata reallocation ([anza-xyz/agave#9799](https://github.com/anza-xyz/agave/issues/9799)). The `initialize` instruction uses Token-2022's `token_metadata_initialize` which triggers a metadata realloc that fails under SIMD-0219. This feature is deactivated in the local test validator via `Anchor.toml`, but cannot be deactivated on devnet. The programs themselves are deployed and verified as shown above; all 615 tests pass on localnet with the feature deactivated.
 
 ---
 
@@ -756,12 +756,12 @@ npx ts-node src/index.ts --mint <MINT_ADDRESS> --rpc https://api.devnet.solana.c
 
 ---
 
-## Testing (606 Tests)
+## Testing (615 Tests)
 
 ### Run All Tests
 
 ```bash
-# Integration tests (386 passing, starts local validator)
+# Integration tests (395 passing, starts local validator)
 anchor test
 
 # SDK unit tests (173 passing)
@@ -776,22 +776,22 @@ cargo test --manifest-path trident-tests/Cargo.toml
 | Category | Tests | Files |
 |----------|------:|------:|
 | Core token operations | 34 | `sss-token.ts` |
-| Transfer hook + blacklist | 11 | `sss-transfer-hook.ts` |
-| Role matrix (7 roles x permissions) | 47 | `role-matrix.ts` |
-| Token operations extended | 40 | `token-ops-extended.ts` |
-| Compliance extended | 38 | `compliance-extended.ts` |
-| Authority + pause extended | 30 | `authority-pause-extended.ts` |
+| Transfer hook + blacklist | 15 | `sss-transfer-hook.ts` |
+| Role matrix (7 roles x permissions) | 103 | `role-matrix.ts` |
+| Token operations edge cases | 40 | `token-ops-edge.ts` |
+| Compliance flows | 38 | `compliance-flows.ts` |
+| Authority + pause | 30 | `authority-pause.ts` |
 | SDK integration | 26 | `sdk-integration.ts` |
 | E2E SSS-1 lifecycle | 17 | `e2e-sss1.ts` |
 | Edge cases | 17 | `edge-cases.ts` |
 | Multi-user scenarios | 15 | `multi-user.ts` |
-| Admin extended | 15 | `admin-extended.ts` |
+| Admin roles | 15 | `admin-roles.ts` |
 | E2E SSS-2 lifecycle | 13 | `e2e-sss2.ts` |
 | Invariant checks | 11 | `invariants.ts` |
 | Reserve attestation | 11 | `reserve-attestation.ts` |
 | Full lifecycle | 8 | `full-lifecycle.ts` |
 | Registry | 2 | `registry.ts` |
-| **Subtotal (integration)** | **386** | **16 files** |
+| **Subtotal (integration)** | **395** | **16 files** |
 | SDK unit tests | 48 | `sdk.test.ts` |
 | PDA derivation tests | 36 | `pda.test.ts` |
 | Error parsing tests | 26 | `errors.test.ts` |
@@ -801,7 +801,7 @@ cargo test --manifest-path trident-tests/Cargo.toml
 | **Subtotal (SDK unit)** | **173** | **6 files** |
 | Property-based fuzz tests | 47 | `fuzz_sss_token.rs` |
 | **Subtotal (property)** | **47** | **1 file** |
-| **Total** | **606** | **23 files** |
+| **Total** | **615** | **23 files** |
 
 ### What Tests Verify
 
@@ -941,14 +941,14 @@ solana-stablecoin-standard/
       tests/                       173 tests (48 SDK + 25 oracle + 36 pda + 26 errors + 20 types + 18 constants)
     cli/                           CLI tool (commander.js, 20 commands)
     tui/                           Interactive admin TUI (blessed)
-  tests/                           386 integration tests across 16 files + SDK + property tests
+  tests/                           395 integration tests across 16 files + SDK + property tests
   backend/                         Fastify REST API (11 endpoints, port 3001)
     src/
       routes/                      5 route modules
       services/                    Compliance, event-poller, webhook (HMAC-SHA256)
       middleware/                   API key authentication
   frontend/                        Next.js dashboard (17 components)
-  docs/                            20 documentation files (5,119 lines)
+  docs/                            16 documentation files
   scripts/                         Devnet proof script
   target/                          Build artifacts (IDL, types, .so)
 ```
@@ -962,10 +962,8 @@ solana-stablecoin-standard/
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, PDA structure, extension usage |
 | [docs/SSS-1.md](docs/SSS-1.md) | SSS-1 specification details |
 | [docs/SSS-2.md](docs/SSS-2.md) | SSS-2 specification details |
-| [docs/SSS-3.md](docs/SSS-3.md) | SSS-3 specification (future) |
 | [docs/SDK.md](docs/SDK.md) | TypeScript SDK reference |
 | [docs/CLI.md](docs/CLI.md) | Full CLI command reference (20 commands) |
-| [docs/CONSTANTS.md](docs/CONSTANTS.md) | Program IDs, PDA seeds, and configuration constants |
 | [docs/API.md](docs/API.md) | Backend REST API reference |
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Blacklist, seizure, OFAC integration |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment instructions for localnet and devnet |
@@ -975,9 +973,7 @@ solana-stablecoin-standard/
 | [docs/OPERATIONS.md](docs/OPERATIONS.md) | Deployment and operational guide |
 | [docs/ORACLE.md](docs/ORACLE.md) | Oracle Price Guard with Pyth integration |
 | [docs/REGULATORY.md](docs/REGULATORY.md) | MiCA, US, Brazil regulatory compliance mapping |
-| [docs/PRIVACY.md](docs/PRIVACY.md) | ConfidentialTransfer incompatibility analysis |
 | [docs/ERRORS.md](docs/ERRORS.md) | All 42 error codes from both programs |
-| [docs/EVENTS.md](docs/EVENTS.md) | All 17 events emitted by sss-token |
 | [docs/README.md](docs/README.md) | Documentation index |
 
 ---

@@ -48,15 +48,15 @@ Tests are located in the `tests/` directory:
 tests/
   sss-token.ts              -- Main test suite (34 tests)
   sss-transfer-hook.ts      -- Transfer hook tests (15 tests)
-  admin-extended.ts         -- Extended admin/role tests (15 tests)
-  authority-pause-extended.ts -- Authority & pause tests (30 tests)
-  compliance-extended.ts    -- Compliance flow tests (38 tests)
+  admin-roles.ts            -- Extended admin/role tests (15 tests)
+  authority-pause.ts        -- Authority & pause tests (30 tests)
+  compliance-flows.ts       -- Compliance flow tests (38 tests)
   edge-cases.ts             -- Edge case coverage (17 tests)
   multi-user.ts             -- Multi-user scenarios (15 tests)
   invariants.ts             -- Invariant checks (11 tests)
   full-lifecycle.ts         -- Full lifecycle scenarios (8 tests)
   role-matrix.ts            -- Role permission matrix (103 tests, dynamically generated)
-  token-ops-extended.ts     -- Extended token operations (40 tests)
+  token-ops-edge.ts         -- Extended token operations (40 tests)
   sdk-integration.ts        -- SDK integration tests (26 tests)
   reserve-attestation.ts    -- Reserve attestation tests (11 tests)
   registry.ts               -- Stablecoin registry tests (2 tests)
@@ -151,7 +151,7 @@ Runs against a full SSS-2 token (transfer hook + permanent delegate enabled).
 **seize via permanent delegate** (1 test)
 - Seize bypasses blacklist via permanent delegate
 
-### admin-extended.ts (15 tests)
+### admin-roles.ts (15 tests)
 
 Extended coverage for admin operations, role management edge cases, and Seizer role.
 
@@ -171,11 +171,11 @@ Invariant checks validating PDA derivation consistency, config immutability afte
 
 Full lifecycle scenarios covering various combinations of SSS-1 and SSS-2 features end-to-end.
 
-### authority-pause-extended.ts (30 tests)
+### authority-pause.ts (30 tests)
 
 Extended coverage for authority transfer edge cases and pause/unpause interaction with all operations.
 
-### compliance-extended.ts (38 tests)
+### compliance-flows.ts (38 tests)
 
 Comprehensive compliance testing including blacklist reason validation, CPI flow edge cases, and seize permission checks.
 
@@ -183,7 +183,7 @@ Comprehensive compliance testing including blacklist reason validation, CPI flow
 
 Full role permission matrix ensuring every instruction correctly accepts authorized roles and rejects unauthorized ones. Uses `for` loops to generate per-role rejection tests dynamically.
 
-### token-ops-extended.ts (40 tests)
+### token-ops-edge.ts (40 tests)
 
 Extended token operation tests covering mint quota boundaries, burn edge cases, freeze/thaw interactions, and multi-operation sequences.
 
@@ -218,7 +218,7 @@ initialize (with hook + delegate) -> setup ExtraAccountMetas -> assign roles -> 
 
 ## Property-Based / Fuzz Testing
 
-Property-based test invariants are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` with planned migration to the [Trident](https://ackee.xyz/trident/docs/latest/) framework when Anchor 0.32 compatibility is available. Current coverage relies on 386 integration tests covering the same invariants, supplemented by **47 property-based test functions** that exercise ~25,000+ randomized iterations against a local simulation of on-chain logic.
+Property-based test invariants are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` with planned migration to the [Trident](https://ackee.xyz/trident/docs/latest/) framework when Anchor 0.32 compatibility is available. Current coverage relies on 395 integration tests covering the same invariants, supplemented by **47 property-based test functions** that exercise ~25,000+ randomized iterations against a local simulation of on-chain logic.
 
 ### Status
 

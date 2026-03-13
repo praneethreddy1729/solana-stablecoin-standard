@@ -18,7 +18,7 @@ import {
 } from "@solana/spl-token";
 import { expect } from "chai";
 
-describe("compliance-extended", () => {
+describe("compliance-flows", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 

@@ -17,7 +17,7 @@ import {
 } from "@solana/spl-token";
 import { expect } from "chai";
 
-describe("token-ops-extended", () => {
+describe("token-ops-edge", () => {
   const commitment = "confirmed" as const;
   const opts: anchor.web3.ConfirmOptions = {
     commitment,

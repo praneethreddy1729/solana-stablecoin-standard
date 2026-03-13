@@ -15,7 +15,7 @@ import {
 } from "@solana/spl-token";
 import { expect } from "chai";
 
-describe("admin-extended", () => {
+describe("admin-roles", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 

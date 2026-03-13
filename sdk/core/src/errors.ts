@@ -4,7 +4,6 @@ export interface SSSErrorInfo {
   msg: string;
 }
 
-/** SSS Token Program errors (codes 6000-6034) */
 export const SSS_TOKEN_ERRORS: Record<number, SSSErrorInfo> = {
   6000: { code: 6000, name: "Unauthorized", msg: "Unauthorized: signer is not the authority" },
   6001: { code: 6001, name: "InvalidRoleType", msg: "Invalid role type" },
@@ -43,7 +42,6 @@ export const SSS_TOKEN_ERRORS: Record<number, SSSErrorInfo> = {
   6034: { code: 6034, name: "InvalidTokenProgram", msg: "Invalid token program: must be Token-2022" },
 };
 
-/** SSS Transfer Hook Program errors (codes 6000-6006) */
 export const SSS_TRANSFER_HOOK_ERRORS: Record<number, SSSErrorInfo> = {
   6000: { code: 6000, name: "SenderBlacklisted", msg: "Sender is blacklisted" },
   6001: { code: 6001, name: "ReceiverBlacklisted", msg: "Receiver is blacklisted" },
@@ -54,14 +52,7 @@ export const SSS_TRANSFER_HOOK_ERRORS: Record<number, SSSErrorInfo> = {
   6006: { code: 6006, name: "Unauthorized", msg: "Unauthorized" },
 };
 
-/**
- * Parse an Anchor/program error into a human-readable SSSErrorInfo.
- * Tries token program errors first, then hook program errors.
- * Accepts any error shape (Anchor ProgramError, AnchorError with logs, etc.)
- *
- * @param error - The caught error object from an Anchor RPC call.
- * @returns Parsed {@link SSSErrorInfo} with code, name, and message, or `null` if unrecognized.
- */
+/** Parse an Anchor program error into an SSSErrorInfo, or null if unrecognized. */
 export function parseSSSError(error: unknown): SSSErrorInfo | null {
   const code = extractErrorCode(error);
   if (code === null) return null;

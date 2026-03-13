@@ -9,7 +9,7 @@ compliance enforcement, and ecosystem-wide token discovery.
 2. **Reserve Attestation with Auto-Pause** — Proof-of-reserves with automatic circuit breaker when collateralization drops below threshold
 
 ## Architecture
-- 2 Anchor programs (17 + 5 instructions) on Token-2022
+- 2 Anchor programs (17 + 5 instructions + fallback) on Token-2022
 - TypeScript SDK with full instruction coverage
 - CLI with 20 commands
 - Next.js management dashboard
@@ -25,7 +25,7 @@ compliance enforcement, and ecosystem-wide token discovery.
 | Code Quality (20%) | Zero unwrap(), strict TypeScript, self-audit with 12 findings resolved | programs/, sdk/ |
 | Security (15%) | TOKEN_2022 pin, blacklist enforcement, role RBAC, 2-step authority | docs/SECURITY-AUDIT.md |
 | Authority (20%) | Token-2022 extensions, Anchor best practices, SPL Transfer Hook Interface | Programs follow Solana conventions |
-| Documentation (5%) | 20 doc files (5,119 lines), architecture, compliance, operations guides | docs/, README, CONTRIBUTING |
+| Documentation (5%) | 16 doc files, architecture, compliance, operations guides | docs/, README, CONTRIBUTING |
 
 ## Demo
 - Devnet programs: See README for explorer links

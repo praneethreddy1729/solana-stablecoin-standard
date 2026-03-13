@@ -50,9 +50,7 @@ pub struct Seize<'info> {
     /// Verified manually in handler because this PDA belongs to another program.
     pub blacklist_entry: UncheckedAccount<'info>,
 
-    /// The treasury token account — seized tokens MUST go here.
-    /// SECURITY: Constraining destination prevents a seizer from redirecting
-    /// seized funds to their own account.
+    /// Treasury token account — destination is constrained to prevent a seizer redirecting funds.
     #[account(
         mut,
         token::mint = mint,
@@ -69,8 +67,7 @@ pub fn handler<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Resul
     require_role_active(&ctx.accounts.seizer_role, RoleType::Seizer)?;
     require_permanent_delegate_enabled(&ctx.accounts.config)?;
 
-    // SECURITY: Enforcement actions (seize, freeze, thaw) intentionally
-    // work even when the token is paused — must not be blockable.
+    // Enforcement actions (seize, freeze, thaw) bypass pause — must not be blockable.
     require!(
         ctx.accounts.from.owner == ctx.accounts.from_owner.key(),
         SSSError::InvalidFromOwner

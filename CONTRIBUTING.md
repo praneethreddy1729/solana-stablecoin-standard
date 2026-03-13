@@ -72,9 +72,9 @@ sdk/
   cli/                    # Admin CLI tool (Anchor + Commander)
 frontend/                 # Next.js management dashboard
 backend/                  # Fastify REST API
-tests/                    # Integration tests (16 files, 386 tests)
-docs/                     # Specifications and guides (11 files)
-trident-tests/            # Fuzz test scaffolds (not yet implemented)
+tests/                    # Integration tests (16 files, 395 tests)
+docs/                     # Specifications and guides (20 files)
+trident-tests/            # Property-based fuzz tests (47 tests)
 scripts/                  # Utility and deployment scripts
 examples/                 # Usage examples
 migrations/               # Anchor migration scripts
@@ -254,7 +254,7 @@ Add tests to the relevant existing test file or create a new dedicated file. Eve
 - Use `describe/it` nesting: `describe(feature) > describe(scenario) > it(expected behavior)`.
 - Test names follow: `"verb + noun + expected outcome"` — e.g., `"rejects mint with zero amount"`.
 - For expected-failure tests, use `try/catch` + `expect.fail()` rather than `.should.be.rejected`.
-- The full suite must pass before opening a PR. The suite currently has 606 tests (386 integration + 173 SDK unit + 47 property-based) across 23 files.
+- The full suite must pass before opening a PR. The suite currently has 615 tests (395 integration + 173 SDK unit + 47 property-based) across 23 files.
 
 ---
 
@@ -314,7 +314,7 @@ The `paused` and `paused_by_attestation` flags are independent. `require_not_pau
 
 1. **Branch** from `main` using the naming convention above.
 2. **Build and lint** — `anchor build`, `cargo fmt --all`, `cargo clippy --all-targets` must all pass cleanly.
-3. **Test** — the full 606-test suite must pass. Add new tests for your changes.
+3. **Test** — the full 615-test suite must pass. Add new tests for your changes.
 4. **Update CHANGELOG.md** under the `[Unreleased]` section.
 5. **Open a PR** against `main`. The PR description must include:
    - What the change does and why.

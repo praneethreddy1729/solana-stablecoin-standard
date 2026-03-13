@@ -15,7 +15,7 @@ import {
 } from "@solana/spl-token";
 import { expect } from "chai";
 
-describe("authority-pause-extended", () => {
+describe("authority-pause", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
