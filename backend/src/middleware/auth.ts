@@ -1,4 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
+import { timingSafeEqual } from "crypto";
 
 const API_KEY = process.env.API_KEY;
 
@@ -37,7 +38,9 @@ export async function apiKeyAuth(
   }
 
   const token = authHeader.slice(7);
-  if (token !== API_KEY) {
+  const tokenBuf = Buffer.from(token);
+  const keyBuf = Buffer.from(API_KEY);
+  if (tokenBuf.length !== keyBuf.length || !timingSafeEqual(tokenBuf, keyBuf)) {
     reply.status(401).send({ error: "Invalid API key" });
     return;
   }

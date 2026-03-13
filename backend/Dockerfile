@@ -12,7 +12,7 @@ COPY sdk/core/ /app/sdk/core/
 # Install backend dependencies
 COPY backend/package.json backend/yarn.lock* /app/backend/
 WORKDIR /app/backend
-RUN npm ci --ignore-scripts 2>/dev/null || yarn install --frozen-lockfile
+RUN yarn install --frozen-lockfile
 
 # Copy backend source and compile
 COPY backend/tsconfig.json /app/backend/

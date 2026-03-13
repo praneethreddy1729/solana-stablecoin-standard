@@ -189,10 +189,16 @@ export async function complianceRoutes(app: FastifyInstance): Promise<void> {
     // Filter by date range using blockTime (unix seconds)
     if (from) {
       const fromTime = Math.floor(new Date(from).getTime() / 1000);
+      if (Number.isNaN(fromTime)) {
+        return reply.status(400).send({ error: "Invalid 'from' date format" });
+      }
       events = events.filter((e) => e.blockTime !== null && e.blockTime >= fromTime);
     }
     if (to) {
       const toTime = Math.floor(new Date(to).getTime() / 1000);
+      if (Number.isNaN(toTime)) {
+        return reply.status(400).send({ error: "Invalid 'to' date format" });
+      }
       events = events.filter((e) => e.blockTime !== null && e.blockTime <= toTime);
     }
 
