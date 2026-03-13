@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  build-and-check:
+    name: Build & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install root dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install SDK core dependencies
+        working-directory: sdk/core
+        run: yarn install --frozen-lockfile || npm install
+
+      - name: Install CLI dependencies
+        working-directory: sdk/cli
+        run: yarn install --frozen-lockfile || npm install
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: yarn install --frozen-lockfile || npm install
+
+      - name: Type check - SDK core
+        working-directory: sdk/core
+        run: npx tsc --noEmit
+
+      - name: Type check - CLI
+        working-directory: sdk/cli
+        run: npx tsc --noEmit
+
+      - name: Type check - Backend
+        working-directory: backend
+        run: npx tsc --noEmit

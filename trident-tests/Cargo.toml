@@ -1,0 +1,10 @@
+[package]
+name = "fuzz-tests"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "fuzz_tests"
+path = "fuzz_tests/fuzz_sss_token.rs"
+
+[workspace]

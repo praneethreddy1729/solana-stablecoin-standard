@@ -1,0 +1,280 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy-950: #0a0e1a;
+  --color-navy-900: #0f1629;
+  --color-navy-800: #151d38;
+  --color-navy-700: #1c2748;
+  --color-navy-600: #253259;
+  --color-slate-750: #293548;
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #06b6d4;
+  --color-cyan-600: #0891b2;
+  --color-accent: #22d3ee;
+  --color-accent-dim: #0e7490;
+  --color-success: #34d399;
+  --color-danger: #f87171;
+  --color-warning: #fbbf24;
+  --color-surface: #151d38;
+  --color-surface-alt: #1c2748;
+  --color-border: #253259;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-navy-950 text-text-primary font-sans antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-navy-900);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-navy-600);
+    border-radius: 3px;
+  }
+
+  /* Override wallet adapter button styles */
+  .wallet-adapter-button {
+    @apply !bg-cyan-600 hover:!bg-cyan-500 !rounded-lg !font-sans !text-sm !h-10 !px-4 !transition-all;
+  }
+  .wallet-adapter-button-trigger {
+    @apply !bg-cyan-600 hover:!bg-cyan-500;
+  }
+  .wallet-adapter-modal-wrapper {
+    @apply !bg-navy-800 !border !border-border !rounded-xl;
+  }
+  .wallet-adapter-modal-title {
+    @apply !font-sans !text-text-primary;
+  }
+  .wallet-adapter-modal-list li {
+    @apply !font-sans;
+  }
+}
+
+/* Toast animation */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.95);
+  }
+}
+
+.toast-enter {
+  animation: toast-in 0.2s ease-out;
+}
+.toast-exit {
+  animation: toast-out 0.15s ease-in forwards;
+}
+
+/* Skeleton loading animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-navy-700) 25%,
+    var(--color-navy-600) 50%,
+    var(--color-navy-700) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* Spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  border: 2px solid var(--color-navy-600);
+  border-top-color: var(--color-cyan-400);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Tab indicator animation */
+.tab-active {
+  @apply text-cyan-400 border-b-2 border-cyan-400;
+}
+
+/* Subtle animated gradient background */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.bg-animated-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--color-navy-950) 0%,
+    #0c1225 25%,
+    #0f1a35 50%,
+    #0b1028 75%,
+    var(--color-navy-950) 100%
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+/* Tab content fade-in */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-content-enter {
+  animation: fade-in-up 0.25s ease-out;
+}
+
+/* Hero section gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #22d3ee 0%, #818cf8 50%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card hover elevation */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(34, 211, 238, 0.08);
+  border-color: rgba(34, 211, 238, 0.15);
+}
+
+/* Button hover scale */
+.btn-interactive {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+}
+.btn-interactive:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+.btn-interactive:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Pulse glow for status indicators */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 8px 2px rgba(34, 211, 238, 0.2);
+  }
+}
+
+.status-pulse {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Hero grid pattern overlay */
+.hero-grid {
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* Stat card gradient borders */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-cyan-500), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+/* Number counter animation */
+@keyframes count-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.number-appear {
+  animation: count-up 0.4s ease-out;
+}
+
+/* Horizontal scroll hint for mobile tables */
+.scroll-hint {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* Loading bar animation */
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+
+.loading-bar {
+  overflow: hidden;
+  position: relative;
+}
+.loading-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.15), transparent);
+  animation: loading-bar 1.5s ease-in-out infinite;
+}

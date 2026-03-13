@@ -1,0 +1,69 @@
+import { PublicKey } from "@solana/web3.js";
+
+export const SSS_TOKEN_PROGRAM_ID = new PublicKey(
+  "tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz"
+);
+
+export const SSS_TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
+  "A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB"
+);
+
+export const CONFIG_SEED = Buffer.from("config");
+export const ROLE_SEED = Buffer.from("role");
+export const BLACKLIST_SEED = Buffer.from("blacklist");
+export const EXTRA_ACCOUNT_METAS_SEED = Buffer.from("extra-account-metas");
+export const ATTESTATION_SEED = Buffer.from("attestation");
+export const REGISTRY_SEED = Buffer.from("registry");
+
+export const ROLE_NAMES: Record<number, string> = {
+  0: "Minter",
+  1: "Burner",
+  2: "Pauser",
+  3: "Freezer",
+  4: "Blacklister",
+  5: "Seizer",
+  6: "Attestor",
+};
+
+export const ROLE_DESCRIPTIONS: Record<number, string> = {
+  0: "Can mint new tokens up to their quota",
+  1: "Can burn tokens from any account",
+  2: "Can pause/unpause all token operations",
+  3: "Can freeze/thaw individual token accounts",
+  4: "Can add/remove addresses from the blacklist",
+  5: "Can seize tokens from blacklisted accounts to treasury",
+  6: "Can submit reserve attestations for proof-of-reserves",
+};
+
+export const EXPLORER_BASE = "https://explorer.solana.com";
+
+function getCluster(): string {
+  const rpc = typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_RPC_URL ?? "")
+    : "";
+  if (rpc.includes("mainnet")) return "mainnet-beta";
+  if (rpc.includes("localhost") || rpc.includes("127.0.0.1")) return "custom&customUrl=http%3A%2F%2Flocalhost%3A8899";
+  return "devnet";
+}
+
+export function explorerUrl(
+  addressOrSig: string,
+  type: "address" | "tx" = "address",
+  cluster?: string
+): string {
+  const resolvedCluster = cluster ?? getCluster();
+  return `${EXPLORER_BASE}/${type}/${addressOrSig}?cluster=${resolvedCluster}`;
+}
+
+export function shortenAddress(address: string, chars = 4): string {
+  return `${address.slice(0, chars)}...${address.slice(-chars)}`;
+}
+
+export function formatNumber(supply: bigint, decimals: number): string {
+  const divisor = BigInt(10 ** decimals);
+  const whole = supply / divisor;
+  const frac = supply % divisor;
+  const fracStr = frac.toString().padStart(decimals, "0").replace(/0+$/, "");
+  const wholeFormatted = whole.toLocaleString();
+  return fracStr ? `${wholeFormatted}.${fracStr}` : wholeFormatted;
+}

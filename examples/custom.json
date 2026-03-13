@@ -1,0 +1,10 @@
+{
+  "name": "CustomToken",
+  "symbol": "CUST",
+  "uri": "",
+  "decimals": 9,
+  "preset": "CUSTOM",
+  "enableTransferHook": true,
+  "enablePermanentDelegate": false,
+  "defaultAccountFrozen": false
+}

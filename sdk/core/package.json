@@ -1,0 +1,49 @@
+{
+  "name": "@stbr/sss-token",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for the Solana Stablecoin Standard (SSS) — role-based stablecoin issuance, compliance, and reserve attestation on Token-2022",
+  "keywords": [
+    "solana",
+    "stablecoin",
+    "token-2022",
+    "spl-token",
+    "anchor",
+    "compliance",
+    "blacklist",
+    "transfer-hook",
+    "permanent-delegate",
+    "reserve-attestation"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/solanabr/solana-stablecoin-standard"
+  },
+  "author": "Solana Stablecoin Standard Contributors",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/",
+    "src/",
+    "src/idl/"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/spl-token": "^0.4.6",
+    "@solana/web3.js": "^1.95.0"
+  },
+  "peerDependencies": {
+    "@coral-xyz/anchor": "^0.32.1"
+  },
+  "devDependencies": {
+    "@types/chai": "4",
+    "@types/jest": "^30.0.0",
+    "chai": "4",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.6"
+  }
+}

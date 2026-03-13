@@ -1,0 +1,31 @@
+[toolchain]
+anchor_version = "0.32.1"
+package_manager = "yarn"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+sss_token = "tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz"
+sss_transfer_hook = "A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB"
+
+[programs.devnet]
+sss_token = "tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz"
+sss_transfer_hook = "A7UUA9Dbn9XokzuTqMCD9ka4y7x1pQBHJERa92dGAHKB"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[test.validator]
+bind_address = "127.0.0.1"
+# Deactivate SIMD-0219 (Stricter ABI and Runtime Constraints) which breaks
+# Token-2022 metadata realloc on Agave 3.0.x (anza-xyz/agave#9799)
+deactivate_feature = ["CxeBn9PVeeXbmjbNwLv6U4C6svNxnC4JX6mfkvgeMocM"]
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""

@@ -1,0 +1,11 @@
+[fuzz]
+# Fuzz testing configuration for Solana Stablecoin Standard
+# Install: cargo install trident-cli
+# Run: trident fuzz run fuzz_sss_token
+
+[fuzz.test.fuzz_sss_token]
+fuzz_iterations = 10000
+programs_owned = ["tCe3w68q2eo752dzozjGrV8rwhuynfz6T4HtquHf1Gz"]
+
+[test]
+validator_startup_timeout = 30000

@@ -1,0 +1,7 @@
+{
+  "name": "USDExample",
+  "symbol": "USDe",
+  "uri": "https://example.com/metadata.json",
+  "decimals": 6,
+  "preset": "SSS-1"
+}

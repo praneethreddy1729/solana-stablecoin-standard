@@ -1,0 +1,23 @@
+{
+  "name": "@stbr/sss-backend",
+  "version": "0.1.0",
+  "description": "Fastify REST API for SSS stablecoin operations and compliance",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node-dev src/index.ts"
+  },
+  "dependencies": {
+    "fastify": "^4.28.0",
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/web3.js": "^1.95.0",
+    "@solana/spl-token": "^0.4.6",
+    "pino": "^9.0.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "ts-node": "^10.9.0",
+    "ts-node-dev": "^2.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
