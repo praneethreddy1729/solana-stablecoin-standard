@@ -210,6 +210,9 @@ export class SolanaStablecoin {
       hookProgram: enableTransferHook ? hookProgramId : null,
     };
 
+    // Cast required: Anchor's strict typings don't accept null for optional accounts
+    // (hookProgram is null when transfer hook is disabled). Runtime behaviour is correct —
+    // the on-chain program handles a null hookProgram via Option<Pubkey>.
     const txSig = await wrapError("initialize", () =>
       program.methods
         .initialize({
@@ -221,7 +224,9 @@ export class SolanaStablecoin {
           enablePermanentDelegate,
           defaultAccountFrozen,
           treasury: params.treasury ?? PublicKey.default,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .accountsStrict(accounts as any)
         .signers([mintKeypair])
         .rpc()
@@ -729,6 +734,7 @@ export class SolanaStablecoin {
     return wrapError("seize", () =>
       this.program.methods
         .seize()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .accountsStrict({
           authority: provider.wallet.publicKey,
           config: this.configPda,
@@ -739,6 +745,9 @@ export class SolanaStablecoin {
           blacklistEntry: findBlacklistPda(this.mintAddress, fromOwnerKey, this.hookProgramId)[0],
           fromOwner: fromOwnerKey,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
+          // Cast required: Anchor strict types expect the full IDL-generated account shape;
+          // seize passes only the accounts needed — remaining hook accounts go via remainingAccounts.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any)
         .remainingAccounts([
           { pubkey: this.hookProgramId, isSigner: false, isWritable: false },
@@ -831,8 +840,13 @@ export class SolanaStablecoin {
     );
 
     try {
-      const accounts = await (program.account as any).registryEntry.all();
-      return accounts.map((a: any) => a.account as RegistryEntry);
+      // program.account namespace is typed from the IDL; cast via unknown to avoid
+      // structural mismatch between generated and inlined IDL account shapes.
+      const accountNamespace = program.account as unknown as {
+        registryEntry: { all(): Promise<Array<{ account: RegistryEntry }>> };
+      };
+      const accounts = await accountNamespace.registryEntry.all();
+      return accounts.map((a) => a.account);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       throw new Error(`listAll failed: unable to fetch registry entries: ${msg}`);
