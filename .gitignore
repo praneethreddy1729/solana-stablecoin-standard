@@ -37,3 +37,4 @@ backend/yarn.lock
 # Claude Code
 CLAUDE.md
 .claude/
+PR_DESCRIPTION.md
