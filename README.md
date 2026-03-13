@@ -26,7 +26,7 @@ flowchart TD
 git clone https://github.com/solanabr/solana-stablecoin-standard.git
 cd solana-stablecoin-standard && yarn install
 anchor build
-anchor test  # runs 577 tests against a local validator
+anchor test  # runs 523 tests against a local validator
 ```
 
 Prerequisites: Rust, Solana CLI (Agave 3.0.x), Anchor 0.32.1, Node.js >= 20, Yarn v1.
@@ -64,9 +64,9 @@ Prerequisites: Rust, Solana CLI (Agave 3.0.x), Anchor 0.32.1, Node.js >= 20, Yar
 ## Testing
 
 ```bash
-anchor test                                             # 395 integration tests
+anchor test                                             # 339 integration tests
 cd sdk/core && npx jest                                 # 135 SDK unit tests
-cargo test --manifest-path trident-tests/Cargo.toml     # 47 property-based tests
+cargo test --manifest-path trident-tests/Cargo.toml     # 49 property-based tests
 ```
 
 Coverage: role matrix (103 tests), compliance flows (38), token edge cases (40), authority + pause (30), E2E lifecycles (SSS-1 + SSS-2), reserve attestation, registry, oracle guard, and more.

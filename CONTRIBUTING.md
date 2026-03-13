@@ -48,7 +48,7 @@ ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 ANCHOR_WALLET=~/.config/solana/id.json
 - Fund keypairs via `SystemProgram.transfer`, not airdrop.
 - Use `describe/it` nesting: `describe(feature) > describe(scenario) > it(behavior)`.
 - Test names: `"verb + noun + expected outcome"` (e.g., `"rejects mint with zero amount"`).
-- The full 577-test suite (395 integration + 135 SDK + 47 property-based) must pass before opening a PR.
+- The full 523-test suite (339 integration + 135 SDK + 49 property-based) must pass before opening a PR.
 
 ## Commit Conventions
 

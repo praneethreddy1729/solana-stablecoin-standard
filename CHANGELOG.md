@@ -133,7 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Testing
 
-- 395 integration and unit tests across 16 files covering all instructions, role-permission matrix, edge cases, compliance flows, and SSS-1/SSS-2 lifecycle scenarios
+- 339 integration tests across 16 files covering all instructions, role-permission matrix, edge cases, compliance flows, and SSS-1/SSS-2 lifecycle scenarios
 
 #### Documentation
 

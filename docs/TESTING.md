@@ -4,7 +4,7 @@
 
 The test suite validates all SSS-1 and SSS-2 functionality through Anchor integration tests. Tests run against a local Solana validator with both programs deployed.
 
-**Total: 577 tests** (395 integration + 135 SDK unit + 47 property-based) across 16 integration test files + SDK unit tests + property-based fuzz tests covering all instructions, role checks, compliance flows, and edge cases.
+**Total: 523 tests** (339 integration + 135 SDK unit + 49 property-based) across 16 integration test files + SDK unit tests + property-based fuzz tests covering all instructions, role checks, compliance flows, and edge cases.
 
 ## Running Tests
 
@@ -218,7 +218,7 @@ initialize (with hook + delegate) -> setup ExtraAccountMetas -> assign roles -> 
 
 ## Property-Based / Fuzz Testing
 
-Property-based test invariants are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` with planned migration to the [Trident](https://ackee.xyz/trident/docs/latest/) framework when Anchor 0.32 compatibility is available. Current coverage relies on 395 integration tests covering the same invariants, supplemented by **47 property-based test functions** that exercise ~25,000+ randomized iterations against a local simulation of on-chain logic.
+Property-based test invariants are defined in `trident-tests/fuzz_tests/fuzz_sss_token.rs` with planned migration to the [Trident](https://ackee.xyz/trident/docs/latest/) framework when Anchor 0.32 compatibility is available. Current coverage relies on 339 integration tests covering the same invariants, supplemented by **49 property-based test functions** that exercise ~25,000+ randomized iterations against a local simulation of on-chain logic.
 
 ### Status
 
