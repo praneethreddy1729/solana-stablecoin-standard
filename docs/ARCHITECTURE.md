@@ -282,6 +282,32 @@ A critical design decision: the StablecoinConfig PDA serves as both the **mint a
 
 This pattern ensures that the on-chain program enforces all business logic (roles, quotas, pause state) for every privileged operation.
 
+## Security Model
+
+### Trust Assumptions
+
+The Config PDA is the sole on-chain authority for all privileged token operations. No external keypair holds mint authority, freeze authority, or permanent delegate rights — those are set to the Config PDA at mint initialization and cannot be externally reassigned without a program upgrade.
+
+Role separation is enforced structurally: the `authority` key can assign/revoke roles and initiate authority transfer, but cannot directly mint, burn, freeze, blacklist, or seize without holding the corresponding `RoleAssignment` PDA. Each role is a separate PDA keyed by `(config, role_type, assignee)`, so compromising one role holder does not affect others.
+
+Authority transfer is two-step (`transfer_authority` + `accept_authority`). The current authority must sign to initiate; the pending authority must sign to accept. Either party can cancel. No single-transaction authority handover is possible.
+
+### Threat Model
+
+**Authority key compromise**: An attacker with the authority key can assign new role holders but cannot directly execute any mint/burn/seize/freeze. They would need to assign themselves a role first, which is a separate on-chain transaction that is observable. They cannot bypass the Config PDA; all privileged Token-2022 operations require PDA signing via `invoke_signed`.
+
+**Transfer hook bypass**: The hook is invoked by Token-2022 itself on every `transfer_checked` call. A user cannot skip the hook by calling Token-2022 directly — the `TransferHookAccount` extension on the mint forces execution. The only legitimate bypass is the permanent delegate path (seize operations), which is explicitly checked in `execute()` by comparing `owner_delegate` against the Config PDA address.
+
+**Permanent delegate / seize risk**: The Config PDA as permanent delegate can move tokens from any account. The `seize` instruction gates this behind the `Seizer` role and additionally requires the target account to have an active `BlacklistEntry` PDA (checked in-instruction). Seizure to an arbitrary address is not possible; the destination is the authority-controlled treasury account stored in `config.treasury`.
+
+### Attack Surface
+
+**Token-2022 extension ordering**: Extensions must be initialized before `initializeMint2`. Violating the order causes silent incorrect state or a runtime error. The init sequence in `initialize.rs` is fixed and tested; any modification risks producing a non-functional or misconfigured mint.
+
+**Cross-program PDA validation for blacklist**: The hook's `add_to_blacklist` and `remove_from_blacklist` instructions accept a CPI from the main program. The hook validates that the Config PDA is a signer and that it derives correctly from `[b"config", mint]` against the main program ID. A crafted CPI from an attacker-controlled program would fail this derivation check unless the main program's CPI signing path is compromised.
+
+**Delegate bypass detection via TLV parsing**: The hook reads the mint's `PermanentDelegate` extension data from the mint account's TLV buffer to determine the legitimate delegate address. This parsing must correctly locate the extension type tag. Malformed or reordered extension data could produce incorrect reads; the implementation uses `spl_token_2022::extension::StateWithExtensions::unpack` which validates TLV structure before returning extension references.
+
 ## CPI Architecture
 
 The main program communicates with the hook program via CPI for blacklist operations:

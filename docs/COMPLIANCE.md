@@ -146,6 +146,35 @@ All compliance actions emit events that can be indexed for audit purposes:
 
 The backend also maintains an in-memory audit log of all screening results, accessible via `GET /compliance/audit`.
 
+### Audit Trail Export Format
+
+Each audit entry is a JSON object with the following schema:
+
+```json
+{
+  "timestamp": "2026-03-14T10:30:00Z",
+  "action": "mint | burn | blacklist_add | blacklist_remove | seize | freeze | thaw | pause | unpause",
+  "actor": "<base58 public key>",
+  "role": "Minter | Burner | Blacklister | Seizer | Pauser | Freezer | Authority",
+  "txSignature": "<base58 transaction signature>",
+  "details": {
+    "target": "<base58 address>",
+    "amount": 1000000,
+    "reason": "OFAC SDN match"
+  }
+}
+```
+
+`details.target` and `details.amount` are omitted for actions that do not involve a specific address or token amount (e.g., `pause`). `details.reason` is only present for `blacklist_add` entries.
+
+Export endpoints:
+
+- `GET /compliance/audit` — screening decisions (OFAC/sanctions check results)
+- `GET /compliance/audit/actions` — operational actions (mint, burn, blacklist, seize, freeze, thaw, pause)
+- `GET /compliance/audit/events` — on-chain events with optional `from` / `to` date-range query parameters
+
+Audit data is persisted to the `data/` directory in newline-delimited JSON format and can be exported via these endpoints for ingestion into compliance reporting systems. See [docs/API.md](./API.md) for full endpoint documentation including query parameters and response schemas.
+
 ## Compliance Checklist
 
 For issuers deploying SSS-2 stablecoins:
